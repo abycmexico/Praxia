@@ -33,7 +33,10 @@
   .volver:hover{color:var(--ink);}
   .encabezado{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:8px;}
   h1{font-size:27px;line-height:1.2;}
-  .datos-rapidos{color:var(--gray);font-size:13.5px;margin-bottom:30px;line-height:1.7;}
+  .datos-rapidos{color:var(--gray);font-size:13.5px;margin-bottom:16px;line-height:1.7;}
+  .estado-consentimiento{font-size:12px;padding:9px 14px;border-radius:10px;margin-bottom:26px;display:inline-block;}
+  .estado-consentimiento.si{background:#D4EDDA;color:#2e7d32;}
+  .estado-consentimiento.no{background:#F8D7DA;color:#c62828;}
   .tag{display:inline-block;font-size:10.5px;font-weight:800;letter-spacing:.8px;text-transform:uppercase;padding:4px 10px;border-radius:20px;vertical-align:middle;}
   .tag.activo{background:#D4EDDA;color:#2e7d32;}
   .tag.inactivo{background:#E7E7E7;color:#666;}
@@ -112,6 +115,7 @@
       <h1 id="nombrePaciente"></h1>
     </div>
     <p class="datos-rapidos" id="datosRapidos"></p>
+    <div id="estadoConsentimiento" class="estado-consentimiento"></div>
 
     <nav class="tabs">
       <button class="active" data-tab="ficha">Ficha</button>
@@ -300,6 +304,27 @@ async function iniciar(){
   pintarFicha();
   cargarNotas();
   cargarDocumentos();
+  cargarConsentimiento();
+}
+
+/* ---------- consentimiento ---------- */
+async function cargarConsentimiento(){
+  const cont = document.getElementById('estadoConsentimiento');
+  const { data, error } = await sb.from('consentimientos')
+    .select('aceptado_en').eq('paciente_id', paciente.id)
+    .order('aceptado_en', {ascending:false}).limit(1).maybeSingle();
+
+  if(error || !data){
+    cont.textContent = 'Sin consentimiento registrado';
+    cont.className = 'estado-consentimiento no';
+    return;
+  }
+
+  const fecha = new Date(data.aceptado_en).toLocaleString('es-MX', {
+    day:'numeric', month:'long', year:'numeric', hour:'2-digit', minute:'2-digit'
+  });
+  cont.textContent = `Consentimiento aceptado el ${fecha}`;
+  cont.className = 'estado-consentimiento si';
 }
 
 /* ---------- pestañas y modales ---------- */

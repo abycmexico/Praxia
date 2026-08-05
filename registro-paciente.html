@@ -37,6 +37,11 @@
   .foot{margin-top:24px;font-size:13px;color:var(--gray);text-align:center;}
   .foot a{color:var(--ink);font-weight:700;border-bottom:1.5px solid var(--yellow);}
   .aviso{font-size:11.5px;color:var(--gray);line-height:1.6;margin-top:18px;}
+  .consentimiento-box{border:1.5px solid var(--line);border-radius:12px;padding:16px;margin-top:22px;background:#FAFAFA;}
+  .consentimiento-titulo{font-size:12.5px;font-weight:700;margin-bottom:10px;}
+  .consentimiento-texto{font-size:12px;color:#555;line-height:1.7;max-height:140px;overflow-y:auto;padding-right:6px;margin-bottom:14px;white-space:pre-wrap;}
+  .consentimiento-check{display:flex;align-items:flex-start;gap:9px;cursor:pointer;font-size:12.5px;font-weight:600;}
+  .consentimiento-check input{width:auto;margin-top:2px;flex-shrink:0;}
 </style>
 </head>
 <body>
@@ -67,11 +72,19 @@
         <label for="password">Contraseña</label>
         <input type="password" id="password" minlength="8" required>
 
+        <div class="consentimiento-box">
+          <div class="consentimiento-titulo">Consentimiento y aviso de privacidad</div>
+          <div class="consentimiento-texto" id="textoConsentimiento">Cargando...</div>
+          <label class="consentimiento-check">
+            <input type="checkbox" id="checkConsentimiento" required>
+            <span>He leído y acepto lo anterior.</span>
+          </label>
+        </div>
+
         <button type="submit" id="btn">Crear cuenta</button>
         <p class="msg" id="msg"></p>
       </form>
 
-      <p class="aviso">Al crear tu cuenta aceptas que tus datos de sesión se traten conforme al aviso de privacidad. Tus notas clínicas son privadas de tu psicólogo.</p>
       <p class="foot">¿Ya tienes cuenta? <a href="./login.html">Inicia sesión</a></p>
     </div>
 
@@ -90,6 +103,10 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 const params = new URLSearchParams(location.search);
 const psicologoId = params.get('p');
 
+const TEXTO_BASE = 'Al registrarte, autorizas a tu psicólogo a recabar y tratar tus datos personales y de salud con el único fin de brindarte atención psicológica, conforme a la Ley Federal de Protección de Datos Personales en Posesión de los Particulares. Tus datos de sesión son confidenciales y solo tu psicólogo tiene acceso a tus notas clínicas.';
+
+let textoConsentimientoActual = TEXTO_BASE;
+
 async function iniciar(){
   if(!psicologoId){
     document.getElementById('contenido').style.display = 'none';
@@ -107,12 +124,30 @@ async function iniciar(){
     return;
   }
   document.getElementById('nombrePsicologo').textContent = data.nombre;
+
+  // Si el psicólogo escribió sus propias políticas, se muestran después
+  // del texto base legal — no lo reemplazan, lo complementan.
+  const { data: config } = await sb.from('config_publica')
+    .select('politicas_generales').eq('psicologo_id', psicologoId).maybeSingle();
+
+  textoConsentimientoActual = config && config.politicas_generales
+    ? `${TEXTO_BASE}\n\nAdemás, ${data.nombre} comparte lo siguiente:\n${config.politicas_generales}`
+    : TEXTO_BASE;
+
+  document.getElementById('textoConsentimiento').textContent = textoConsentimientoActual;
 }
 
 document.getElementById('form').addEventListener('submit', async (e)=>{
   e.preventDefault();
   const btn = document.getElementById('btn');
   const msg = document.getElementById('msg');
+
+  if(!document.getElementById('checkConsentimiento').checked){
+    msg.textContent = 'Necesitas aceptar el consentimiento para continuar.';
+    msg.className = 'msg err';
+    return;
+  }
+
   btn.disabled = true;
   msg.className = 'msg';
   msg.textContent = 'Creando tu cuenta...';
@@ -141,6 +176,22 @@ document.getElementById('form').addEventListener('submit', async (e)=>{
 
   if(errPerfil){
     msg.textContent = 'Tu cuenta se creó pero hubo un error al guardar tu perfil: ' + errPerfil.message;
+    msg.className = 'msg err';
+    btn.disabled = false;
+    return;
+  }
+
+  // Se guarda el texto exacto que la persona vio y aceptó, no una
+  // referencia a "las políticas actuales" (que podrían cambiar después).
+  const { error: errConsentimiento } = await sb.from('consentimientos').insert({
+    paciente_id: data.user.id,
+    psicologo_id: psicologoId,
+    texto_aceptado: textoConsentimientoActual,
+    user_agent: navigator.userAgent
+  });
+
+  if(errConsentimiento){
+    msg.textContent = 'Tu cuenta se creó pero no se pudo registrar tu consentimiento: ' + errConsentimiento.message;
     msg.className = 'msg err';
     btn.disabled = false;
     return;
