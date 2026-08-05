@@ -76,7 +76,10 @@
   .filtros{display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;}
   .chip{border:1.5px solid var(--line);background:none;border-radius:20px;padding:8px 15px;font-size:12.5px;font-weight:700;cursor:pointer;font-family:inherit;color:var(--gray);}
   .chip.sel{border-color:var(--primario);background:#EAF5E8;color:var(--ink);}
-  .bloque{border:1.5px solid var(--line);border-radius:16px;padding:22px 24px;margin-bottom:18px;}
+  .bloque{border:1.5px solid var(--line);border-radius:16px;padding:22px 24px;margin-bottom:18px;background:#fff;}
+  .perfil-foto-fila{display:flex;align-items:center;gap:20px;}
+  .perfil-foto-preview{width:64px;height:64px;border-radius:50%;background:var(--primario-suave);color:#fff;font-weight:800;font-size:20px;display:flex;align-items:center;justify-content:center;flex-shrink:0;overflow:hidden;background-size:cover;background-position:center;}
+  .perfil-foto-nota{font-size:11.5px;color:var(--gray);margin-top:6px;}
   .bloque h3{font-size:14px;margin-bottom:2px;}
   .bloque .bh{font-size:12px;color:var(--gray);margin-bottom:18px;line-height:1.6;}
   .rejilla{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
@@ -293,6 +296,48 @@
     <p class="sub">Estos ajustes definen cómo se agendan tus sesiones. Los cambios aplican a las citas nuevas: las que ya están agendadas conservan la duración y el precio con que se hicieron.</p>
 
     <form id="formConfig">
+      <div class="bloque">
+        <h3>Mi perfil</h3>
+        <p class="bh">Así te ven tus pacientes dentro de la plataforma.</p>
+
+        <div class="perfil-foto-fila">
+          <div class="perfil-foto-preview" id="fotoPreview"></div>
+          <div>
+            <input type="file" id="inputFotoPerfil" accept=".jpg,.jpeg,.png" style="display:none;">
+            <button type="button" class="btn btn-ghost" id="btnSubirFoto">Cambiar foto</button>
+            <p class="perfil-foto-nota">JPG o PNG, máximo 5 MB.</p>
+            <p class="msg" id="msgFoto"></p>
+          </div>
+        </div>
+
+        <div class="rejilla" style="margin-top:18px;">
+          <div class="campo">
+            <label for="especialidad">Tipo de especialidad</label>
+            <select id="especialidad">
+              <option value="">Selecciona una opción</option>
+              <option value="Psicología Clínica">Psicología Clínica</option>
+              <option value="Psicoanálisis">Psicoanálisis</option>
+              <option value="Terapia Cognitivo-Conductual">Terapia Cognitivo-Conductual</option>
+              <option value="Terapia Sistémica / Familiar">Terapia Sistémica / Familiar</option>
+              <option value="Terapia Humanista">Terapia Humanista</option>
+              <option value="Psicología Infantil">Psicología Infantil</option>
+              <option value="Neuropsicología">Neuropsicología</option>
+              <option value="Sexología">Sexología</option>
+              <option value="otra">Otra especialidad</option>
+            </select>
+          </div>
+          <div class="campo" id="campoEspecialidadOtra" style="display:none;">
+            <label for="especialidadOtra">¿Cuál?</label>
+            <input type="text" id="especialidadOtra" placeholder="Escribe tu especialidad">
+          </div>
+        </div>
+
+        <div class="campo" style="margin-top:16px;">
+          <label for="bio">Sobre ti</label>
+          <textarea id="bio" placeholder="Una breve presentación que tus pacientes puedan leer sobre ti y tu enfoque."></textarea>
+        </div>
+      </div>
+
       <div class="bloque">
         <h3>Tu consultorio</h3>
         <p class="bh">Así verá tu paciente el espacio donde agenda.</p>
@@ -817,7 +862,118 @@ async function cargarConfig(){
   });
 
   document.getElementById('whatsappActivo').checked = !!config.whatsapp_activo;
+
+  cargarPerfil();
 }
+
+/* ---------- perfil: foto, especialidad, bio ---------- */
+function cargarPerfil(){
+  pintarFoto(yo.foto_url);
+
+  const especialidadesConocidas = [
+    'Psicología Clínica','Psicoanálisis','Terapia Cognitivo-Conductual',
+    'Terapia Sistémica / Familiar','Terapia Humanista','Psicología Infantil',
+    'Neuropsicología','Sexología'
+  ];
+  const sel = document.getElementById('especialidad');
+  const campoOtra = document.getElementById('campoEspecialidadOtra');
+  const inputOtra = document.getElementById('especialidadOtra');
+
+  if(yo.especialidad && especialidadesConocidas.includes(yo.especialidad)){
+    sel.value = yo.especialidad;
+    campoOtra.style.display = 'none';
+  } else if(yo.especialidad){
+    sel.value = 'otra';
+    inputOtra.value = yo.especialidad;
+    campoOtra.style.display = 'block';
+  } else {
+    sel.value = '';
+  }
+
+  document.getElementById('bio').value = yo.bio || '';
+}
+
+document.getElementById('especialidad').addEventListener('change', (e)=>{
+  document.getElementById('campoEspecialidadOtra').style.display =
+    e.target.value === 'otra' ? 'block' : 'none';
+});
+
+function pintarFoto(url){
+  const cont = document.getElementById('fotoPreview');
+  const avatarSidebar = document.getElementById('avatarIniciales');
+  if(url){
+    cont.style.backgroundImage = `url(${url})`;
+    cont.textContent = '';
+    if(avatarSidebar){
+      avatarSidebar.style.backgroundImage = `url(${url})`;
+      avatarSidebar.textContent = '';
+    }
+  } else {
+    cont.style.backgroundImage = '';
+    cont.textContent = iniciales(yo.nombre);
+  }
+}
+
+document.getElementById('btnSubirFoto').addEventListener('click', ()=>{
+  document.getElementById('inputFotoPerfil').click();
+});
+
+document.getElementById('inputFotoPerfil').addEventListener('change', async (e)=>{
+  const file = e.target.files[0];
+  const msg = document.getElementById('msgFoto');
+  if(!file) return;
+
+  if(file.size > 5*1024*1024){
+    msg.textContent = 'La foto pesa más de 5 MB.';
+    msg.className = 'msg err';
+    return;
+  }
+
+  msg.className = 'msg';
+  msg.textContent = 'Subiendo...';
+
+  const extension = file.name.includes('.') ? file.name.split('.').pop() : 'jpg';
+  // Misma carpeta por dueño que ya usan las políticas de Storage
+  // del bucket "documentos": {psicologo_id}/perfil/foto.ext
+  const ruta = `${yo.id}/perfil/foto.${extension}`;
+
+  const { error: errSubida } = await sb.storage
+    .from('documentos')
+    .upload(ruta, file, { upsert: true, contentType: file.type || undefined });
+
+  if(errSubida){
+    msg.textContent = 'No se pudo subir: ' + errSubida.message;
+    msg.className = 'msg err';
+    return;
+  }
+
+  // Bucket privado: se guarda una liga firmada de larga duración (1 año)
+  // en vez de una URL pública, porque el bucket no es público.
+  const { data: firmada, error: errFirma } = await sb.storage
+    .from('documentos')
+    .createSignedUrl(ruta, 60*60*24*365);
+
+  if(errFirma){
+    msg.textContent = 'La foto se subió pero no se pudo generar el enlace: ' + errFirma.message;
+    msg.className = 'msg err';
+    return;
+  }
+
+  const { error: errGuardar } = await sb.from('psicologos')
+    .update({ foto_url: firmada.signedUrl }).eq('id', yo.id);
+
+  if(errGuardar){
+    msg.textContent = 'La foto se subió pero no se pudo guardar: ' + errGuardar.message;
+    msg.className = 'msg err';
+    return;
+  }
+
+  yo.foto_url = firmada.signedUrl;
+  pintarFoto(firmada.signedUrl);
+  msg.textContent = 'Foto actualizada.';
+  msg.className = 'msg ok';
+  setTimeout(()=>{ if(msg.textContent==='Foto actualizada.') msg.textContent=''; }, 3000);
+});
 
 document.getElementById('formConfig').addEventListener('submit', async (e)=>{
   e.preventDefault();
@@ -864,6 +1020,27 @@ document.getElementById('formConfig').addEventListener('submit', async (e)=>{
     btn.disabled = false;
     return;
   }
+
+  // Especialidad y bio viven en la tabla psicologos, no en configuracion.
+  const selEspecialidad = document.getElementById('especialidad').value;
+  const especialidadFinal = selEspecialidad === 'otra'
+    ? vacioNull(document.getElementById('especialidadOtra').value)
+    : vacioNull(selEspecialidad);
+
+  const { error: errorPerfil } = await sb.from('psicologos').update({
+    especialidad: especialidadFinal,
+    bio: vacioNull(document.getElementById('bio').value)
+  }).eq('id', yo.id);
+
+  if(errorPerfil){
+    msg.textContent = 'La configuración se guardó, pero tu perfil no: ' + errorPerfil.message;
+    msg.className = 'msg err';
+    btn.disabled = false;
+    return;
+  }
+
+  yo.especialidad = especialidadFinal;
+  yo.bio = document.getElementById('bio').value;
 
   config = { ...config, ...cambios };
   msg.textContent = 'Configuración guardada.';

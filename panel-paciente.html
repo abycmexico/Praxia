@@ -27,7 +27,10 @@
   nav.tabs button.active{color:var(--ink);border-bottom-color:var(--primario);}
   section{display:none;}
   section.active{display:block;}
-  .bloque{border:1.5px solid var(--line);border-radius:16px;padding:22px 24px;margin-bottom:18px;}
+  .bloque{border:1.5px solid var(--line);border-radius:16px;padding:22px 24px;margin-bottom:18px;background:#fff;}
+  .perfil-foto-fila{display:flex;align-items:center;gap:20px;}
+  .perfil-foto-preview{width:64px;height:64px;border-radius:50%;background:var(--primario-suave);color:#fff;font-weight:800;font-size:20px;display:flex;align-items:center;justify-content:center;flex-shrink:0;overflow:hidden;background-size:cover;background-position:center;}
+  .perfil-foto-nota{font-size:11.5px;color:var(--gray);margin-top:6px;}
   .bloque h3{font-size:14px;margin-bottom:2px;}
   .bloque .bh{font-size:12px;color:var(--gray);margin-bottom:18px;line-height:1.6;}
   .rejilla{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
@@ -160,6 +163,20 @@
     <p class="sub">Mantén tu información al día. Tu psicólogo la ve en tu expediente.</p>
 
     <form id="formPerfil">
+      <div class="bloque">
+        <h3>Mi foto</h3>
+        <p class="bh">Así te ve tu psicólogo en tu expediente.</p>
+        <div class="perfil-foto-fila">
+          <div class="perfil-foto-preview" id="fotoPreview"></div>
+          <div>
+            <input type="file" id="inputFotoPerfil" accept=".jpg,.jpeg,.png" style="display:none;">
+            <button type="button" class="btn btn-ghost" id="btnSubirFoto">Cambiar foto</button>
+            <p class="perfil-foto-nota">JPG o PNG, máximo 5 MB.</p>
+            <p class="msg" id="msgFoto"></p>
+          </div>
+        </div>
+      </div>
+
       <div class="bloque">
         <h3>Datos personales</h3>
         <p class="bh">Tu correo no se puede cambiar desde aquí: es con el que inicias sesión.</p>
@@ -342,7 +359,82 @@ function pintarPerfil(){
   document.getElementById('pNacimiento').value     = yo.fecha_nacimiento || '';
   document.getElementById('pEmergNombre').value    = yo.contacto_emergencia_nombre || '';
   document.getElementById('pEmergTelefono').value  = yo.contacto_emergencia_telefono || '';
+  pintarFoto(yo.foto_url);
 }
+
+function pintarFoto(url){
+  const cont = document.getElementById('fotoPreview');
+  if(url){
+    cont.style.backgroundImage = `url(${url})`;
+    cont.textContent = '';
+  } else {
+    cont.style.backgroundImage = '';
+    cont.textContent = (yo.nombre||'').trim().split(/\s+/).slice(0,2).map(p=>p[0].toUpperCase()).join('');
+  }
+}
+
+document.getElementById('btnSubirFoto').addEventListener('click', ()=>{
+  document.getElementById('inputFotoPerfil').click();
+});
+
+document.getElementById('inputFotoPerfil').addEventListener('change', async (e)=>{
+  const file = e.target.files[0];
+  const msg = document.getElementById('msgFoto');
+  if(!file) return;
+
+  if(file.size > 5*1024*1024){
+    msg.textContent = 'La foto pesa más de 5 MB.';
+    msg.className = 'msg err';
+    return;
+  }
+
+  msg.className = 'msg';
+  msg.textContent = 'Subiendo...';
+
+  const extension = file.name.includes('.') ? file.name.split('.').pop() : 'jpg';
+  const ruta = `${yo.id}/perfil/foto.${extension}`;
+
+  const { error: errSubida } = await sb.storage
+    .from('documentos')
+    .upload(ruta, file, { upsert: true, contentType: file.type || undefined });
+
+  if(errSubida){
+    msg.textContent = 'No se pudo subir: ' + errSubida.message;
+    msg.className = 'msg err';
+    return;
+  }
+
+  const { data: firmada, error: errFirma } = await sb.storage
+    .from('documentos')
+    .createSignedUrl(ruta, 60*60*24*365);
+
+  if(errFirma){
+    msg.textContent = 'La foto se subió pero no se pudo generar el enlace: ' + errFirma.message;
+    msg.className = 'msg err';
+    return;
+  }
+
+  const { data, error } = await sb.rpc('actualizar_mis_datos', {
+    p_nombre: yo.nombre,
+    p_telefono: yo.telefono,
+    p_fecha_nacimiento: yo.fecha_nacimiento,
+    p_emergencia_nombre: yo.contacto_emergencia_nombre,
+    p_emergencia_telefono: yo.contacto_emergencia_telefono,
+    p_foto_url: firmada.signedUrl
+  });
+
+  if(error){
+    msg.textContent = 'La foto se subió pero no se pudo guardar: ' + error.message;
+    msg.className = 'msg err';
+    return;
+  }
+
+  yo.foto_url = firmada.signedUrl;
+  pintarFoto(firmada.signedUrl);
+  msg.textContent = 'Foto actualizada.';
+  msg.className = 'msg ok';
+  setTimeout(()=>{ if(msg.textContent==='Foto actualizada.') msg.textContent=''; }, 3000);
+});
 
 document.getElementById('formPerfil').addEventListener('submit', async (e)=>{
   e.preventDefault();

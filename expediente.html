@@ -32,6 +32,8 @@
   .volver{font-size:13px;color:var(--gray);display:inline-block;margin-bottom:18px;}
   .volver:hover{color:var(--ink);}
   .encabezado{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:8px;}
+  .encabezado-titulo{display:flex;align-items:center;gap:14px;}
+  .avatar-expediente{width:46px;height:46px;border-radius:50%;background:var(--primario-suave);color:#fff;font-weight:800;font-size:16px;display:flex;align-items:center;justify-content:center;flex-shrink:0;overflow:hidden;background-size:cover;background-position:center;}
   h1{font-size:27px;line-height:1.2;}
   .datos-rapidos{color:var(--gray);font-size:13.5px;margin-bottom:16px;line-height:1.7;}
   .estado-consentimiento{font-size:12px;padding:9px 14px;border-radius:10px;margin-bottom:26px;display:inline-block;}
@@ -112,7 +114,10 @@
 
   <div id="contenido" style="display:none;">
     <div class="encabezado">
-      <h1 id="nombrePaciente"></h1>
+      <div class="encabezado-titulo">
+        <div class="avatar-expediente" id="avatarExpediente"></div>
+        <h1 id="nombrePaciente"></h1>
+      </div>
     </div>
     <p class="datos-rapidos" id="datosRapidos"></p>
     <div id="estadoConsentimiento" class="estado-consentimiento"></div>
@@ -347,6 +352,7 @@ document.querySelectorAll('.modal-bg').forEach(m=>{
 /* ---------- ficha ---------- */
 function pintarFicha(){
   document.getElementById('nombrePaciente').textContent = paciente.nombre;
+  pintarAvatarExpediente();
   actualizarDatosRapidos();
 
   document.getElementById('nombre').value = paciente.nombre || '';
@@ -359,6 +365,17 @@ function pintarFicha(){
   document.getElementById('estado').value = paciente.estado || 'activo';
   document.getElementById('motivoConsulta').value = paciente.motivo_consulta || '';
   document.getElementById('observacionesGenerales').value = paciente.observaciones_generales || '';
+}
+
+function pintarAvatarExpediente(){
+  const cont = document.getElementById('avatarExpediente');
+  if(paciente.foto_url){
+    cont.style.backgroundImage = `url(${paciente.foto_url})`;
+    cont.textContent = '';
+  } else {
+    cont.style.backgroundImage = '';
+    cont.textContent = (paciente.nombre||'').trim().split(/\s+/).slice(0,2).map(p=>p[0].toUpperCase()).join('');
+  }
 }
 
 function actualizarDatosRapidos(){
