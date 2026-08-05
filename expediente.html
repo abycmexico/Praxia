@@ -87,7 +87,7 @@
 </header>
 
 <main>
-  <a class="volver" href="/consultorio/panel-psicologo.html">← Volver a mis pacientes</a>
+  <a class="volver" href="./panel-psicologo.html">← Volver a mis pacientes</a>
 
   <div id="cargando"><p class="empty">Cargando expediente...</p></div>
 
@@ -224,13 +224,13 @@ let citaNotaActual = null;
 /* ---------- arranque ---------- */
 async function iniciar(){
   const { data:{ session } } = await sb.auth.getSession();
-  if(!session){ location.href = '/consultorio/login.html'; return; }
+  if(!session){ location.href = './login.html'; return; }
 
   const { data: psi } = await sb.from('psicologos')
     .select('*').eq('id', session.user.id).maybeSingle();
   if(!psi || psi.estado !== 'aprobado'){
     await sb.auth.signOut();
-    location.href = '/consultorio/login.html';
+    location.href = './login.html';
     return;
   }
   yo = psi;

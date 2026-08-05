@@ -58,7 +58,7 @@
       <p class="msg" id="msg"></p>
     </form>
 
-    <p class="foot">¿Eres psicólogo y no tienes cuenta? <a href="/consultorio/registro-psicologo.html">Regístrate aquí</a></p>
+    <p class="foot">¿Eres psicólogo y no tienes cuenta? <a href="./registro-psicologo.html">Regístrate aquí</a></p>
   </div>
 </main>
 
@@ -98,7 +98,7 @@
     const { data: psicologo } = await sb.from('psicologos').select('estado').eq('id', userId).maybeSingle();
     if (psicologo) {
       if (psicologo.estado === 'aprobado') {
-        window.location.href = '/consultorio/panel-psicologo.html';
+        window.location.href = './panel-psicologo.html';
       } else {
         msg.textContent = 'Tu cuenta todavía está pendiente de aprobación.';
         msg.className = 'msg err';
@@ -110,7 +110,7 @@
 
     const { data: paciente } = await sb.from('pacientes').select('id').eq('id', userId).maybeSingle();
     if (paciente) {
-      window.location.href = '/consultorio/panel-paciente.html';
+      window.location.href = './panel-paciente.html';
       return;
     }
 

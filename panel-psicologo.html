@@ -311,14 +311,14 @@ let yo = null;
 /* ---------- arranque: exigir sesión válida y aprobada ---------- */
 async function iniciar(){
   const { data: { session } } = await sb.auth.getSession();
-  if(!session){ location.href = '/consultorio/login.html'; return; }
+  if(!session){ location.href = './login.html'; return; }
 
   const { data: psi } = await sb.from('psicologos')
     .select('*').eq('id', session.user.id).maybeSingle();
 
   if(!psi || psi.estado !== 'aprobado'){
     await sb.auth.signOut();
-    location.href = '/consultorio/login.html';
+    location.href = './login.html';
     return;
   }
 
@@ -332,7 +332,7 @@ async function iniciar(){
 
 document.getElementById('btnSalir').addEventListener('click', async ()=>{
   await sb.auth.signOut();
-  location.href = '/consultorio/login.html';
+  location.href = './login.html';
 });
 
 /* ---------- pestañas ---------- */
@@ -439,7 +439,7 @@ function pintarPacientes(){
   }
 
   cont.innerHTML = filtros + lista.map(p=>`
-    <a class="card flex" href="/consultorio/expediente.html?id=${p.id}">
+    <a class="card flex" href="./expediente.html?id=${p.id}">
       <div>
         <h3>${escapar(p.nombre)}</h3>
         <p>${escapar(p.correo)}${p.motivo_consulta ? ' · ' + escapar(recortar(p.motivo_consulta, 60)) : ''}</p>
@@ -460,7 +460,7 @@ function recortar(t, n){
 }
 
 document.getElementById('btnNuevoPaciente').addEventListener('click', ()=>{
-  const liga = `${location.origin}/consultorio/registro-paciente.html?p=${yo.id}`;
+  const liga = new URL(`./registro-paciente.html?p=${yo.id}`, location.href).href;
   document.getElementById('ligaInvitacion').textContent = liga;
   abrirModal('modalInvitar');
 });
@@ -529,7 +529,7 @@ function tarjetaCita(c, esProxima){
       </div>
       <div style="display:flex;gap:8px;flex-wrap:wrap;">
         ${puedeEntrar && c.daily_room_url ? `<a class="btn btn-primary" href="${c.daily_room_url}" target="_blank">Entrar a la sesión</a>` : ''}
-        ${c.paciente_id ? `<a class="btn btn-ghost" href="/consultorio/expediente.html?id=${c.paciente_id}">Expediente</a>` : ''}
+        ${c.paciente_id ? `<a class="btn btn-ghost" href="./expediente.html?id=${c.paciente_id}">Expediente</a>` : ''}
         ${modificable ? `<button class="btn btn-ghost" onclick="abrirReprogramar('${c.id}')">Reprogramar</button>` : ''}
         ${modificable ? `<button class="btn btn-danger" onclick="abrirCancelar('${c.id}')">Cancelar</button>` : ''}
       </div>

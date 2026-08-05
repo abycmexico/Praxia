@@ -72,7 +72,7 @@
       </form>
 
       <p class="aviso">Al crear tu cuenta aceptas que tus datos de sesión se traten conforme al aviso de privacidad. Tus notas clínicas son privadas de tu psicólogo.</p>
-      <p class="foot">¿Ya tienes cuenta? <a href="/consultorio/login.html">Inicia sesión</a></p>
+      <p class="foot">¿Ya tienes cuenta? <a href="./login.html">Inicia sesión</a></p>
     </div>
 
     <div id="sinLiga" style="display:none;">
@@ -148,7 +148,7 @@ document.getElementById('form').addEventListener('submit', async (e)=>{
 
   msg.textContent = 'Cuenta creada. Entrando...';
   msg.className = 'msg ok';
-  setTimeout(()=>{ location.href = '/consultorio/panel-paciente.html'; }, 900);
+  setTimeout(()=>{ location.href = './panel-paciente.html'; }, 900);
 });
 
 iniciar();

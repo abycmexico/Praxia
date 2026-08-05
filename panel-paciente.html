@@ -258,14 +258,14 @@ let horaSel = null;
 /* ---------- arranque ---------- */
 async function iniciar(){
   const { data: { session } } = await sb.auth.getSession();
-  if(!session){ location.href = '/consultorio/login.html'; return; }
+  if(!session){ location.href = './login.html'; return; }
 
   const { data: pac } = await sb.from('pacientes')
     .select('*').eq('id', session.user.id).maybeSingle();
 
   if(!pac){
     await sb.auth.signOut();
-    location.href = '/consultorio/login.html';
+    location.href = './login.html';
     return;
   }
   yo = pac;
@@ -378,7 +378,7 @@ function pintarDatosSesion(){
 
 document.getElementById('btnSalir').addEventListener('click', async ()=>{
   await sb.auth.signOut();
-  location.href = '/consultorio/login.html';
+  location.href = './login.html';
 });
 
 /* ---------- datos base ---------- */
