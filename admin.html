@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow">
+<title>Admin | Praxia</title>
+<link rel="icon" type="image/png" href="./assets/praxia-isotipo.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,400;1,600&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  :root{--yellow:#377534;--yellow-soft:#5C9A59;--ink:#111111;--gray:#7a7a7a;--line:#ececec;--err:#c62828;--ok:#2e7d32;}
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{background:#fff;color:var(--ink);font-family:'Montserrat',Arial,sans-serif;font-weight:500;min-height:100vh;}
+  a{color:inherit;text-decoration:none;}
+  header{display:flex;align-items:center;justify-content:space-between;padding:24px 32px;border-bottom:1.5px solid var(--line);}
+  header .logo{display:flex;align-items:center;gap:10px;}
+  header img{height:26px;}
+  header span{font-weight:800;letter-spacing:2px;font-size:15px;}
+  header button{background:none;border:1.5px solid var(--line);border-radius:20px;padding:8px 16px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;}
+  main{max-width:900px;margin:0 auto;padding:40px 24px 80px;}
+  h1{font-size:26px;margin-bottom:8px;}
+  p.sub{color:var(--gray);font-size:14px;margin-bottom:32px;}
+  .row{display:flex;align-items:center;justify-content:space-between;gap:16px;border:1.5px solid var(--line);border-radius:14px;padding:18px 20px;margin-bottom:14px;}
+  .row .info h3{font-size:15.5px;margin-bottom:4px;}
+  .row .info p{font-size:13px;color:var(--gray);}
+  .tag{display:inline-block;font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;padding:4px 10px;border-radius:20px;margin-left:8px;}
+  .tag.pendiente{background:#FFF3CD;color:#8a6d1a;}
+  .tag.aprobado{background:#D4EDDA;color:#2e7d32;}
+  .tag.rechazado{background:#F8D7DA;color:#c62828;}
+  .btns{display:flex;gap:8px;flex-shrink:0;}
+  .btns button{padding:9px 18px;border-radius:20px;font-size:13px;font-weight:700;border:none;cursor:pointer;font-family:inherit;}
+  .btn-aprobar{background:var(--yellow);color:var(--ink);}
+  .btn-aprobar:hover{background:var(--yellow-soft);}
+  .btn-rechazar{background:none;border:1.5px solid var(--line);color:var(--ink);}
+  .empty{color:var(--gray);font-size:14px;text-align:center;padding:40px 0;}
+  .gate{max-width:420px;margin:100px auto;text-align:center;}
+  .gate input{width:100%;padding:12px 14px;border:1.5px solid var(--line);border-radius:10px;font-family:inherit;font-size:15px;margin-top:16px;}
+  .gate button{margin-top:16px;width:100%;padding:14px;border:none;border-radius:30px;background:var(--yellow);color:var(--ink);font-weight:700;font-size:15px;cursor:pointer;font-family:inherit;}
+</style>
+</head>
+<body>
+
+<div id="gate" class="gate">
+  <h1>Acceso administrador</h1>
+  <p class="sub">Inicia sesión con tu cuenta de AbyC.</p>
+  <input type="email" id="adminCorreo" placeholder="Correo">
+  <input type="password" id="adminPassword" placeholder="Contraseña">
+  <button id="btnGateLogin">Entrar</button>
+  <p class="msg" id="gateMsg" style="color:var(--err);font-size:13px;margin-top:12px;"></p>
+</div>
+
+<div id="app" style="display:none;">
+  <header>
+    <div class="logo">
+      <img src="./assets/praxia-isotipo.png" alt="AbyC">
+      <span>PRAXIA · ADMIN</span>
+    </div>
+    <button id="btnLogout">Cerrar sesión</button>
+  </header>
+
+  <main>
+    <h1>Psicólogos registrados</h1>
+    <p class="sub">Aprueba o rechaza las cuentas nuevas.</p>
+    <div id="lista"></div>
+  </main>
+</div>
+
+<script>
+  const SUPABASE_URL = 'https://uxbpfyeahqpertamhdxt.supabase.co';
+  const SUPABASE_KEY = 'sb_publishable_xaaA4lYAQZjdcMFRhMGtuQ_fvIeJKv7';
+  const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+  // Lista de correos con permiso de administrador.
+  // Ajusta este arreglo con tu(s) correo(s) real(es).
+  const ADMIN_EMAILS = ['abycmexico@gmail.com'];
+
+  const gate = document.getElementById('gate');
+  const app = document.getElementById('app');
+  const gateMsg = document.getElementById('gateMsg');
+
+  async function checkSession(){
+    const { data: { session } } = await sb.auth.getSession();
+    if (session && ADMIN_EMAILS.includes(session.user.email)) {
+      gate.style.display = 'none';
+      app.style.display = 'block';
+      cargarPsicologos();
+    } else {
+      gate.style.display = 'block';
+      app.style.display = 'none';
+    }
+  }
+
+  document.getElementById('btnGateLogin').addEventListener('click', async () => {
+    const correo = document.getElementById('adminCorreo').value.trim();
+    const password = document.getElementById('adminPassword').value;
+    const { data, error } = await sb.auth.signInWithPassword({ email: correo, password });
+    if (error) {
+      gateMsg.textContent = 'Correo o contraseña incorrectos.';
+      return;
+    }
+    if (!ADMIN_EMAILS.includes(data.user.email)) {
+      gateMsg.textContent = 'Esta cuenta no tiene permisos de administrador.';
+      await sb.auth.signOut();
+      return;
+    }
+    checkSession();
+  });
+
+  document.getElementById('btnLogout').addEventListener('click', async () => {
+    await sb.auth.signOut();
+    location.reload();
+  });
+
+  async function cargarPsicologos(){
+    const lista = document.getElementById('lista');
+    lista.innerHTML = '<p class="empty">Cargando...</p>';
+
+    const { data, error } = await sb.from('psicologos').select('*').order('creado_en', { ascending: false });
+
+    if (error) {
+      lista.innerHTML = '<p class="empty">Error al cargar: ' + error.message + '</p>';
+      return;
+    }
+    if (!data || data.length === 0) {
+      lista.innerHTML = '<p class="empty">Todavía no hay psicólogos registrados.</p>';
+      return;
+    }
+
+    lista.innerHTML = data.map(p => `
+      <div class="row" data-id="${p.id}">
+        <div class="info">
+          <h3>${p.nombre} <span class="tag ${p.estado}">${p.estado}</span></h3>
+          <p>${p.correo} · registrado ${new Date(p.creado_en).toLocaleDateString('es-MX')}</p>
+        </div>
+        <div class="btns">
+          ${p.estado !== 'aprobado' ? `<button class="btn-aprobar" onclick="cambiarEstado('${p.id}','aprobado')">Aprobar</button>` : ''}
+          ${p.estado !== 'rechazado' ? `<button class="btn-rechazar" onclick="cambiarEstado('${p.id}','rechazado')">Rechazar</button>` : ''}
+        </div>
+      </div>
+    `).join('');
+  }
+
+  async function cambiarEstado(id, nuevoEstado){
+    const { error } = await sb.from('psicologos').update({ estado: nuevoEstado }).eq('id', id);
+    if (error) {
+      alert('Error al actualizar: ' + error.message);
+      return;
+    }
+    cargarPsicologos();
+  }
+  window.cambiarEstado = cambiarEstado;
+
+  checkSession();
+</script>
+
+</body>
+</html>

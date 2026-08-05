@@ -1,0 +1,540 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow">
+<title>Expediente | Praxia</title>
+<link rel="icon" type="image/png" href="./assets/praxia-isotipo.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,400;1,600&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  :root{--yellow:#377534;--yellow-soft:#5C9A59;--ink:#111111;--gray:#7a7a7a;--line:#ececec;--err:#c62828;--ok:#2e7d32;}
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{background:#fff;color:var(--ink);font-family:'Montserrat',Arial,sans-serif;font-weight:500;}
+  a{color:inherit;text-decoration:none;}
+  header{display:flex;align-items:center;justify-content:space-between;padding:20px 32px;border-bottom:1.5px solid var(--line);position:sticky;top:0;background:#fff;z-index:10;}
+  header .logo{display:flex;align-items:center;gap:10px;}
+  header img{height:24px;}
+  header .logo span{font-weight:800;letter-spacing:2px;font-size:14px;}
+  header .right{display:flex;align-items:center;gap:12px;}
+  .btn{padding:10px 18px;border-radius:24px;font-size:12.5px;font-weight:700;border:none;cursor:pointer;font-family:inherit;white-space:nowrap;}
+  .btn-primary{background:var(--yellow);color:var(--ink);}
+  .btn-primary:hover{background:var(--yellow-soft);}
+  .btn-ghost{background:none;border:1.5px solid var(--line);color:var(--ink);}
+  .btn-ghost:hover{border-color:var(--yellow);}
+  .btn:disabled{opacity:.5;cursor:default;}
+  main{max-width:860px;margin:0 auto;padding:32px 24px 90px;}
+  .volver{font-size:13px;color:var(--gray);display:inline-block;margin-bottom:18px;}
+  .volver:hover{color:var(--ink);}
+  .encabezado{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:8px;}
+  h1{font-size:27px;line-height:1.2;}
+  .datos-rapidos{color:var(--gray);font-size:13.5px;margin-bottom:30px;line-height:1.7;}
+  .tag{display:inline-block;font-size:10.5px;font-weight:800;letter-spacing:.8px;text-transform:uppercase;padding:4px 10px;border-radius:20px;vertical-align:middle;}
+  .tag.activo{background:#D4EDDA;color:#2e7d32;}
+  .tag.inactivo{background:#E7E7E7;color:#666;}
+  nav.tabs{display:flex;gap:4px;border-bottom:1.5px solid var(--line);margin-bottom:28px;overflow-x:auto;}
+  nav.tabs button{background:none;border:none;padding:13px 18px;font-size:13.5px;font-weight:700;cursor:pointer;font-family:inherit;color:var(--gray);border-bottom:2.5px solid transparent;white-space:nowrap;}
+  nav.tabs button.active{color:var(--ink);border-bottom-color:var(--yellow);}
+  section{display:none;}
+  section.active{display:block;}
+  .bloque{border:1.5px solid var(--line);border-radius:16px;padding:22px 24px;margin-bottom:18px;}
+  .bloque h3{font-size:14px;margin-bottom:2px;}
+  .bloque .bh{font-size:12px;color:var(--gray);margin-bottom:18px;line-height:1.6;}
+  .rejilla{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+  .campo{margin-bottom:0;}
+  label{display:block;font-size:12px;font-weight:700;margin-bottom:6px;}
+  input,select,textarea{width:100%;padding:11px 13px;border:1.5px solid var(--line);border-radius:10px;font-family:inherit;font-size:14px;background:#fff;color:var(--ink);}
+  input:focus,select:focus,textarea:focus{outline:none;border-color:var(--yellow);}
+  textarea{resize:vertical;min-height:90px;line-height:1.65;}
+  textarea.alto{min-height:120px;}
+  .msg{font-size:13px;min-height:17px;line-height:1.6;}
+  .msg.err{color:var(--err);}
+  .msg.ok{color:var(--ok);}
+  .barra-guardar{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;margin-top:20px;}
+  .card{border:1.5px solid var(--line);border-radius:14px;padding:18px 20px;margin-bottom:12px;}
+  .card-head{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;}
+  .card h4{font-size:14.5px;margin-bottom:2px;}
+  .card .fecha-sub{font-size:12.5px;color:var(--gray);}
+  .card .previo{font-size:13px;color:#444;line-height:1.7;margin-top:12px;padding-top:12px;border-top:1px solid var(--line);white-space:pre-wrap;}
+  .empty{color:var(--gray);font-size:13.5px;text-align:center;padding:34px 0;border:1.5px dashed var(--line);border-radius:14px;}
+  .modal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:50;align-items:center;justify-content:center;padding:20px;}
+  .modal-bg.show{display:flex;}
+  .modal{background:#fff;border-radius:18px;padding:28px;max-width:620px;width:100%;max-height:90vh;overflow:auto;}
+  .modal h3{font-size:19px;margin-bottom:3px;}
+  .modal .modal-sub{font-size:13px;color:var(--gray);margin-bottom:22px;}
+  .modal .campo{margin-bottom:16px;}
+  .modal-actions{display:flex;gap:10px;margin-top:20px;justify-content:flex-end;flex-wrap:wrap;}
+  @media(max-width:640px){
+    header{padding:16px 20px;}
+    .rejilla{grid-template-columns:1fr;}
+    h1{font-size:23px;}
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    <img src="./assets/praxia-isotipo.png" alt="AbyC">
+    <span>PRAXIA</span>
+  </div>
+  <div class="right">
+    <button class="btn btn-ghost" id="btnExportar">Exportar expediente</button>
+  </div>
+</header>
+
+<main>
+  <a class="volver" href="/consultorio/panel-psicologo.html">← Volver a mis pacientes</a>
+
+  <div id="cargando"><p class="empty">Cargando expediente...</p></div>
+
+  <div id="contenido" style="display:none;">
+    <div class="encabezado">
+      <h1 id="nombrePaciente"></h1>
+    </div>
+    <p class="datos-rapidos" id="datosRapidos"></p>
+
+    <nav class="tabs">
+      <button class="active" data-tab="ficha">Ficha</button>
+      <button data-tab="notas">Notas por sesión</button>
+    </nav>
+
+    <section id="tab-ficha" class="active">
+      <form id="formFicha">
+        <div class="bloque">
+          <h3>Datos personales</h3>
+          <p class="bh">Información de contacto e identificación del paciente.</p>
+          <div class="rejilla">
+            <div class="campo">
+              <label for="nombre">Nombre completo</label>
+              <input type="text" id="nombre" required>
+            </div>
+            <div class="campo">
+              <label for="correo">Correo</label>
+              <input type="email" id="correo" disabled>
+            </div>
+            <div class="campo">
+              <label for="telefono">Teléfono</label>
+              <input type="tel" id="telefono" placeholder="55 1234 5678">
+            </div>
+            <div class="campo">
+              <label for="fechaNacimiento">Fecha de nacimiento</label>
+              <input type="date" id="fechaNacimiento">
+            </div>
+          </div>
+        </div>
+
+        <div class="bloque">
+          <h3>Contacto de emergencia</h3>
+          <p class="bh">A quién avisar en caso necesario.</p>
+          <div class="rejilla">
+            <div class="campo">
+              <label for="emergenciaNombre">Nombre</label>
+              <input type="text" id="emergenciaNombre">
+            </div>
+            <div class="campo">
+              <label for="emergenciaTelefono">Teléfono</label>
+              <input type="tel" id="emergenciaTelefono">
+            </div>
+          </div>
+        </div>
+
+        <div class="bloque">
+          <h3>Información clínica</h3>
+          <p class="bh">Motivo de consulta, estado del tratamiento y observaciones generales del caso.</p>
+          <div class="rejilla" style="margin-bottom:16px;">
+            <div class="campo">
+              <label for="fechaInicio">Fecha de inicio</label>
+              <input type="date" id="fechaInicio">
+            </div>
+            <div class="campo">
+              <label for="estado">Estado</label>
+              <select id="estado">
+                <option value="activo">Activo</option>
+                <option value="inactivo">Inactivo</option>
+              </select>
+            </div>
+          </div>
+          <div class="campo" style="margin-bottom:16px;">
+            <label for="motivoConsulta">Motivo de consulta</label>
+            <textarea id="motivoConsulta" placeholder="Qué trae al paciente a consulta."></textarea>
+          </div>
+          <div class="campo">
+            <label for="observacionesGenerales">Observaciones generales</label>
+            <textarea id="observacionesGenerales" class="alto" placeholder="Antecedentes, contexto, impresión diagnóstica, encuadre acordado."></textarea>
+          </div>
+        </div>
+
+        <div class="barra-guardar">
+          <p class="msg" id="msgFicha"></p>
+          <button type="submit" class="btn btn-primary" id="btnGuardarFicha">Guardar expediente</button>
+        </div>
+      </form>
+    </section>
+
+    <section id="tab-notas">
+      <div id="listaNotas"><p class="empty">Cargando sesiones...</p></div>
+    </section>
+  </div>
+</main>
+
+<div class="modal-bg" id="modalNota">
+  <div class="modal">
+    <h3>Nota de sesión</h3>
+    <p class="modal-sub" id="notaSub"></p>
+
+    <div class="campo">
+      <label for="nObjetivos">Objetivos de la sesión</label>
+      <textarea id="nObjetivos" placeholder="Qué se buscaba trabajar en esta sesión."></textarea>
+    </div>
+    <div class="campo">
+      <label for="nObservaciones">Observaciones</label>
+      <textarea id="nObservaciones" class="alto" placeholder="Qué ocurrió en sesión, contenido, afecto, intervenciones."></textarea>
+    </div>
+    <div class="campo">
+      <label for="nTareas">Tareas o acuerdos</label>
+      <textarea id="nTareas" placeholder="Qué se acordó para antes de la próxima sesión."></textarea>
+    </div>
+    <div class="campo">
+      <label for="nEvolucion">Evolución</label>
+      <textarea id="nEvolucion" placeholder="Cambios respecto a sesiones anteriores, avances o retrocesos."></textarea>
+    </div>
+
+    <p class="msg" id="msgNota"></p>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="cerrarModal('modalNota')">Cancelar</button>
+      <button class="btn btn-primary" id="btnGuardarNota">Guardar nota</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const SUPABASE_URL = 'https://uxbpfyeahqpertamhdxt.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_xaaA4lYAQZjdcMFRhMGtuQ_fvIeJKv7';
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+const pacienteId = new URLSearchParams(location.search).get('id');
+let yo = null;
+let paciente = null;
+let citaNotaActual = null;
+
+/* ---------- arranque ---------- */
+async function iniciar(){
+  const { data:{ session } } = await sb.auth.getSession();
+  if(!session){ location.href = '/consultorio/login.html'; return; }
+
+  const { data: psi } = await sb.from('psicologos')
+    .select('*').eq('id', session.user.id).maybeSingle();
+  if(!psi || psi.estado !== 'aprobado'){
+    await sb.auth.signOut();
+    location.href = '/consultorio/login.html';
+    return;
+  }
+  yo = psi;
+
+  if(!pacienteId){
+    document.getElementById('cargando').innerHTML =
+      '<p class="empty">No se indicó qué expediente abrir.</p>';
+    return;
+  }
+
+  // La política de seguridad ya garantiza que solo se puede leer
+  // un paciente propio: si no es suyo, no devuelve nada.
+  const { data: pac, error } = await sb.from('pacientes')
+    .select('*').eq('id', pacienteId).maybeSingle();
+
+  if(error || !pac){
+    document.getElementById('cargando').innerHTML =
+      '<p class="empty">No se encontró el expediente o no tienes acceso a él.</p>';
+    return;
+  }
+
+  paciente = pac;
+  document.getElementById('cargando').style.display = 'none';
+  document.getElementById('contenido').style.display = 'block';
+
+  pintarFicha();
+  cargarNotas();
+}
+
+/* ---------- pestañas y modales ---------- */
+document.querySelectorAll('nav.tabs button').forEach(b=>{
+  b.addEventListener('click', ()=>{
+    document.querySelectorAll('nav.tabs button').forEach(x=>x.classList.remove('active'));
+    document.querySelectorAll('main section').forEach(s=>s.classList.remove('active'));
+    b.classList.add('active');
+    document.getElementById('tab-' + b.dataset.tab).classList.add('active');
+  });
+});
+
+function abrirModal(id){ document.getElementById(id).classList.add('show'); }
+function cerrarModal(id){ document.getElementById(id).classList.remove('show'); }
+window.cerrarModal = cerrarModal;
+document.querySelectorAll('.modal-bg').forEach(m=>{
+  m.addEventListener('click', e=>{ if(e.target===m) m.classList.remove('show'); });
+});
+
+/* ---------- ficha ---------- */
+function pintarFicha(){
+  document.getElementById('nombrePaciente').textContent = paciente.nombre;
+  actualizarDatosRapidos();
+
+  document.getElementById('nombre').value = paciente.nombre || '';
+  document.getElementById('correo').value = paciente.correo || '';
+  document.getElementById('telefono').value = paciente.telefono || '';
+  document.getElementById('fechaNacimiento').value = paciente.fecha_nacimiento || '';
+  document.getElementById('emergenciaNombre').value = paciente.contacto_emergencia_nombre || '';
+  document.getElementById('emergenciaTelefono').value = paciente.contacto_emergencia_telefono || '';
+  document.getElementById('fechaInicio').value = paciente.fecha_inicio || '';
+  document.getElementById('estado').value = paciente.estado || 'activo';
+  document.getElementById('motivoConsulta').value = paciente.motivo_consulta || '';
+  document.getElementById('observacionesGenerales').value = paciente.observaciones_generales || '';
+}
+
+function actualizarDatosRapidos(){
+  const partes = [];
+  partes.push(`<span class="tag ${paciente.estado||'activo'}">${paciente.estado||'activo'}</span>`);
+  if(paciente.correo) partes.push(escapar(paciente.correo));
+  if(paciente.telefono) partes.push(escapar(paciente.telefono));
+  if(paciente.fecha_nacimiento){
+    const edad = calcularEdad(paciente.fecha_nacimiento);
+    if(edad !== null) partes.push(`${edad} años`);
+  }
+  if(paciente.fecha_inicio){
+    partes.push('en tratamiento desde ' +
+      new Date(paciente.fecha_inicio + 'T12:00:00').toLocaleDateString('es-MX',
+        {day:'numeric', month:'long', year:'numeric'}));
+  }
+  document.getElementById('datosRapidos').innerHTML = partes.join(' · ');
+}
+
+function calcularEdad(fechaIso){
+  const n = new Date(fechaIso + 'T12:00:00');
+  if(isNaN(n)) return null;
+  const hoy = new Date();
+  let edad = hoy.getFullYear() - n.getFullYear();
+  const m = hoy.getMonth() - n.getMonth();
+  if(m < 0 || (m === 0 && hoy.getDate() < n.getDate())) edad--;
+  return edad >= 0 && edad < 130 ? edad : null;
+}
+
+document.getElementById('formFicha').addEventListener('submit', async (e)=>{
+  e.preventDefault();
+  const btn = document.getElementById('btnGuardarFicha');
+  const msg = document.getElementById('msgFicha');
+  btn.disabled = true;
+  msg.className = 'msg';
+  msg.textContent = 'Guardando...';
+
+  const cambios = {
+    nombre: document.getElementById('nombre').value.trim(),
+    telefono: vacioNull(document.getElementById('telefono').value),
+    fecha_nacimiento: vacioNull(document.getElementById('fechaNacimiento').value),
+    contacto_emergencia_nombre: vacioNull(document.getElementById('emergenciaNombre').value),
+    contacto_emergencia_telefono: vacioNull(document.getElementById('emergenciaTelefono').value),
+    fecha_inicio: vacioNull(document.getElementById('fechaInicio').value),
+    estado: document.getElementById('estado').value,
+    motivo_consulta: vacioNull(document.getElementById('motivoConsulta').value),
+    observaciones_generales: vacioNull(document.getElementById('observacionesGenerales').value)
+  };
+
+  const { error } = await sb.from('pacientes').update(cambios).eq('id', paciente.id);
+
+  if(error){
+    msg.textContent = 'No se pudo guardar: ' + error.message;
+    msg.className = 'msg err';
+    btn.disabled = false;
+    return;
+  }
+
+  paciente = { ...paciente, ...cambios };
+  document.getElementById('nombrePaciente').textContent = paciente.nombre;
+  actualizarDatosRapidos();
+  msg.textContent = 'Expediente guardado.';
+  msg.className = 'msg ok';
+  btn.disabled = false;
+  setTimeout(()=>{ if(msg.textContent==='Expediente guardado.') msg.textContent=''; }, 3000);
+});
+
+/* ---------- notas por sesión ---------- */
+async function cargarNotas(){
+  const cont = document.getElementById('listaNotas');
+
+  const { data: citas, error } = await sb.from('citas')
+    .select('id, fecha_hora, estado, duracion_minutos')
+    .eq('paciente_id', paciente.id)
+    .order('fecha_hora', {ascending:false});
+
+  if(error){ cont.innerHTML = `<p class="empty">Error: ${escapar(error.message)}</p>`; return; }
+  if(!citas || !citas.length){
+    cont.innerHTML = '<p class="empty">Este paciente todavía no tiene sesiones agendadas.</p>';
+    return;
+  }
+
+  const { data: notas } = await sb.from('notas_sesion')
+    .select('*').eq('psicologo_id', yo.id);
+  const porCita = {};
+  (notas||[]).forEach(n=>{ porCita[n.cita_id] = n; });
+
+  cont.innerHTML = citas.map(c=>{
+    const f = new Date(c.fecha_hora);
+    const fecha = f.toLocaleDateString('es-MX', {weekday:'long', day:'numeric', month:'long', year:'numeric'});
+    const hora  = f.toLocaleTimeString('es-MX', {hour:'2-digit', minute:'2-digit'});
+    const n = porCita[c.id];
+    const tieneNota = n && (n.objetivos || n.observaciones || n.tareas || n.evolucion);
+
+    return `
+      <div class="card">
+        <div class="card-head">
+          <div>
+            <h4>${capitalizar(fecha)}</h4>
+            <div class="fecha-sub">${hora} · ${c.duracion_minutos} min</div>
+          </div>
+          <button class="btn ${tieneNota ? 'btn-ghost' : 'btn-primary'}"
+                  onclick="abrirNota('${c.id}','${capitalizar(fecha)} · ${hora}')">
+            ${tieneNota ? 'Ver / editar nota' : 'Escribir nota'}
+          </button>
+        </div>
+        ${tieneNota ? `<div class="previo">${escapar(resumenNota(n))}</div>` : ''}
+      </div>`;
+  }).join('');
+}
+
+function resumenNota(n){
+  const txt = n.observaciones || n.objetivos || n.evolucion || n.tareas || '';
+  return txt.length > 220 ? txt.slice(0,220) + '...' : txt;
+}
+
+async function abrirNota(citaId, subtitulo){
+  citaNotaActual = citaId;
+  document.getElementById('notaSub').textContent = `${paciente.nombre} · ${subtitulo}`;
+  document.getElementById('msgNota').textContent = '';
+  ['nObjetivos','nObservaciones','nTareas','nEvolucion'].forEach(id=>{
+    document.getElementById(id).value = '';
+  });
+  abrirModal('modalNota');
+
+  const { data } = await sb.from('notas_sesion')
+    .select('*').eq('cita_id', citaId).maybeSingle();
+
+  if(data){
+    document.getElementById('nObjetivos').value    = data.objetivos || '';
+    document.getElementById('nObservaciones').value= data.observaciones || '';
+    document.getElementById('nTareas').value       = data.tareas || '';
+    document.getElementById('nEvolucion').value    = data.evolucion || '';
+  }
+}
+window.abrirNota = abrirNota;
+
+document.getElementById('btnGuardarNota').addEventListener('click', async ()=>{
+  const btn = document.getElementById('btnGuardarNota');
+  const msg = document.getElementById('msgNota');
+  btn.disabled = true;
+  msg.className = 'msg';
+  msg.textContent = 'Guardando...';
+
+  const campos = {
+    objetivos:     vacioNull(document.getElementById('nObjetivos').value),
+    observaciones: vacioNull(document.getElementById('nObservaciones').value),
+    tareas:        vacioNull(document.getElementById('nTareas').value),
+    evolucion:     vacioNull(document.getElementById('nEvolucion').value),
+    actualizado_en: new Date().toISOString()
+  };
+
+  const { data: existente } = await sb.from('notas_sesion')
+    .select('id').eq('cita_id', citaNotaActual).maybeSingle();
+
+  const res = existente
+    ? await sb.from('notas_sesion').update(campos).eq('id', existente.id)
+    : await sb.from('notas_sesion').insert({
+        ...campos, cita_id: citaNotaActual, psicologo_id: yo.id
+      });
+
+  if(res.error){
+    msg.textContent = 'No se pudo guardar: ' + res.error.message;
+    msg.className = 'msg err';
+    btn.disabled = false;
+    return;
+  }
+
+  msg.textContent = 'Nota guardada.';
+  msg.className = 'msg ok';
+  btn.disabled = false;
+  cargarNotas();
+  setTimeout(()=>cerrarModal('modalNota'), 700);
+});
+
+/* ---------- exportar expediente ---------- */
+document.getElementById('btnExportar').addEventListener('click', async ()=>{
+  const btn = document.getElementById('btnExportar');
+  btn.disabled = true;
+  btn.textContent = 'Preparando...';
+
+  const { data: citas } = await sb.from('citas')
+    .select('id, fecha_hora, duracion_minutos, estado')
+    .eq('paciente_id', paciente.id).order('fecha_hora');
+  const { data: notas } = await sb.from('notas_sesion')
+    .select('*').eq('psicologo_id', yo.id);
+  const porCita = {};
+  (notas||[]).forEach(n=>{ porCita[n.cita_id] = n; });
+
+  let txt = '';
+  txt += 'EXPEDIENTE CLÍNICO\n';
+  txt += '==================\n\n';
+  txt += `Paciente: ${paciente.nombre}\n`;
+  txt += `Correo: ${paciente.correo || '-'}\n`;
+  txt += `Teléfono: ${paciente.telefono || '-'}\n`;
+  txt += `Fecha de nacimiento: ${paciente.fecha_nacimiento || '-'}\n`;
+  txt += `Contacto de emergencia: ${paciente.contacto_emergencia_nombre || '-'} ${paciente.contacto_emergencia_telefono || ''}\n`;
+  txt += `Fecha de inicio: ${paciente.fecha_inicio || '-'}\n`;
+  txt += `Estado: ${paciente.estado || '-'}\n\n`;
+  txt += `Motivo de consulta:\n${paciente.motivo_consulta || '-'}\n\n`;
+  txt += `Observaciones generales:\n${paciente.observaciones_generales || '-'}\n\n`;
+  txt += `Psicólogo tratante: ${yo.nombre}\n`;
+  txt += `Exportado el ${new Date().toLocaleString('es-MX')}\n\n`;
+  txt += 'SESIONES\n========\n\n';
+
+  (citas||[]).forEach(c=>{
+    const f = new Date(c.fecha_hora);
+    txt += `--- ${f.toLocaleDateString('es-MX',{weekday:'long',day:'numeric',month:'long',year:'numeric'})} · ${f.toLocaleTimeString('es-MX',{hour:'2-digit',minute:'2-digit'})} (${c.duracion_minutos} min, ${c.estado}) ---\n`;
+    const n = porCita[c.id];
+    if(n){
+      if(n.objetivos)     txt += `\nObjetivos:\n${n.objetivos}\n`;
+      if(n.observaciones) txt += `\nObservaciones:\n${n.observaciones}\n`;
+      if(n.tareas)        txt += `\nTareas o acuerdos:\n${n.tareas}\n`;
+      if(n.evolucion)     txt += `\nEvolución:\n${n.evolucion}\n`;
+    } else {
+      txt += '\n(Sin nota registrada)\n';
+    }
+    txt += '\n';
+  });
+
+  const blob = new Blob([txt], {type:'text/plain;charset=utf-8'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `expediente-${paciente.nombre.replace(/\s+/g,'-').toLowerCase()}.txt`;
+  a.click();
+  URL.revokeObjectURL(url);
+
+  btn.disabled = false;
+  btn.textContent = 'Exportar expediente';
+});
+
+/* ---------- util ---------- */
+function vacioNull(v){ const t = (v||'').trim(); return t === '' ? null : t; }
+function capitalizar(t){ return t.charAt(0).toUpperCase() + t.slice(1); }
+function escapar(t){
+  const d = document.createElement('div');
+  d.textContent = t == null ? '' : t;
+  return d.innerHTML;
+}
+
+iniciar();
+</script>
+
+</body>
+</html>
