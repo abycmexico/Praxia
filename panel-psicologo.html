@@ -128,6 +128,19 @@
   .cal-hora-celda{border-right:1px solid var(--line);border-bottom:1px solid var(--line);min-height:44px;position:relative;padding:2px;}
   .cal-evento-semana{background:var(--primario);color:#fff;font-size:10px;font-weight:700;border-radius:6px;padding:3px 6px;line-height:1.3;overflow:hidden;cursor:pointer;}
   .cal-evento-semana.cancelada{background:#ddd;color:#888;}
+
+  .disp-atajos{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;}
+  .disp-ayuda{font-size:12px;color:var(--gray);margin-bottom:16px;}
+  .disp-grid{border:1.5px solid var(--line);border-radius:16px;overflow:hidden;background:#fff;overflow-x:auto;}
+  .disp-grid-inner{display:grid;grid-template-columns:56px repeat(7,minmax(80px,1fr));min-width:680px;}
+  .disp-dia-header{padding:10px 4px;font-size:12px;font-weight:800;text-align:center;color:var(--ink);border-bottom:1.5px solid var(--line);background:#FAFAF8;cursor:pointer;user-select:none;}
+  .disp-dia-header:hover{color:var(--primario);}
+  .disp-dia-header.con-horas{color:var(--primario);}
+  .disp-hora-label{font-size:10px;color:var(--gray);text-align:right;padding:6px 6px 0 0;border-right:1px solid var(--line);}
+  .disp-celda{border-right:1px solid var(--line);border-bottom:1px solid var(--line);height:26px;cursor:pointer;background:#fff;transition:background .1s;}
+  .disp-celda:hover{background:#EAF5E8;}
+  .disp-celda.activa{background:var(--primario);}
+  .disp-celda.activa:hover{background:var(--primario-claro);}
   .chip{border:1.5px solid var(--line);background:none;border-radius:20px;padding:8px 15px;font-size:12.5px;font-weight:700;cursor:pointer;font-family:inherit;color:var(--gray);}
   .chip.sel{border-color:var(--primario);background:#EAF5E8;color:var(--ink);}
   .bloque{border:1.5px solid var(--line);border-radius:16px;padding:22px 24px;margin-bottom:18px;background:#fff;}
@@ -324,36 +337,22 @@
 
   <section id="tab-disponibilidad">
     <h2>Tu disponibilidad</h2>
-    <p class="sub">Define los bloques de horario en que atiendes cada semana. Tus pacientes solo podrán agendar dentro de estos bloques, en espacios de 50 minutos.</p>
+    <p class="sub">Marca las horas en que atiendes. Tus pacientes solo podrán agendar dentro de lo que marques aquí.</p>
 
-    <div class="card">
-      <div class="fila">
-        <div>
-          <label for="dia">Día</label>
-          <select id="dia">
-            <option value="1">Lunes</option>
-            <option value="2">Martes</option>
-            <option value="3">Miércoles</option>
-            <option value="4">Jueves</option>
-            <option value="5">Viernes</option>
-            <option value="6">Sábado</option>
-            <option value="0">Domingo</option>
-          </select>
-        </div>
-        <div>
-          <label for="horaInicio">Desde</label>
-          <input type="time" id="horaInicio" value="09:00">
-        </div>
-        <div>
-          <label for="horaFin">Hasta</label>
-          <input type="time" id="horaFin" value="14:00">
-        </div>
-        <button class="btn btn-primary" id="btnAgregarBloque">Agregar</button>
-      </div>
-      <p class="msg" id="msgDisp"></p>
+    <div class="disp-atajos">
+      <button class="btn btn-ghost" id="btnDispLunAVie">Copiar lunes a L–V</button>
+      <button class="btn btn-ghost" id="btnDispPreset9a14">Aplicar 9:00–14:00 (L–V)</button>
+      <button class="btn btn-ghost" id="btnDispPreset10a18">Aplicar 10:00–18:00 (L–V)</button>
+      <button class="btn btn-ghost" id="btnDispLimpiar">Limpiar todo</button>
     </div>
+    <p class="disp-ayuda">Haz clic en las celdas para marcar horas sueltas, o en el nombre de un día para marcarlo/desmarcarlo completo.</p>
 
-    <div id="listaDisponibilidad" style="margin-top:20px;"><p class="empty">Cargando...</p></div>
+    <div id="dispGrid" class="disp-grid"></div>
+
+    <div class="barra-guardar" style="margin-top:20px;">
+      <p class="msg" id="msgDisp"></p>
+      <button class="btn btn-primary" id="btnGuardarDisp">Guardar disponibilidad</button>
+    </div>
   </section>
 
   <section id="tab-pacientes">
@@ -635,53 +634,159 @@ document.querySelectorAll('.modal-bg').forEach(m=>{
   m.addEventListener('click', e=>{ if(e.target === m) m.classList.remove('show'); });
 });
 
-/* ---------- disponibilidad ---------- */
-async function cargarDisponibilidad(){
-  const cont = document.getElementById('listaDisponibilidad');
-  const { data, error } = await sb.from('disponibilidad')
-    .select('*').eq('psicologo_id', yo.id).eq('activo', true)
-    .order('dia_semana').order('hora_inicio');
+/* ---------- disponibilidad (cuadrícula clickeable) ---------- */
+const DISP_HORA_INICIO = 7;   // 7:00
+const DISP_HORA_FIN = 21;     // hasta 21:00 (última celda 20:00-21:00)
+const DISP_DIAS = [1,2,3,4,5,6,0]; // Lunes primero, Domingo al final
+const DISP_DIAS_NOMBRE = {0:'Dom',1:'Lun',2:'Mar',3:'Mié',4:'Jue',5:'Vie',6:'Sáb'};
 
-  if(error){ cont.innerHTML = `<p class="empty">Error: ${error.message}</p>`; return; }
-  if(!data.length){ cont.innerHTML = '<p class="empty">Todavía no defines horarios. Agrega tu primer bloque arriba.</p>'; return; }
+// Estado en memoria: dispEstado[dia][hora] = true/false
+let dispEstado = {};
 
-  cont.innerHTML = data.map(d=>`
-    <div class="card flex">
-      <div>
-        <h3>${DIAS[d.dia_semana]}</h3>
-        <p>${d.hora_inicio.slice(0,5)} a ${d.hora_fin.slice(0,5)}</p>
-      </div>
-      <button class="btn btn-danger" onclick="borrarBloque('${d.id}')">Quitar</button>
-    </div>
-  `).join('');
+function dispEstadoVacio(){
+  const e = {};
+  DISP_DIAS.forEach(d=>{ e[d] = {}; });
+  return e;
 }
 
-document.getElementById('btnAgregarBloque').addEventListener('click', async ()=>{
-  const msg = document.getElementById('msgDisp');
-  const dia = parseInt(document.getElementById('dia').value, 10);
-  const ini = document.getElementById('horaInicio').value;
-  const fin = document.getElementById('horaFin').value;
+async function cargarDisponibilidad(){
+  dispEstado = dispEstadoVacio();
 
-  msg.className = 'msg';
-  if(!ini || !fin){ msg.textContent = 'Falta la hora de inicio o de fin.'; msg.className='msg err'; return; }
-  if(fin <= ini){ msg.textContent = 'La hora de fin debe ser posterior a la de inicio.'; msg.className='msg err'; return; }
+  const { data, error } = await sb.from('disponibilidad')
+    .select('*').eq('psicologo_id', yo.id).eq('activo', true);
 
-  const { error } = await sb.from('disponibilidad').insert({
-    psicologo_id: yo.id, dia_semana: dia, hora_inicio: ini, hora_fin: fin
+  if(error){
+    document.getElementById('msgDisp').textContent = 'No se pudo cargar: ' + error.message;
+    document.getElementById('msgDisp').className = 'msg err';
+    return;
+  }
+
+  (data||[]).forEach(bloque=>{
+    const hi = parseInt(bloque.hora_inicio.slice(0,2), 10);
+    const hf = parseInt(bloque.hora_fin.slice(0,2), 10);
+    for(let h=hi; h<hf; h++){
+      if(dispEstado[bloque.dia_semana]) dispEstado[bloque.dia_semana][h] = true;
+    }
   });
 
-  if(error){ msg.textContent = 'Error al guardar: ' + error.message; msg.className='msg err'; return; }
-  msg.textContent = 'Bloque agregado.'; msg.className = 'msg ok';
-  cargarDisponibilidad();
+  pintarDispGrid();
+}
+
+function pintarDispGrid(){
+  const cont = document.getElementById('dispGrid');
+
+  let headerDias = '<div></div>' + DISP_DIAS.map(d=>{
+    const tieneHoras = Object.values(dispEstado[d]).some(v=>v);
+    return `<div class="disp-dia-header ${tieneHoras?'con-horas':''}" onclick="dispToggleDia(${d})">${DISP_DIAS_NOMBRE[d]}</div>`;
+  }).join('');
+
+  let filas = '';
+  for(let h=DISP_HORA_INICIO; h<DISP_HORA_FIN; h++){
+    filas += `<div class="disp-hora-label">${h}:00</div>`;
+    DISP_DIAS.forEach(d=>{
+      const activa = !!dispEstado[d][h];
+      filas += `<div class="disp-celda ${activa?'activa':''}" onclick="dispToggleCelda(${d},${h})"></div>`;
+    });
+  }
+
+  cont.innerHTML = `<div class="disp-grid-inner">${headerDias}${filas}</div>`;
+}
+
+function dispToggleCelda(dia, hora){
+  dispEstado[dia][hora] = !dispEstado[dia][hora];
+  pintarDispGrid();
+}
+window.dispToggleCelda = dispToggleCelda;
+
+function dispToggleDia(dia){
+  const tieneHoras = Object.values(dispEstado[dia]).some(v=>v);
+  for(let h=DISP_HORA_INICIO; h<DISP_HORA_FIN; h++){
+    dispEstado[dia][h] = !tieneHoras; // si ya tenía algo, se limpia; si no, se llena todo
+  }
+  pintarDispGrid();
+}
+window.dispToggleDia = dispToggleDia;
+
+/* ---------- atajos ---------- */
+document.getElementById('btnDispLunAVie').addEventListener('click', ()=>{
+  const patronLunes = { ...dispEstado[1] };
+  [2,3,4,5].forEach(d=>{ dispEstado[d] = { ...patronLunes }; });
+  pintarDispGrid();
 });
 
-async function borrarBloque(id){
-  if(!confirm('¿Quitar este bloque de tu disponibilidad?')) return;
-  const { error } = await sb.from('disponibilidad').update({activo:false}).eq('id', id);
-  if(error){ alert('Error: ' + error.message); return; }
-  cargarDisponibilidad();
-}
-window.borrarBloque = borrarBloque;
+document.getElementById('btnDispPreset9a14').addEventListener('click', ()=>{
+  [1,2,3,4,5].forEach(d=>{
+    for(let h=DISP_HORA_INICIO; h<DISP_HORA_FIN; h++) dispEstado[d][h] = (h>=9 && h<14);
+  });
+  pintarDispGrid();
+});
+
+document.getElementById('btnDispPreset10a18').addEventListener('click', ()=>{
+  [1,2,3,4,5].forEach(d=>{
+    for(let h=DISP_HORA_INICIO; h<DISP_HORA_FIN; h++) dispEstado[d][h] = (h>=10 && h<18);
+  });
+  pintarDispGrid();
+});
+
+document.getElementById('btnDispLimpiar').addEventListener('click', ()=>{
+  if(!confirm('¿Borrar toda tu disponibilidad marcada?')) return;
+  dispEstado = dispEstadoVacio();
+  pintarDispGrid();
+});
+
+/* ---------- guardar: convierte la cuadrícula en bloques contiguos ---------- */
+document.getElementById('btnGuardarDisp').addEventListener('click', async ()=>{
+  const btn = document.getElementById('btnGuardarDisp');
+  const msg = document.getElementById('msgDisp');
+  btn.disabled = true;
+  msg.className = 'msg';
+  msg.textContent = 'Guardando...';
+
+  const bloquesNuevos = [];
+  DISP_DIAS.forEach(dia=>{
+    let inicio = null;
+    for(let h=DISP_HORA_INICIO; h<=DISP_HORA_FIN; h++){
+      const activa = h < DISP_HORA_FIN && dispEstado[dia][h];
+      if(activa && inicio === null){
+        inicio = h;
+      } else if(!activa && inicio !== null){
+        bloquesNuevos.push({
+          psicologo_id: yo.id, dia_semana: dia,
+          hora_inicio: `${String(inicio).padStart(2,'0')}:00`,
+          hora_fin: `${String(h).padStart(2,'0')}:00`
+        });
+        inicio = null;
+      }
+    }
+  });
+
+  // Se desactivan todos los bloques anteriores y se insertan los nuevos:
+  // más simple y confiable que intentar calcular diffs celda por celda.
+  const { error: errDesactivar } = await sb.from('disponibilidad')
+    .update({activo:false}).eq('psicologo_id', yo.id).eq('activo', true);
+
+  if(errDesactivar){
+    msg.textContent = 'No se pudo guardar: ' + errDesactivar.message;
+    msg.className = 'msg err';
+    btn.disabled = false;
+    return;
+  }
+
+  if(bloquesNuevos.length){
+    const { error: errInsertar } = await sb.from('disponibilidad').insert(bloquesNuevos);
+    if(errInsertar){
+      msg.textContent = 'No se pudo guardar: ' + errInsertar.message;
+      msg.className = 'msg err';
+      btn.disabled = false;
+      return;
+    }
+  }
+
+  msg.textContent = 'Disponibilidad guardada.';
+  msg.className = 'msg ok';
+  btn.disabled = false;
+  setTimeout(()=>{ if(msg.textContent==='Disponibilidad guardada.') msg.textContent=''; }, 3000);
+});
 
 /* ---------- pacientes (tarjetas kanban) ---------- */
 let pacientesCache = [];
