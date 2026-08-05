@@ -11,36 +11,71 @@
 <link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,400;1,600&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
-  :root{--yellow:#377534;--yellow-soft:#5C9A59;--ink:#111111;--gray:#7a7a7a;--line:#ececec;--err:#c62828;--ok:#2e7d32;}
+  :root{--primario:#2E7D32;--primario-claro:#7BC043;--primario-suave:#A8C99B;--bg:#F7F9F6;--ink:#1A1A1A;--gray:#7a7a7a;--line:#ececec;--err:#c62828;--ok:#2e7d32;}
   *{box-sizing:border-box;margin:0;padding:0;}
-  body{background:#fff;color:var(--ink);font-family:'Montserrat',Arial,sans-serif;font-weight:500;}
+  body{background:var(--bg,#F7F9F6);color:var(--ink);font-family:'Montserrat',Arial,sans-serif;font-weight:500;}
   a{color:inherit;text-decoration:none;}
-  header{display:flex;align-items:center;justify-content:space-between;padding:20px 32px;border-bottom:1.5px solid var(--line);position:sticky;top:0;background:#fff;z-index:10;}
-  header .logo{display:flex;align-items:center;gap:10px;}
-  header img{height:24px;}
-  header .logo span{font-weight:800;letter-spacing:2px;font-size:14px;}
-  header .right{display:flex;align-items:center;gap:14px;}
-  header .quien{font-size:13px;color:var(--gray);}
-  header button{background:none;border:1.5px solid var(--line);border-radius:20px;padding:8px 16px;font-size:12.5px;font-weight:700;cursor:pointer;font-family:inherit;}
-  header button:hover{border-color:var(--yellow);}
-  nav.tabs{display:flex;gap:4px;padding:0 32px;border-bottom:1.5px solid var(--line);overflow-x:auto;}
-  nav.tabs button{background:none;border:none;padding:14px 18px;font-size:13.5px;font-weight:700;cursor:pointer;font-family:inherit;color:var(--gray);border-bottom:2.5px solid transparent;white-space:nowrap;}
-  nav.tabs button.active{color:var(--ink);border-bottom-color:var(--yellow);}
+
+  .app-shell{display:flex;min-height:100vh;}
+
+  .sidebar{width:240px;flex-shrink:0;background:#fff;border-right:1.5px solid var(--line);display:flex;flex-direction:column;padding:24px 16px;position:sticky;top:0;height:100vh;}
+  .sidebar-logo{display:flex;align-items:center;gap:9px;padding:0 8px 26px;}
+  .sidebar-logo img{height:24px;}
+  .sidebar-logo span{font-weight:800;letter-spacing:2px;font-size:14px;color:var(--primario);}
+
+  nav.sidebar-nav{display:flex;flex-direction:column;gap:3px;flex:1;}
+  nav.sidebar-nav button{display:flex;align-items:center;gap:11px;background:none;border:none;padding:11px 12px;border-radius:12px;font-size:13.5px;font-weight:700;cursor:pointer;font-family:inherit;color:var(--gray);text-align:left;width:100%;}
+  nav.sidebar-nav button:hover{background:#F2F6F1;}
+  nav.sidebar-nav button.active{background:var(--primario);color:#fff;}
+  nav.sidebar-nav .icono{font-size:15px;width:18px;text-align:center;flex-shrink:0;}
+
+  .sidebar-user{display:flex;align-items:center;gap:10px;padding:14px 8px;margin-top:10px;border-top:1.5px solid var(--line);}
+  .sidebar-avatar{width:34px;height:34px;border-radius:50%;background:var(--primario-suave);color:#fff;font-weight:800;font-size:12.5px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+  .sidebar-user-info{min-width:0;}
+  .sidebar-user-nombre{font-size:12.5px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .sidebar-user-rol{font-size:10.5px;color:var(--gray);}
+  .btn-salir{background:none;border:1.5px solid var(--line);border-radius:20px;padding:9px;font-size:11.5px;font-weight:700;cursor:pointer;font-family:inherit;color:var(--gray);margin-top:8px;}
+  .btn-salir:hover{border-color:var(--err);color:var(--err);}
+
+  .content-area{flex:1;min-width:0;}
+
+  .topbar-stats{display:flex;gap:28px;padding:18px 32px;border-bottom:1.5px solid var(--line);background:#fff;position:sticky;top:0;z-index:10;flex-wrap:wrap;}
+  .stat-mini{display:flex;align-items:baseline;gap:7px;}
+  .stat-mini-num{font-size:19px;font-weight:800;color:var(--primario);}
+  .stat-mini-label{font-size:12px;color:var(--gray);}
+
   main{max-width:820px;margin:0 auto;padding:36px 24px 90px;}
   section{display:none;}
   section.active{display:block;}
+
+  @media(max-width:860px){
+    .app-shell{flex-direction:column;}
+    .sidebar{width:100%;height:auto;position:static;flex-direction:row;align-items:center;padding:12px 16px;overflow-x:auto;}
+    .sidebar-logo{padding:0 12px 0 0;}
+    nav.sidebar-nav{flex-direction:row;flex:none;}
+    nav.sidebar-nav button span.icono{margin-right:0;}
+    .sidebar-user,.btn-salir{display:none;}
+    .topbar-stats{padding:14px 16px;gap:18px;}
+  }
   h2{font-size:21px;margin-bottom:6px;}
   p.sub{color:var(--gray);font-size:13.5px;margin-bottom:26px;line-height:1.6;}
-  .card{border:1.5px solid var(--line);border-radius:14px;padding:18px 20px;margin-bottom:12px;}
+  .card{border:1.5px solid var(--line);border-radius:14px;padding:18px 20px;margin-bottom:12px;background:#fff;}
   .card.flex{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;}
   .card h3{font-size:15px;margin-bottom:3px;}
   .card p{font-size:13px;color:var(--gray);line-height:1.5;}
+  .card-con-avatar{display:flex;align-items:flex-start;gap:14px;}
+  .avatar-cita{width:38px;height:38px;border-radius:50%;background:var(--primario-suave);color:#fff;font-weight:800;font-size:14px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+  .tag{display:inline-block;font-size:10.5px;font-weight:800;letter-spacing:.5px;text-transform:uppercase;padding:4px 10px;border-radius:20px;}
+  .tag.confirmada{background:#E4F3E1;color:var(--primario);}
+  .tag.pendiente_pago{background:#FFF1DB;color:#B5680A;}
+  .tag.completada{background:#EDEDED;color:#666;}
+  .tag.cancelada{background:#FBE0E0;color:var(--err);}
   .empty{color:var(--gray);font-size:13.5px;text-align:center;padding:34px 0;border:1.5px dashed var(--line);border-radius:14px;}
   a.card{transition:border-color .15s;}
-  a.card:hover{border-color:var(--yellow);}
+  a.card:hover{border-color:var(--primario);}
   .filtros{display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;}
   .chip{border:1.5px solid var(--line);background:none;border-radius:20px;padding:8px 15px;font-size:12.5px;font-weight:700;cursor:pointer;font-family:inherit;color:var(--gray);}
-  .chip.sel{border-color:var(--yellow);background:#FFFBF0;color:var(--ink);}
+  .chip.sel{border-color:var(--primario);background:#EAF5E8;color:var(--ink);}
   .bloque{border:1.5px solid var(--line);border-radius:16px;padding:22px 24px;margin-bottom:18px;}
   .bloque h3{font-size:14px;margin-bottom:2px;}
   .bloque .bh{font-size:12px;color:var(--gray);margin-bottom:18px;line-height:1.6;}
@@ -60,7 +95,7 @@
   .switch input{opacity:0;width:0;height:0;}
   .switch .slider{position:absolute;cursor:pointer;inset:0;background:#ddd;border-radius:22px;transition:.2s;}
   .switch .slider::before{content:"";position:absolute;height:16px;width:16px;left:3px;bottom:3px;background:#fff;border-radius:50%;transition:.2s;}
-  .switch input:checked + .slider{background:var(--yellow);}
+  .switch input:checked + .slider{background:var(--primario);}
   .switch input:checked + .slider::before{transform:translateX(16px);}
 
   .grid-dashboard{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-top:26px;}
@@ -68,30 +103,25 @@
   .card-dash-num{font-size:26px;font-weight:800;}
   .card-dash-label{font-size:12px;color:var(--gray);margin-top:4px;line-height:1.5;}
   .card-dash-dinero{grid-column:span 2;background:#FAFAF8;}
-  .card-dash-dinero .card-dash-num{color:var(--yellow);}
+  .card-dash-dinero .card-dash-num{color:var(--primario);}
   @media(max-width:760px){.grid-dashboard{grid-template-columns:1fr 1fr;}.card-dash-dinero{grid-column:span 2;}}
   @media(max-width:480px){.grid-dashboard{grid-template-columns:1fr;}.card-dash-dinero{grid-column:span 1;}}
   label{display:block;font-size:12.5px;font-weight:700;margin-bottom:6px;}
   input,select,textarea{width:100%;padding:11px 13px;border:1.5px solid var(--line);border-radius:10px;font-family:inherit;font-size:14px;background:#fff;color:var(--ink);}
-  input:focus,select:focus,textarea:focus{outline:none;border-color:var(--yellow);}
+  input:focus,select:focus,textarea:focus{outline:none;border-color:var(--primario);}
   textarea{resize:vertical;min-height:120px;line-height:1.6;}
   .fila{display:grid;grid-template-columns:1.4fr 1fr 1fr auto;gap:10px;align-items:end;margin-bottom:14px;}
   .btn{padding:11px 20px;border-radius:24px;font-size:13px;font-weight:700;border:none;cursor:pointer;font-family:inherit;white-space:nowrap;}
-  .btn-primary{background:var(--yellow);color:var(--ink);}
-  .btn-primary:hover{background:var(--yellow-soft);}
+  .btn-primary{background:var(--primario);color:#fff;}
+  .btn-primary:hover{background:var(--primario-claro);}
   .btn-ghost{background:none;border:1.5px solid var(--line);color:var(--ink);}
-  .btn-ghost:hover{border-color:var(--yellow);}
+  .btn-ghost:hover{border-color:var(--primario);}
   .btn-danger{background:none;border:1.5px solid var(--line);color:var(--err);}
   .btn:disabled{opacity:.5;cursor:default;}
   .btn-videollamada-pendiente{background:#f2f2f2;color:#999;cursor:not-allowed;border:1.5px solid var(--line);}
   .msg{font-size:13px;margin-top:12px;min-height:17px;}
   .msg.err{color:var(--err);}
   .msg.ok{color:var(--ok);}
-  .tag{display:inline-block;font-size:10.5px;font-weight:800;letter-spacing:.8px;text-transform:uppercase;padding:4px 9px;border-radius:20px;}
-  .tag.confirmada{background:#D4EDDA;color:#2e7d32;}
-  .tag.pendiente_pago{background:#FFF3CD;color:#8a6d1a;}
-  .tag.completada{background:#E7E7E7;color:#555;}
-  .tag.cancelada{background:#F8D7DA;color:#c62828;}
   .modal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:50;align-items:center;justify-content:center;padding:20px;}
   .modal-bg.show{display:flex;}
   .modal{background:#fff;border-radius:18px;padding:28px;max-width:520px;width:100%;max-height:88vh;overflow:auto;}
@@ -107,45 +137,64 @@
   .modal label{display:block;font-size:12.5px;font-weight:700;margin-bottom:6px;}
   .dias{display:flex;gap:8px;overflow-x:auto;padding-bottom:10px;margin-bottom:18px;}
   .dia-chip{flex:0 0 auto;border:1.5px solid var(--line);border-radius:12px;padding:10px 14px;cursor:pointer;text-align:center;min-width:74px;}
-  .dia-chip.sel{border-color:var(--yellow);background:#FFFBF0;}
+  .dia-chip.sel{border-color:var(--primario);background:#EAF5E8;}
   .dia-chip .dn{font-size:10.5px;text-transform:uppercase;letter-spacing:.8px;color:var(--gray);font-weight:700;}
   .dia-chip .df{font-size:17px;font-weight:800;margin-top:2px;}
   .dia-chip .dm{font-size:10.5px;color:var(--gray);}
   .horas{display:grid;grid-template-columns:repeat(auto-fill,minmax(92px,1fr));gap:10px;}
   .hora-btn{border:1.5px solid var(--line);border-radius:10px;padding:12px 6px;font-size:13.5px;font-weight:700;cursor:pointer;background:#fff;font-family:inherit;color:var(--ink);}
-  .hora-btn:hover:not(:disabled){border-color:var(--yellow);}
-  .hora-btn.sel{border-color:var(--yellow);background:var(--yellow);}
+  .hora-btn:hover:not(:disabled){border-color:var(--primario);}
+  .hora-btn.sel{border-color:var(--primario);background:var(--primario);color:#fff;}
   .hora-btn:disabled{opacity:.35;cursor:default;text-decoration:line-through;}
   @media(max-width:640px){
     .fila{grid-template-columns:1fr 1fr;}
-    header{padding:16px 20px;}
-    nav.tabs{padding:0 16px;}
-    header .quien{display:none;}
   }
 </style>
 </head>
 <body>
 
-<header>
-  <div class="logo">
-    <img src="./assets/praxia-isotipo.png" alt="AbyC">
-    <span>PRAXIA</span>
-  </div>
-  <div class="right">
-    <span class="quien" id="quien"></span>
-    <button id="btnSalir">Cerrar sesión</button>
-  </div>
-</header>
+<div class="app-shell">
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <img src="./assets/praxia-isotipo.png" alt="Praxia">
+      <span>PRAXIA</span>
+    </div>
 
-<nav class="tabs">
-  <button class="active" data-tab="resumen">Resumen</button>
-  <button data-tab="citas">Mis citas</button>
-  <button data-tab="disponibilidad">Disponibilidad</button>
-  <button data-tab="pacientes">Mis pacientes</button>
-  <button data-tab="config">Configuración</button>
-</nav>
+    <nav class="tabs sidebar-nav">
+      <button class="active" data-tab="resumen"><span class="icono">📊</span>Resumen</button>
+      <button data-tab="citas"><span class="icono">📅</span>Mis citas</button>
+      <button data-tab="disponibilidad"><span class="icono">🕐</span>Disponibilidad</button>
+      <button data-tab="pacientes"><span class="icono">👥</span>Mis pacientes</button>
+      <button data-tab="config"><span class="icono">⚙️</span>Configuración</button>
+    </nav>
 
-<main>
+    <div class="sidebar-user">
+      <div class="sidebar-avatar" id="avatarIniciales"></div>
+      <div class="sidebar-user-info">
+        <div class="sidebar-user-nombre" id="quien"></div>
+        <div class="sidebar-user-rol">Psicólogo clínico</div>
+      </div>
+    </div>
+    <button id="btnSalir" class="btn-salir">Cerrar sesión</button>
+  </aside>
+
+  <div class="content-area">
+    <div class="topbar-stats">
+      <div class="stat-mini">
+        <span class="stat-mini-num" id="statCitasHoy">—</span>
+        <span class="stat-mini-label">Citas hoy</span>
+      </div>
+      <div class="stat-mini">
+        <span class="stat-mini-num" id="statPendientesPago">—</span>
+        <span class="stat-mini-label">Pendientes de pago</span>
+      </div>
+      <div class="stat-mini">
+        <span class="stat-mini-num" id="statPacientesActivos">—</span>
+        <span class="stat-mini-label">Pacientes activos</span>
+      </div>
+    </div>
+
+    <main>
 
   <section id="tab-resumen" class="active">
     <h2>Hola, <span id="saludoNombre"></span></h2>
@@ -177,6 +226,7 @@
         <div class="card-dash-label">Por cobrar (citas pendientes de pago)</div>
       </div>
     </div>
+
 
     <h2 style="margin-top:44px;">Sesiones de hoy</h2>
     <div id="listaHoy"><p class="empty">Cargando...</p></div>
@@ -354,8 +404,9 @@
       </div>
     </form>
   </section>
-
-</main>
+    </main>
+  </div>
+</div>
 
 <div class="modal-bg" id="modalInvitar">
   <div class="modal">
@@ -422,6 +473,7 @@ async function iniciar(){
 
   yo = psi;
   document.getElementById('quien').textContent = psi.nombre;
+  document.getElementById('avatarIniciales').textContent = iniciales(psi.nombre);
   cargarCitas();
   cargarDisponibilidad();
   cargarPacientes();
@@ -625,6 +677,11 @@ async function cargarResumen(){
   document.getElementById('montoIngresos').textContent = '$' + ingresosMes.toLocaleString('es-MX');
   document.getElementById('montoPendiente').textContent = '$' + montoPendiente.toLocaleString('es-MX');
 
+  // Barra superior persistente (visible en cualquier pestaña)
+  document.getElementById('statCitasHoy').textContent = hoy.length;
+  document.getElementById('statPendientesPago').textContent = pendientes.length;
+  document.getElementById('statPacientesActivos').textContent = activos;
+
   const contHoy = document.getElementById('listaHoy');
   contHoy.innerHTML = hoy.length
     ? hoy.map(c=>tarjetaCita(c, true)).join('')
@@ -684,10 +741,13 @@ function tarjetaCita(c, esProxima){
 
   return `
     <div class="card flex">
-      <div>
-        <h3>${nombre} <span class="tag ${c.estado}">${etiquetaEstado(c.estado)}</span></h3>
-        <p>${detalle}</p>
-        ${c.motivo_cancelacion ? `<p class="motivo">Motivo: ${escapar(c.motivo_cancelacion)}</p>` : ''}
+      <div class="card-con-avatar">
+        <div class="avatar-cita">${(c.pacientes ? c.pacientes.nombre : 'P').charAt(0).toUpperCase()}</div>
+        <div>
+          <h3>${nombre} <span class="tag ${c.estado}">${etiquetaEstado(c.estado)}</span></h3>
+          <p>${detalle}</p>
+          ${c.motivo_cancelacion ? `<p class="motivo">Motivo: ${escapar(c.motivo_cancelacion)}</p>` : ''}
+        </div>
       </div>
       <div style="display:flex;gap:8px;flex-wrap:wrap;">
         ${puedeEntrar
@@ -1035,6 +1095,10 @@ document.getElementById('btnConfirmarReprogramar').addEventListener('click', asy
 });
 
 function capitalizar(t){ return t.charAt(0).toUpperCase() + t.slice(1); }
+
+function iniciales(nombre){
+  return (nombre||'').trim().split(/\s+/).slice(0,2).map(p=>p[0].toUpperCase()).join('');
+}
 
 /* ---------- util ---------- */
 function escapar(t){
