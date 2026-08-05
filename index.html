@@ -47,8 +47,25 @@
   .hero .btn{padding:15px 30px;font-size:14.5px;}
   .hero .nota{font-size:12.5px;color:#aaa;}
   .hero-visual{margin-top:56px;border:1.5px solid var(--line);border-radius:24px;padding:8px;max-width:920px;margin-left:auto;margin-right:auto;background:linear-gradient(180deg,var(--verde-claro),#fff);}
-  .hero-visual .inner{background:#fff;border-radius:18px;padding:40px 30px;display:flex;align-items:center;justify-content:center;min-height:280px;}
-  .hero-visual img{width:110px;opacity:.9;}
+  .hero-visual .inner{background:#fff;border-radius:18px;padding:36px;display:flex;align-items:center;justify-content:center;min-height:280px;}
+  .mock-panel{width:100%;max-width:520px;text-align:left;}
+  .mock-top{display:flex;align-items:center;gap:12px;margin-bottom:24px;}
+  .mock-avatar{width:42px;height:42px;border-radius:50%;background:var(--verde);color:#fff;font-weight:800;font-size:14px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+  .mock-nombre{font-size:14.5px;font-weight:700;}
+  .mock-especialidad{font-size:12px;color:var(--gray);}
+  .mock-en-linea{margin-left:auto;font-size:11.5px;color:var(--verde);font-weight:700;}
+  .mock-stats{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:22px;}
+  .mock-stat{border:1.5px solid var(--line);border-radius:12px;padding:14px 16px;}
+  .mock-stat-num{font-size:22px;font-weight:800;}
+  .mock-stat-label{font-size:11px;color:var(--gray);margin-top:2px;}
+  .mock-citas-label{font-size:11px;font-weight:800;letter-spacing:1px;text-transform:uppercase;color:var(--gray);margin-bottom:10px;}
+  .mock-cita{display:flex;align-items:center;justify-content:space-between;gap:12px;border:1.5px solid var(--line);border-radius:12px;padding:12px 14px;margin-bottom:10px;}
+  .mock-cita-nombre{font-size:13.5px;font-weight:700;}
+  .mock-cita-hora{font-size:11.5px;color:var(--gray);margin-top:2px;}
+  .mock-badge{font-size:10.5px;font-weight:800;padding:6px 12px;border-radius:20px;white-space:nowrap;}
+  .mock-badge-primario{background:var(--verde);color:#fff;}
+  .mock-badge-pagado{background:var(--verde-claro);color:var(--verde);}
+  @media(max-width:600px){.mock-stats{grid-template-columns:1fr;}}
 
   .franja{border-top:1.5px solid var(--line);border-bottom:1.5px solid var(--line);padding:26px 24px;}
   .franja .wrap{display:flex;flex-wrap:wrap;gap:28px;justify-content:center;align-items:center;font-size:12.5px;color:var(--gray);font-weight:700;letter-spacing:.4px;}
@@ -154,49 +171,85 @@
   </nav>
   <div class="acciones">
     <a class="btn btn-fantasma" href="./login.html">Iniciar sesión</a>
-    <a class="btn btn-primario" href="./registro-psicologo.html">Crear cuenta</a>
+    <a class="btn btn-primario" href="./registro-psicologo.html">Crear mi espacio</a>
   </div>
 </header>
 
 <section class="hero">
   <span class="kicker">Consultorio virtual</span>
-  <h1>El lugar donde llevas tu consulta, <em>no donde la persigues</em></h1>
-  <p class="sub">Agenda, sesión por videollamada, expediente y cobro, todo en un mismo sistema. Deja de coordinar por WhatsApp y de perder sesiones por cancelaciones de último minuto.</p>
+  <h1>Gestiona tus consultas virtuales <em>bajo tu propia marca</em></h1>
+  <p class="sub">El espacio privado donde psicólogos, médicos, abogados y consultores organizan su agenda, cobran sus sesiones y atienden por videollamada, sin depender de otras herramientas sueltas.</p>
   <div class="acciones-hero">
-    <a class="btn btn-primario" href="./registro-psicologo.html">Crear mi cuenta</a>
+    <a class="btn btn-primario" href="./registro-psicologo.html">Crear mi espacio</a>
     <a class="btn btn-fantasma" href="#precios">Ver precios</a>
   </div>
   <p class="nota">Sin tarjeta para empezar · Precio de fundador congelado para los primeros 20</p>
 
   <div class="hero-visual">
     <div class="inner">
-      <img src="./assets/praxia-logo-completo.png" alt="Praxia">
+      <div class="mock-panel">
+        <div class="mock-top">
+          <div class="mock-avatar">EL</div>
+          <div>
+            <div class="mock-nombre">Dra. Elena Rostova</div>
+            <div class="mock-especialidad">Psiquiatría &amp; Psicoterapia</div>
+          </div>
+          <span class="mock-en-linea">● En línea</span>
+        </div>
+        <div class="mock-stats">
+          <div class="mock-stat">
+            <div class="mock-stat-num">42</div>
+            <div class="mock-stat-label">Consultas este mes</div>
+          </div>
+          <div class="mock-stat">
+            <div class="mock-stat-num">$18,400</div>
+            <div class="mock-stat-label">Ingresos del mes</div>
+          </div>
+        </div>
+        <div class="mock-citas">
+          <div class="mock-citas-label">Próximas sesiones hoy</div>
+          <div class="mock-cita">
+            <div>
+              <div class="mock-cita-nombre">Carlos M.</div>
+              <div class="mock-cita-hora">15:00 · Consulta de seguimiento</div>
+            </div>
+            <span class="mock-badge mock-badge-primario">Iniciar sala</span>
+          </div>
+          <div class="mock-cita">
+            <div>
+              <div class="mock-cita-nombre">Ana G.</div>
+              <div class="mock-cita-hora">16:30 · Evaluación inicial</div>
+            </div>
+            <span class="mock-badge mock-badge-pagado">Pagado</span>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 </section>
 
 <div class="franja">
   <div class="wrap">
-    <span><span class="punto"></span>Sesiones por videollamada integradas</span>
+    <span><span class="punto"></span>Videollamadas privadas</span>
     <span><span class="punto"></span>Expediente y notas por sesión</span>
-    <span><span class="punto"></span>Agenda con reglas de cancelación</span>
-    <span><span class="punto"></span>Cobro al momento de agendar</span>
+    <span><span class="punto"></span>Agenda configurable</span>
+    <span><span class="punto"></span>Cobro integrado</span>
   </div>
 </div>
 
 <section class="problema" id="producto">
   <div class="wrap grid2">
     <div>
-      <span class="kicker">El problema real</span>
-      <h2>Tu consulta ya funciona. Lo que falla es todo lo que la rodea.</h2>
-      <p>No te falta talento ni pacientes. Te falta un lugar donde todo lo operativo —agendar, cobrar, recordar, documentar— no dependa de ti acordándote de hacerlo a mano.</p>
+      <span class="kicker">No somos un directorio ni un marketplace</span>
+      <h2>La infraestructura directa entre tú y tus pacientes</h2>
+      <p>No te conseguimos clientes ni te ponemos a competir en un catálogo. Praxia es el sistema privado donde ya organizas la parte operativa de tu consulta: agendar, cobrar, documentar y dar la sesión, todo bajo tu propia marca.</p>
     </div>
     <ul class="lista-dolor">
-      <li>Pacientes que cancelan sin avisar y la hora se pierde</li>
-      <li>Coordinar horarios por WhatsApp, uno por uno</li>
-      <li>Notas de sesión regadas entre cuadernos y notas del celular</li>
-      <li>Cobrar después de la sesión, o no cobrar a tiempo</li>
-      <li>Ningún lugar donde ver de un vistazo cómo va tu consulta</li>
+      <li>Agenda visible solo para ti y tus pacientes, sin intermediarios</li>
+      <li>Menos tiempo coordinando horarios de un lado a otro</li>
+      <li>Un solo lugar para las notas de cada sesión</li>
+      <li>El cobro queda resuelto antes de que empiece la consulta</li>
+      <li>Una vista clara de cómo va tu consulta cada mes</li>
     </ul>
   </div>
 </section>
@@ -204,39 +257,39 @@
 <section class="features">
   <div class="wrap">
     <span class="kicker" style="display:block;text-align:center;width:fit-content;margin:0 auto 18px;">Qué incluye</span>
-    <h2>Todo lo que hoy haces con tres herramientas distintas, en una sola</h2>
-    <p class="centro">Praxia no reemplaza tu criterio profesional. Reemplaza el trabajo administrativo que te quita tiempo de consulta.</p>
+    <h2>Todo lo que tu consulta privada necesita</h2>
+    <p class="centro">Praxia no reemplaza tu criterio profesional. Se encarga de la parte operativa para que tu tiempo se quede en la consulta, no en administrarla.</p>
 
     <div class="grid-features">
       <div class="card-feature">
         <div class="num">01</div>
-        <h3>Agenda con reglas propias</h3>
-        <p>Defines tu disponibilidad, la duración de tus sesiones, cuánta anticipación pides y tu política de cancelación. El sistema la respeta sola.</p>
+        <h3>Videollamadas privadas</h3>
+        <p>Salas encriptadas para sesiones confidenciales, integradas directo en tu espacio. Tu paciente entra desde el mismo lugar donde agendó, sin instalar nada externo.</p>
       </div>
       <div class="card-feature">
         <div class="num">02</div>
-        <h3>Sesión por videollamada</h3>
-        <p>Tu paciente entra desde el mismo lugar donde agendó. Sin links sueltos, sin depender de otra plataforma externa.</p>
+        <h3>Agenda configurable</h3>
+        <p>Defines tus horarios disponibles, la duración de cada sesión y tu política de cancelación. Tus pacientes agendan dentro de esas reglas, en tiempo real.</p>
       </div>
       <div class="card-feature">
         <div class="num">03</div>
-        <h3>Expediente por paciente</h3>
-        <p>Datos personales, motivo de consulta, contacto de emergencia y estado del caso, todo en un solo lugar y solo visible para ti.</p>
+        <h3>Cobro integrado</h3>
+        <p>El pago se resuelve al momento de agendar, sin intermediarios ni transferencias manuales. La cita queda confirmada solo cuando ya está cubierta.</p>
       </div>
       <div class="card-feature">
         <div class="num">04</div>
-        <h3>Notas estructuradas por sesión</h3>
-        <p>Objetivos, observaciones, acuerdos y evolución. Cada sesión queda documentada de forma que se pueda revisar meses después.</p>
+        <h3>Expediente por paciente</h3>
+        <p>Datos personales, motivo de consulta, contacto de emergencia y estado del caso, en un solo lugar y visible únicamente para ti.</p>
       </div>
       <div class="card-feature">
         <div class="num">05</div>
-        <h3>Cobro al agendar</h3>
-        <p>La cita se confirma cuando se paga. Se acabó perseguir transferencias o cobrar sesiones que nunca sucedieron.</p>
+        <h3>Notas por sesión</h3>
+        <p>Objetivos, observaciones, acuerdos y evolución de cada consulta, documentados de forma que se puedan revisar meses después.</p>
       </div>
       <div class="card-feature">
         <div class="num">06</div>
         <h3>Portal para tu paciente</h3>
-        <p>Tu paciente ve sus próximas sesiones, su historial, y puede reagendar o cancelar según las reglas que tú definiste.</p>
+        <p>Tu paciente ve sus próximas sesiones y su historial, y puede reagendar o cancelar dentro de las reglas que tú definiste.</p>
       </div>
     </div>
   </div>
@@ -272,15 +325,15 @@
 
 <section class="paraquien">
   <div class="wrap">
-    <h2>Para quien da consulta uno a uno</h2>
-    <p class="centro">Praxia está pensado para cualquier profesional que atiende pacientes o clientes de forma individual y recurrente, por sesión.</p>
+    <h2>Para psicólogos, médicos, abogados y consultores</h2>
+    <p class="centro">Praxia está pensado para cualquier profesional que atiende pacientes o clientes de forma individual y recurrente, por sesión, y que valora la privacidad de esa relación.</p>
     <div class="chips-profesion">
       <span class="chip-prof on">Psicología</span>
+      <span class="chip-prof">Medicina</span>
+      <span class="chip-prof">Derecho</span>
+      <span class="chip-prof">Consultoría</span>
       <span class="chip-prof">Nutrición</span>
       <span class="chip-prof">Coaching</span>
-      <span class="chip-prof">Terapia física</span>
-      <span class="chip-prof">Asesoría legal</span>
-      <span class="chip-prof">Consultoría</span>
       <span class="chip-prof">Y más</span>
     </div>
   </div>
@@ -322,7 +375,7 @@
           <li>Notas de sesión completas</li>
           <li>Exportar expediente</li>
         </ul>
-        <a class="btn btn-primario" href="./registro-psicologo.html">Crear mi cuenta</a>
+        <a class="btn btn-primario" href="./registro-psicologo.html">Crear mi espacio</a>
       </div>
 
       <div class="plan">
@@ -391,9 +444,9 @@
 
 <section class="cta-final">
   <div class="wrap">
-    <h2>Tu consulta, en un solo lugar</h2>
-    <p>Crea tu cuenta hoy y asegura el precio de fundador antes de que se acaben los primeros 20 lugares.</p>
-    <a class="btn btn-primario" href="./registro-psicologo.html">Crear mi cuenta gratis</a>
+    <h2>Crea tu espacio en Praxia</h2>
+    <p>El registro toma unos minutos, y el precio de fundador está disponible mientras haya lugares entre los primeros 20.</p>
+    <a class="btn btn-primario" href="./registro-psicologo.html">Crear mi espacio</a>
   </div>
 </section>
 
