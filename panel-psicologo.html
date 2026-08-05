@@ -96,6 +96,38 @@
   .pac-btn{flex:1 1 auto;text-align:center;font-size:11px;padding:8px 8px;border-radius:10px;border:1.5px solid var(--line);background:#fff;cursor:pointer;font-family:inherit;font-weight:700;color:var(--ink);white-space:nowrap;}
   .pac-btn:hover{border-color:var(--primario);color:var(--primario);}
   .pac-btn.pac-btn-peligro:hover{border-color:var(--err);color:var(--err);}
+
+  .cal-toolbar{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:22px;}
+  .cal-nav{display:flex;align-items:center;gap:14px;}
+  .cal-nav h2{font-size:18px;text-transform:capitalize;min-width:170px;text-align:center;}
+  .cal-vista-switch{display:flex;border:1.5px solid var(--line);border-radius:10px;overflow:hidden;}
+  .cal-vista-btn{background:#fff;border:none;padding:8px 16px;font-size:12.5px;font-weight:700;cursor:pointer;font-family:inherit;color:var(--gray);}
+  .cal-vista-btn.active{background:var(--primario);color:#fff;}
+
+  .cal-mes{border:1.5px solid var(--line);border-radius:16px;overflow:hidden;background:#fff;}
+  .cal-mes-cabecera{display:grid;grid-template-columns:repeat(7,1fr);background:#FAFAF8;border-bottom:1.5px solid var(--line);}
+  .cal-mes-cabecera div{padding:10px;font-size:11px;font-weight:800;text-align:center;color:var(--gray);text-transform:uppercase;letter-spacing:.5px;}
+  .cal-mes-grid{display:grid;grid-template-columns:repeat(7,1fr);}
+  .cal-dia{min-height:92px;border-right:1px solid var(--line);border-bottom:1px solid var(--line);padding:8px;cursor:pointer;transition:background .12s;}
+  .cal-dia:hover{background:#FAFAF8;}
+  .cal-dia:nth-child(7n){border-right:none;}
+  .cal-dia.fuera-de-mes{background:#FCFCFC;color:#ccc;}
+  .cal-dia.hoy{background:#EAF5E8;}
+  .cal-dia.seleccionado{outline:2px solid var(--primario);outline-offset:-2px;}
+  .cal-dia-num{font-size:12.5px;font-weight:700;margin-bottom:6px;}
+  .cal-evento-chip{background:var(--primario-suave);color:#fff;font-size:10px;font-weight:700;padding:2px 6px;border-radius:6px;margin-bottom:3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .cal-evento-chip.cancelada{background:#ddd;color:#888;text-decoration:line-through;}
+  .cal-mas{font-size:10px;color:var(--gray);font-weight:700;}
+
+  .cal-semana{border:1.5px solid var(--line);border-radius:16px;overflow:hidden;background:#fff;overflow-x:auto;}
+  .cal-semana-grid{display:grid;grid-template-columns:56px repeat(7,minmax(120px,1fr));min-width:760px;}
+  .cal-semana-cabecera{display:contents;}
+  .cal-semana-cabecera > div{padding:10px 6px;font-size:11px;font-weight:800;text-align:center;color:var(--gray);border-bottom:1.5px solid var(--line);background:#FAFAF8;text-transform:uppercase;}
+  .cal-semana-cabecera > div.hoy-col{color:var(--primario);}
+  .cal-hora-label{font-size:10px;color:var(--gray);text-align:right;padding:4px 6px 0 0;border-right:1px solid var(--line);}
+  .cal-hora-celda{border-right:1px solid var(--line);border-bottom:1px solid var(--line);min-height:44px;position:relative;padding:2px;}
+  .cal-evento-semana{background:var(--primario);color:#fff;font-size:10px;font-weight:700;border-radius:6px;padding:3px 6px;line-height:1.3;overflow:hidden;cursor:pointer;}
+  .cal-evento-semana.cancelada{background:#ddd;color:#888;}
   .chip{border:1.5px solid var(--line);background:none;border-radius:20px;padding:8px 15px;font-size:12.5px;font-weight:700;cursor:pointer;font-family:inherit;color:var(--gray);}
   .chip.sel{border-color:var(--primario);background:#EAF5E8;color:var(--ink);}
   .bloque{border:1.5px solid var(--line);border-radius:16px;padding:22px 24px;margin-bottom:18px;background:#fff;}
@@ -188,6 +220,7 @@
     <nav class="tabs sidebar-nav">
       <button class="active" data-tab="resumen"><span class="icono">📊</span>Resumen</button>
       <button data-tab="citas"><span class="icono">📅</span>Mis citas</button>
+      <button data-tab="calendario"><span class="icono">🗓️</span>Calendario</button>
       <button data-tab="disponibilidad"><span class="icono">🕐</span>Disponibilidad</button>
       <button data-tab="pacientes"><span class="icono">👥</span>Mis pacientes</button>
       <button data-tab="config"><span class="icono">⚙️</span>Configuración</button>
@@ -268,6 +301,25 @@
     <h2 style="margin-top:40px;">Historial</h2>
     <p class="sub">Sesiones que ya ocurrieron.</p>
     <div id="listaHistorial"><p class="empty">Cargando...</p></div>
+  </section>
+
+  <section id="tab-calendario">
+    <div class="cal-toolbar">
+      <div class="cal-nav">
+        <button class="btn btn-ghost" id="calAnterior">←</button>
+        <h2 id="calTitulo" style="margin:0;"></h2>
+        <button class="btn btn-ghost" id="calSiguiente">→</button>
+      </div>
+      <div class="cal-vista-switch">
+        <button class="cal-vista-btn active" data-vista="mes">Mes</button>
+        <button class="cal-vista-btn" data-vista="semana">Semana</button>
+      </div>
+    </div>
+
+    <div id="calMes" class="cal-mes"></div>
+    <div id="calSemana" class="cal-semana" style="display:none;"></div>
+
+    <div id="calDiaSeleccionado" style="margin-top:24px;"></div>
   </section>
 
   <section id="tab-disponibilidad">
@@ -557,6 +609,7 @@ async function iniciar(){
   cargarPacientes();
   cargarConfig();
   cargarResumen();
+  cargarCalendario();
 }
 
 document.getElementById('btnSalir').addEventListener('click', async ()=>{
@@ -1308,6 +1361,7 @@ document.getElementById('btnConfirmarCancelar').addEventListener('click', async 
   btn.disabled = false;
   cargarCitas();
   cargarResumen();
+  cargarCalendario();
   setTimeout(()=>cerrarModal('modalCancelar'), 1300);
 });
 
@@ -1452,10 +1506,176 @@ document.getElementById('btnConfirmarReprogramar').addEventListener('click', asy
   msg.className = 'msg ok';
   cargarCitas();
   cargarResumen();
+  cargarCalendario();
   setTimeout(()=>cerrarModal('modalReprogramar'), 1200);
 });
 
 function capitalizar(t){ return t.charAt(0).toUpperCase() + t.slice(1); }
+
+/* ---------- calendario ---------- */
+const MESES_LARGO = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+const DIAS_LARGO = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
+const HORA_INICIO_SEMANA = 7;   // 7:00
+const HORA_FIN_SEMANA = 21;     // 21:00
+
+let vistaActual = 'mes';
+let fechaCalendario = new Date(); // ancla: día visible / semana visible
+let todasLasCitas = []; // cache para pintar el calendario
+
+document.querySelectorAll('.cal-vista-btn').forEach(b=>{
+  b.addEventListener('click', ()=>{
+    document.querySelectorAll('.cal-vista-btn').forEach(x=>x.classList.remove('active'));
+    b.classList.add('active');
+    vistaActual = b.dataset.vista;
+    document.getElementById('calMes').style.display = vistaActual==='mes' ? 'block' : 'none';
+    document.getElementById('calSemana').style.display = vistaActual==='semana' ? 'block' : 'none';
+    document.getElementById('calDiaSeleccionado').innerHTML = '';
+    pintarCalendario();
+  });
+});
+
+document.getElementById('calAnterior').addEventListener('click', ()=>{
+  moverCalendario(-1);
+});
+document.getElementById('calSiguiente').addEventListener('click', ()=>{
+  moverCalendario(1);
+});
+
+function moverCalendario(direccion){
+  if(vistaActual === 'mes'){
+    fechaCalendario.setMonth(fechaCalendario.getMonth() + direccion);
+  } else {
+    fechaCalendario.setDate(fechaCalendario.getDate() + direccion*7);
+  }
+  fechaCalendario = new Date(fechaCalendario);
+  pintarCalendario();
+}
+
+async function cargarCalendario(){
+  const { data } = await sb.from('citas')
+    .select('*, pacientes(nombre)').eq('psicologo_id', yo.id);
+  todasLasCitas = data || [];
+  pintarCalendario();
+}
+
+function pintarCalendario(){
+  if(vistaActual === 'mes') pintarCalMes(); else pintarCalSemana();
+}
+
+function mismoDia(a, b){
+  return a.getFullYear()===b.getFullYear() && a.getMonth()===b.getMonth() && a.getDate()===b.getDate();
+}
+
+function pintarCalMes(){
+  const hoy = new Date();
+  const anio = fechaCalendario.getFullYear();
+  const mes = fechaCalendario.getMonth();
+
+  document.getElementById('calTitulo').textContent = `${MESES_LARGO[mes]} ${anio}`;
+
+  const primerDiaMes = new Date(anio, mes, 1);
+  const inicioGrid = new Date(primerDiaMes);
+  inicioGrid.setDate(primerDiaMes.getDate() - primerDiaMes.getDay()); // retrocede al domingo
+
+  let celdas = '';
+  for(let i=0; i<42; i++){
+    const d = new Date(inicioGrid);
+    d.setDate(inicioGrid.getDate() + i);
+    const fueraDeMes = d.getMonth() !== mes;
+    const esHoy = mismoDia(d, hoy);
+
+    const citasDia = todasLasCitas.filter(c=> mismoDia(new Date(c.fecha_hora), d))
+      .sort((a,b)=> new Date(a.fecha_hora) - new Date(b.fecha_hora));
+
+    const chips = citasDia.slice(0,3).map(c=>{
+      const hora = new Date(c.fecha_hora).toLocaleTimeString('es-MX',{hour:'2-digit',minute:'2-digit'});
+      const nombre = c.pacientes ? c.pacientes.nombre.split(' ')[0] : 'Paciente';
+      return `<div class="cal-evento-chip ${c.estado==='cancelada'?'cancelada':''}">${hora} ${escapar(nombre)}</div>`;
+    }).join('');
+    const mas = citasDia.length > 3 ? `<div class="cal-mas">+${citasDia.length-3} más</div>` : '';
+
+    celdas += `
+      <div class="cal-dia ${fueraDeMes?'fuera-de-mes':''} ${esHoy?'hoy':''}" data-fecha="${d.toISOString()}" onclick="seleccionarDiaCal(this)">
+        <div class="cal-dia-num">${d.getDate()}</div>
+        ${chips}${mas}
+      </div>`;
+  }
+
+  document.getElementById('calMes').innerHTML = `
+    <div class="cal-mes-cabecera">${DIAS_LARGO.map(d=>`<div>${d}</div>`).join('')}</div>
+    <div class="cal-mes-grid">${celdas}</div>
+  `;
+}
+
+function seleccionarDiaCal(el){
+  document.querySelectorAll('.cal-dia').forEach(d=>d.classList.remove('seleccionado'));
+  el.classList.add('seleccionado');
+  const fecha = new Date(el.dataset.fecha);
+  mostrarCitasDelDia(fecha);
+}
+window.seleccionarDiaCal = seleccionarDiaCal;
+
+function mostrarCitasDelDia(fecha){
+  const cont = document.getElementById('calDiaSeleccionado');
+  const citasDia = todasLasCitas.filter(c=> mismoDia(new Date(c.fecha_hora), fecha))
+    .sort((a,b)=> new Date(a.fecha_hora) - new Date(b.fecha_hora));
+
+  const titulo = capitalizar(fecha.toLocaleDateString('es-MX', {weekday:'long', day:'numeric', month:'long'}));
+
+  if(!citasDia.length){
+    cont.innerHTML = `<h2>${titulo}</h2><p class="empty">No hay sesiones este día.</p>`;
+    return;
+  }
+  cont.innerHTML = `<h2>${titulo}</h2>` + citasDia.map(c=>tarjetaCita(c, new Date(c.fecha_hora) >= new Date())).join('');
+}
+
+function pintarCalSemana(){
+  // Domingo como inicio de semana, igual que la vista de mes.
+  const inicioSemana = new Date(fechaCalendario);
+  inicioSemana.setDate(fechaCalendario.getDate() - fechaCalendario.getDay());
+
+  const finSemana = new Date(inicioSemana);
+  finSemana.setDate(inicioSemana.getDate() + 6);
+
+  document.getElementById('calTitulo').textContent =
+    `${inicioSemana.getDate()} ${MESES[inicioSemana.getMonth()]} – ${finSemana.getDate()} ${MESES[finSemana.getMonth()]}`;
+
+  const hoy = new Date();
+  const dias = [];
+  for(let i=0;i<7;i++){
+    const d = new Date(inicioSemana);
+    d.setDate(inicioSemana.getDate()+i);
+    dias.push(d);
+  }
+
+  let cabecera = '<div class="cal-hora-label"></div>' + dias.map(d=>
+    `<div class="${mismoDia(d,hoy)?'hoy-col':''}">${DIAS_LARGO[d.getDay()]} ${d.getDate()}</div>`
+  ).join('');
+
+  let filas = '';
+  for(let h=HORA_INICIO_SEMANA; h<=HORA_FIN_SEMANA; h++){
+    filas += `<div class="cal-hora-label">${h}:00</div>`;
+    dias.forEach(d=>{
+      const citasHora = todasLasCitas.filter(c=>{
+        const f = new Date(c.fecha_hora);
+        return mismoDia(f, d) && f.getHours() === h;
+      });
+      const contenido = citasHora.map(c=>{
+        const hora = new Date(c.fecha_hora).toLocaleTimeString('es-MX',{hour:'2-digit',minute:'2-digit'});
+        const nombre = c.pacientes ? c.pacientes.nombre.split(' ')[0] : 'Paciente';
+        return `<div class="cal-evento-semana ${c.estado==='cancelada'?'cancelada':''}" onclick="mostrarCitasDelDia(new Date('${c.fecha_hora}'))">${hora} ${escapar(nombre)}</div>`;
+      }).join('');
+      filas += `<div class="cal-hora-celda">${contenido}</div>`;
+    });
+  }
+
+  document.getElementById('calSemana').innerHTML = `
+    <div class="cal-semana-grid">
+      <div class="cal-semana-cabecera">${cabecera}</div>
+      ${filas}
+    </div>`;
+}
+window.mostrarCitasDelDia = mostrarCitasDelDia;
 
 function iniciales(nombre){
   return (nombre||'').trim().split(/\s+/).slice(0,2).map(p=>p[0].toUpperCase()).join('');
