@@ -73,6 +73,13 @@
   .btn-primary:hover{background:var(--yellow-soft);}
   .btn-ghost{background:none;border:1.5px solid var(--line);color:var(--ink);}
   .btn:disabled{opacity:.5;cursor:default;}
+  .btn-videollamada-pendiente{background:#f2f2f2;color:#999;cursor:not-allowed;border:1.5px solid var(--line);}
+  .btn-pagar{background:var(--yellow);color:#fff;border:none;}
+  .btn-pagar:hover{background:var(--yellow-soft);}
+  .pago-mock{border:1.5px solid var(--line);border-radius:12px;padding:18px;margin-bottom:16px;}
+  .pago-mock-fila{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;font-size:14px;padding-bottom:14px;border-bottom:1px solid var(--line);}
+  .pago-mock-campos input{margin-bottom:10px;background:#FAFAFA;}
+  .pago-mock-dos{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
   .tag{display:inline-block;font-size:10.5px;font-weight:800;letter-spacing:.8px;text-transform:uppercase;padding:4px 9px;border-radius:20px;}
   .tag.confirmada{background:#D4EDDA;color:#2e7d32;}
   .tag.pendiente_pago{background:#FFF3CD;color:#8a6d1a;}
@@ -224,6 +231,34 @@
     <div class="modal-actions">
       <button class="btn btn-ghost" onclick="cerrarModal('modalReprogramar')">Volver</button>
       <button class="btn btn-primary" id="btnConfirmarReprogramar" disabled>Mover la sesión</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-bg" id="modalPago">
+  <div class="modal">
+    <h3>Pagar sesión</h3>
+    <p class="modal-sub">Simulación de cobro. Todavía no está conectado un procesador de pagos real.</p>
+
+    <div class="pago-mock">
+      <div class="pago-mock-fila">
+        <span>Sesión</span>
+        <strong id="pagoMonto">$0 MXN</strong>
+      </div>
+      <div class="pago-mock-campos">
+        <input type="text" placeholder="Número de tarjeta" disabled>
+        <div class="pago-mock-dos">
+          <input type="text" placeholder="MM/AA" disabled>
+          <input type="text" placeholder="CVC" disabled>
+        </div>
+      </div>
+    </div>
+
+    <p class="aviso-caja" style="display:block;">Cuando se conecte el cobro real, esta pantalla se reemplaza por la ventana segura del procesador de pagos. Por ahora, ningún cargo se realiza.</p>
+
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="cerrarModal('modalPago')">Cerrar</button>
+      <button class="btn btn-primary" disabled title="El cobro todavía no está conectado">Pagar (próximamente)</button>
     </div>
   </div>
 </div>
@@ -474,8 +509,13 @@ function tarjeta(c, esProxima){
           : ''}
       </div>
       <div class="acciones">
-        ${puedeEntrar && c.daily_room_url
-          ? `<a class="btn btn-primary" href="${c.daily_room_url}" target="_blank">Entrar a la sesión</a>`
+        ${c.estado === 'pendiente_pago' && f > new Date()
+          ? `<button class="btn btn-pagar" onclick="abrirPago('${c.id}', ${c.precio || 0})">Pagar ahora</button>`
+          : ''}
+        ${puedeEntrar
+          ? (c.daily_room_url
+              ? `<a class="btn btn-primary" href="${c.daily_room_url}" target="_blank">Entrar a la sesión</a>`
+              : `<button class="btn btn-videollamada-pendiente" disabled title="La videollamada aún no está conectada">Videollamada · Próximamente</button>`)
           : ''}
         ${modificable ? `<button class="btn btn-ghost" onclick="abrirReprogramar('${c.id}')">Reprogramar</button>` : ''}
         ${modificable ? `<button class="btn btn-danger" onclick="abrirCancelar('${c.id}')">Cancelar</button>` : ''}
@@ -645,6 +685,16 @@ document.getElementById('btnAgendar').addEventListener('click', async ()=>{
     window.scrollTo({top:0, behavior:'smooth'});
   }, 1200);
 });
+
+/* ---------- pago (simulado, sin conectar todavía) ---------- */
+function abrirPago(citaId, precio){
+  const monto = precio > 0
+    ? `$${Number(precio).toLocaleString('es-MX')} ${cfg.moneda}`
+    : 'Precio no definido';
+  document.getElementById('pagoMonto').textContent = monto;
+  abrirModal('modalPago');
+}
+window.abrirPago = abrirPago;
 
 /* ---------- cancelar ---------- */
 let citaCancelar = null;

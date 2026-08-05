@@ -49,6 +49,19 @@
   textarea.alto{min-height:130px;}
   .barra-guardar{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;margin-top:4px;}
   @media(max-width:640px){.rejilla{grid-template-columns:1fr;}}
+
+  .integracion-fila{border-top:1px solid var(--line);padding-top:16px;margin-top:16px;}
+  .integracion-fila:first-of-type{border-top:none;padding-top:0;margin-top:0;}
+  .integracion-toggle{display:flex;align-items:flex-start;gap:12px;}
+  .integracion-nombre{font-size:13.5px;font-weight:700;display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+  .integracion-desc{font-size:12px;color:var(--gray);line-height:1.6;margin-top:4px;}
+  .badge-proximamente{display:inline-block;font-size:9.5px;font-weight:800;letter-spacing:.6px;text-transform:uppercase;padding:3px 9px;border-radius:20px;background:#FFF3CD;color:#8a6d1a;}
+  .switch{position:relative;display:inline-block;width:38px;height:22px;flex-shrink:0;margin-top:1px;}
+  .switch input{opacity:0;width:0;height:0;}
+  .switch .slider{position:absolute;cursor:pointer;inset:0;background:#ddd;border-radius:22px;transition:.2s;}
+  .switch .slider::before{content:"";position:absolute;height:16px;width:16px;left:3px;bottom:3px;background:#fff;border-radius:50%;transition:.2s;}
+  .switch input:checked + .slider{background:var(--yellow);}
+  .switch input:checked + .slider::before{transform:translateX(16px);}
   label{display:block;font-size:12.5px;font-weight:700;margin-bottom:6px;}
   input,select,textarea{width:100%;padding:11px 13px;border:1.5px solid var(--line);border-radius:10px;font-family:inherit;font-size:14px;background:#fff;color:var(--ink);}
   input:focus,select:focus,textarea:focus{outline:none;border-color:var(--yellow);}
@@ -61,6 +74,7 @@
   .btn-ghost:hover{border-color:var(--yellow);}
   .btn-danger{background:none;border:1.5px solid var(--line);color:var(--err);}
   .btn:disabled{opacity:.5;cursor:default;}
+  .btn-videollamada-pendiente{background:#f2f2f2;color:#999;cursor:not-allowed;border:1.5px solid var(--line);}
   .msg{font-size:13px;margin-top:12px;min-height:17px;}
   .msg.err{color:var(--err);}
   .msg.ok{color:var(--ok);}
@@ -247,6 +261,42 @@
         <div class="campo">
           <label for="politicasGenerales">Políticas del consultorio</label>
           <textarea id="politicasGenerales" class="alto" placeholder="Escribe aquí el encuadre que compartes con tus pacientes."></textarea>
+        </div>
+      </div>
+
+      <div class="bloque">
+        <h3>Integraciones</h3>
+        <p class="bh">Estas conexiones todavía no están activas. Deja tus datos listos y en cuanto se conecten, empiezan a funcionar sin que tengas que configurar nada de nuevo.</p>
+
+        <div class="integracion-fila">
+          <div class="integracion-info">
+            <div class="integracion-nombre">Cobro con tarjeta <span class="badge-proximamente">Próximamente</span></div>
+            <p class="integracion-desc">Tus pacientes pagarán al momento de agendar. Por ahora, las citas quedan como "pendiente de pago" y el cobro se resuelve fuera de la plataforma.</p>
+          </div>
+        </div>
+
+        <div class="integracion-fila">
+          <div class="integracion-info">
+            <div class="integracion-nombre">Videollamada integrada <span class="badge-proximamente">Próximamente</span></div>
+            <p class="integracion-desc">La sala de videollamada se abrirá desde el mismo panel, 10 minutos antes de cada cita. Por ahora, coordina el enlace de la sesión por tu cuenta.</p>
+          </div>
+        </div>
+
+        <div class="integracion-fila">
+          <div class="integracion-toggle">
+            <label class="switch">
+              <input type="checkbox" id="whatsappActivo">
+              <span class="slider"></span>
+            </label>
+            <div>
+              <div class="integracion-nombre">Recordatorios por WhatsApp <span class="badge-proximamente">Próximamente</span></div>
+              <p class="integracion-desc">Cuando se conecte, tus pacientes recibirán un recordatorio automático 24 h y 1 h antes de su sesión. Deja tu número listo desde ahora.</p>
+            </div>
+          </div>
+          <div class="campo" style="margin-top:14px;">
+            <label for="whatsappNumero">Número de WhatsApp del consultorio</label>
+            <input type="tel" id="whatsappNumero" placeholder="Ej. 55 1234 5678">
+          </div>
         </div>
       </div>
 
@@ -528,7 +578,11 @@ function tarjetaCita(c, esProxima){
         ${c.motivo_cancelacion ? `<p class="motivo">Motivo: ${escapar(c.motivo_cancelacion)}</p>` : ''}
       </div>
       <div style="display:flex;gap:8px;flex-wrap:wrap;">
-        ${puedeEntrar && c.daily_room_url ? `<a class="btn btn-primary" href="${c.daily_room_url}" target="_blank">Entrar a la sesión</a>` : ''}
+        ${puedeEntrar
+          ? (c.daily_room_url
+              ? `<a class="btn btn-primary" href="${c.daily_room_url}" target="_blank">Entrar a la sesión</a>`
+              : `<button class="btn btn-videollamada-pendiente" disabled title="La videollamada aún no está conectada">Videollamada · Próximamente</button>`)
+          : ''}
         ${c.paciente_id ? `<a class="btn btn-ghost" href="./expediente.html?id=${c.paciente_id}">Expediente</a>` : ''}
         ${modificable ? `<button class="btn btn-ghost" onclick="abrirReprogramar('${c.id}')">Reprogramar</button>` : ''}
         ${modificable ? `<button class="btn btn-danger" onclick="abrirCancelar('${c.id}')">Cancelar</button>` : ''}
@@ -560,7 +614,8 @@ const CAMPOS_CONFIG = {
   diasMaxAnticipacion:  'dias_max_anticipacion',
   horasMinimasCancelar: 'horas_minimas_cancelar',
   politicaCancelacion:  'politica_cancelacion',
-  politicasGenerales:   'politicas_generales'
+  politicasGenerales:   'politicas_generales',
+  whatsappNumero:       'whatsapp_numero'
 };
 
 async function cargarConfig(){
@@ -588,6 +643,8 @@ async function cargarConfig(){
     const el = document.getElementById(idInput);
     if(el) el.value = config[columna] ?? '';
   });
+
+  document.getElementById('whatsappActivo').checked = !!config.whatsapp_activo;
 }
 
 document.getElementById('formConfig').addEventListener('submit', async (e)=>{
@@ -614,6 +671,8 @@ document.getElementById('formConfig').addEventListener('submit', async (e)=>{
     horas_minimas_cancelar:    numero('horasMinimasCancelar', 24),
     politica_cancelacion:      vacioNull(document.getElementById('politicaCancelacion').value),
     politicas_generales:       vacioNull(document.getElementById('politicasGenerales').value),
+    whatsapp_numero:           vacioNull(document.getElementById('whatsappNumero').value),
+    whatsapp_activo:           document.getElementById('whatsappActivo').checked,
     actualizado_en:            new Date().toISOString()
   };
 
