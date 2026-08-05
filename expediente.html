@@ -25,6 +25,8 @@
   .btn-primary:hover{background:var(--yellow-soft);}
   .btn-ghost{background:none;border:1.5px solid var(--line);color:var(--ink);}
   .btn-ghost:hover{border-color:var(--yellow);}
+  .btn-danger{background:none;border:1.5px solid var(--line);color:var(--err);}
+  .btn-danger:hover{border-color:var(--err);}
   .btn:disabled{opacity:.5;cursor:default;}
   main{max-width:860px;margin:0 auto;padding:32px 24px 90px;}
   .volver{font-size:13px;color:var(--gray);display:inline-block;margin-bottom:18px;}
@@ -60,6 +62,20 @@
   .card .fecha-sub{font-size:12.5px;color:var(--gray);}
   .card .previo{font-size:13px;color:#444;line-height:1.7;margin-top:12px;padding-top:12px;border-top:1px solid var(--line);white-space:pre-wrap;}
   .empty{color:var(--gray);font-size:13.5px;text-align:center;padding:34px 0;border:1.5px dashed var(--line);border-radius:14px;}
+  .subir-box{border:1.5px dashed var(--line);border-radius:16px;padding:26px;text-align:center;}
+  .subir-label{display:block;cursor:pointer;margin-bottom:16px;}
+  .subir-label strong{display:block;font-size:14.5px;margin-bottom:4px;}
+  .subir-label span{font-size:12.5px;color:var(--gray);}
+  .subir-controles{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;}
+  .subir-controles select{width:auto;min-width:160px;}
+  .nombre-elegido{font-size:12.5px;color:var(--ink);margin-top:12px;font-weight:700;}
+  .doc-card{border:1.5px solid var(--line);border-radius:14px;padding:16px 18px;margin-bottom:10px;display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;}
+  .doc-info{display:flex;align-items:center;gap:12px;min-width:0;}
+  .doc-icono{width:38px;height:38px;border-radius:10px;background:var(--verde-claro, #EDF5EC);color:var(--yellow);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;}
+  .doc-nombre{font-size:13.5px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:260px;}
+  .doc-meta{font-size:11.5px;color:var(--gray);margin-top:2px;}
+  .doc-tag{display:inline-block;font-size:10px;font-weight:800;letter-spacing:.6px;text-transform:uppercase;padding:3px 9px;border-radius:12px;background:#f2f2f2;color:#666;margin-right:6px;}
+  .doc-acciones{display:flex;gap:8px;flex-shrink:0;}
   .modal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:50;align-items:center;justify-content:center;padding:20px;}
   .modal-bg.show{display:flex;}
   .modal{background:#fff;border-radius:18px;padding:28px;max-width:620px;width:100%;max-height:90vh;overflow:auto;}
@@ -100,6 +116,7 @@
     <nav class="tabs">
       <button class="active" data-tab="ficha">Ficha</button>
       <button data-tab="notas">Notas por sesión</button>
+      <button data-tab="documentos">Documentos</button>
     </nav>
 
     <section id="tab-ficha" class="active">
@@ -177,6 +194,30 @@
 
     <section id="tab-notas">
       <div id="listaNotas"><p class="empty">Cargando sesiones...</p></div>
+    </section>
+
+    <section id="tab-documentos">
+      <div class="subir-box">
+        <label for="inputArchivo" class="subir-label">
+          <strong>Subir un documento</strong>
+          <span>PDF, imágenes o archivos de este paciente. Máximo 20 MB.</span>
+        </label>
+        <input type="file" id="inputArchivo" style="display:none;"
+               accept=".pdf,.jpg,.jpeg,.png,.doc,.docx">
+        <div class="subir-controles">
+          <select id="tipoDocumento">
+            <option value="estudio">Estudio</option>
+            <option value="informe">Informe</option>
+            <option value="consentimiento">Consentimiento</option>
+            <option value="otro">Otro</option>
+          </select>
+          <button type="button" class="btn btn-ghost" id="btnElegirArchivo">Elegir archivo</button>
+        </div>
+        <p id="nombreArchivoElegido" class="nombre-elegido"></p>
+        <p class="msg" id="msgSubida"></p>
+      </div>
+
+      <div id="listaDocumentos" style="margin-top:20px;"><p class="empty">Cargando documentos...</p></div>
     </section>
   </div>
 </main>
@@ -258,6 +299,7 @@ async function iniciar(){
 
   pintarFicha();
   cargarNotas();
+  cargarDocumentos();
 }
 
 /* ---------- pestañas y modales ---------- */
@@ -467,6 +509,165 @@ document.getElementById('btnGuardarNota').addEventListener('click', async ()=>{
   setTimeout(()=>cerrarModal('modalNota'), 700);
 });
 
+/* ---------- documentos ---------- */
+const MAX_BYTES = 20 * 1024 * 1024; // 20 MB
+let archivoElegido = null;
+
+document.getElementById('btnElegirArchivo').addEventListener('click', ()=>{
+  document.getElementById('inputArchivo').click();
+});
+
+document.getElementById('inputArchivo').addEventListener('change', async (e)=>{
+  const file = e.target.files[0];
+  const msg = document.getElementById('msgSubida');
+  msg.textContent = '';
+
+  if(!file) return;
+
+  if(file.size > MAX_BYTES){
+    msg.textContent = 'El archivo pesa más de 20 MB. Elige uno más pequeño.';
+    msg.className = 'msg err';
+    e.target.value = '';
+    return;
+  }
+
+  archivoElegido = file;
+  document.getElementById('nombreArchivoElegido').textContent = file.name;
+  await subirArchivo();
+});
+
+async function subirArchivo(){
+  if(!archivoElegido) return;
+  const msg = document.getElementById('msgSubida');
+  msg.className = 'msg';
+  msg.textContent = 'Subiendo...';
+
+  const tipo = document.getElementById('tipoDocumento').value;
+  const extension = archivoElegido.name.includes('.')
+    ? archivoElegido.name.split('.').pop()
+    : '';
+  const nombreSeguro = `${Date.now()}-${Math.random().toString(36).slice(2,8)}${extension ? '.'+extension : ''}`;
+  // Ruta: {psicologo_id}/{paciente_id}/{archivo} — así la política de Storage
+  // puede validar dueño con solo mirar la primera carpeta.
+  const ruta = `${yo.id}/${paciente.id}/${nombreSeguro}`;
+
+  const { error: errSubida } = await sb.storage
+    .from('documentos')
+    .upload(ruta, archivoElegido, { contentType: archivoElegido.type || undefined });
+
+  if(errSubida){
+    msg.textContent = 'No se pudo subir: ' + errSubida.message;
+    msg.className = 'msg err';
+    archivoElegido = null;
+    document.getElementById('inputArchivo').value = '';
+    return;
+  }
+
+  const { error: errRegistro } = await sb.from('documentos').insert({
+    paciente_id: paciente.id,
+    psicologo_id: yo.id,
+    nombre: archivoElegido.name,
+    ruta,
+    tipo,
+    mime: archivoElegido.type || null,
+    tamano_bytes: archivoElegido.size
+  });
+
+  if(errRegistro){
+    msg.textContent = 'El archivo se subió pero no se pudo registrar: ' + errRegistro.message;
+    msg.className = 'msg err';
+    archivoElegido = null;
+    document.getElementById('inputArchivo').value = '';
+    return;
+  }
+
+  msg.textContent = 'Documento subido.';
+  msg.className = 'msg ok';
+  archivoElegido = null;
+  document.getElementById('inputArchivo').value = '';
+  document.getElementById('nombreArchivoElegido').textContent = '';
+  cargarDocumentos();
+  setTimeout(()=>{ if(msg.textContent==='Documento subido.') msg.textContent=''; }, 3000);
+}
+
+async function cargarDocumentos(){
+  const cont = document.getElementById('listaDocumentos');
+  const { data, error } = await sb.from('documentos')
+    .select('*').eq('paciente_id', paciente.id).order('subido_en', {ascending:false});
+
+  if(error){ cont.innerHTML = `<p class="empty">Error: ${escapar(error.message)}</p>`; return; }
+  if(!data || !data.length){
+    cont.innerHTML = '<p class="empty">Todavía no hay documentos para este paciente.</p>';
+    return;
+  }
+
+  cont.innerHTML = data.map(d=>`
+    <div class="doc-card">
+      <div class="doc-info">
+        <div class="doc-icono">${iconoPara(d.mime)}</div>
+        <div style="min-width:0;">
+          <div class="doc-nombre">${escapar(d.nombre)}</div>
+          <div class="doc-meta">
+            <span class="doc-tag">${escapar(d.tipo || 'otro')}</span>
+            ${formatoTamano(d.tamano_bytes)} · ${new Date(d.subido_en).toLocaleDateString('es-MX')}
+          </div>
+        </div>
+      </div>
+      <div class="doc-acciones">
+        <button class="btn btn-ghost" onclick="verDocumento('${d.ruta}')">Ver</button>
+        <button class="btn btn-danger" onclick="borrarDocumento('${d.id}','${d.ruta}')">Eliminar</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+function iconoPara(mime){
+  if(!mime) return '📄';
+  if(mime.includes('pdf')) return '📕';
+  if(mime.includes('image')) return '🖼️';
+  if(mime.includes('word') || mime.includes('document')) return '📝';
+  return '📄';
+}
+
+function formatoTamano(bytes){
+  if(!bytes) return '';
+  if(bytes < 1024*1024) return Math.round(bytes/1024) + ' KB';
+  return (bytes/1024/1024).toFixed(1) + ' MB';
+}
+
+// El bucket es privado: se genera una liga temporal válida por 60 segundos.
+async function verDocumento(ruta){
+  const { data, error } = await sb.storage
+    .from('documentos')
+    .createSignedUrl(ruta, 60);
+
+  if(error){
+    alert('No se pudo abrir el documento: ' + error.message);
+    return;
+  }
+  window.open(data.signedUrl, '_blank');
+}
+window.verDocumento = verDocumento;
+
+async function borrarDocumento(id, ruta){
+  if(!confirm('¿Eliminar este documento? No se puede deshacer.')) return;
+
+  const { error: errStorage } = await sb.storage.from('documentos').remove([ruta]);
+  if(errStorage){
+    alert('No se pudo eliminar el archivo: ' + errStorage.message);
+    return;
+  }
+
+  const { error: errFila } = await sb.from('documentos').delete().eq('id', id);
+  if(errFila){
+    alert('El archivo se borró pero no se pudo quitar del registro: ' + errFila.message);
+    return;
+  }
+
+  cargarDocumentos();
+}
+window.borrarDocumento = borrarDocumento;
+
 /* ---------- exportar expediente ---------- */
 document.getElementById('btnExportar').addEventListener('click', async ()=>{
   const btn = document.getElementById('btnExportar');
@@ -495,6 +696,19 @@ document.getElementById('btnExportar').addEventListener('click', async ()=>{
   txt += `Observaciones generales:\n${paciente.observaciones_generales || '-'}\n\n`;
   txt += `Psicólogo tratante: ${yo.nombre}\n`;
   txt += `Exportado el ${new Date().toLocaleString('es-MX')}\n\n`;
+
+  const { data: docs } = await sb.from('documentos')
+    .select('nombre, tipo, subido_en').eq('paciente_id', paciente.id).order('subido_en');
+  txt += 'DOCUMENTOS\n==========\n\n';
+  if(docs && docs.length){
+    docs.forEach(d=>{
+      txt += `- ${d.nombre} (${d.tipo || 'otro'}) — subido el ${new Date(d.subido_en).toLocaleDateString('es-MX')}\n`;
+    });
+  } else {
+    txt += '(Sin documentos)\n';
+  }
+  txt += '\n';
+
   txt += 'SESIONES\n========\n\n';
 
   (citas||[]).forEach(c=>{
