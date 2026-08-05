@@ -27,7 +27,7 @@
   nav.sidebar-nav button{display:flex;align-items:center;gap:11px;background:none;border:none;padding:11px 12px;border-radius:12px;font-size:13.5px;font-weight:700;cursor:pointer;font-family:inherit;color:var(--gray);text-align:left;width:100%;}
   nav.sidebar-nav button:hover{background:#F2F6F1;}
   nav.sidebar-nav button.active{background:var(--primario);color:#fff;}
-  nav.sidebar-nav .icono{font-size:15px;width:18px;text-align:center;flex-shrink:0;}
+  nav.sidebar-nav .icono-svg{width:18px;height:18px;flex-shrink:0;}
 
   .sidebar-user{display:flex;align-items:center;gap:10px;padding:14px 8px;margin-top:10px;border-top:1.5px solid var(--line);}
   .sidebar-avatar{width:34px;height:34px;border-radius:50%;background:var(--primario-suave);color:#fff;font-weight:800;font-size:12.5px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
@@ -53,7 +53,7 @@
     .sidebar{width:100%;height:auto;position:static;flex-direction:row;align-items:center;padding:12px 16px;overflow-x:auto;}
     .sidebar-logo{padding:0 12px 0 0;}
     nav.sidebar-nav{flex-direction:row;flex:none;}
-    nav.sidebar-nav button span.icono{margin-right:0;}
+    nav.sidebar-nav button span.icono-svg{margin-right:0;}
     .sidebar-user,.btn-salir{display:none;}
     .topbar-stats{padding:14px 16px;gap:18px;}
   }
@@ -231,12 +231,30 @@
     </a>
 
     <nav class="tabs sidebar-nav">
-      <button class="active" data-tab="resumen"><span class="icono">📊</span>Resumen</button>
-      <button data-tab="citas"><span class="icono">📅</span>Mis citas</button>
-      <button data-tab="calendario"><span class="icono">🗓️</span>Calendario</button>
-      <button data-tab="disponibilidad"><span class="icono">🕐</span>Disponibilidad</button>
-      <button data-tab="pacientes"><span class="icono">👥</span>Mis pacientes</button>
-      <button data-tab="config"><span class="icono">⚙️</span>Configuración</button>
+      <button class="active" data-tab="resumen">
+        <svg class="icono-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="12" width="4" height="8"></rect><rect x="10" y="7" width="4" height="13"></rect><rect x="17" y="3" width="4" height="17"></rect></svg>
+        Resumen
+      </button>
+      <button data-tab="citas">
+        <svg class="icono-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="17" rx="2"></rect><line x1="3" y1="9" x2="21" y2="9"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="16" y1="2" x2="16" y2="6"></line></svg>
+        Mis citas
+      </button>
+      <button data-tab="calendario">
+        <svg class="icono-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="17" rx="2"></rect><line x1="3" y1="10" x2="21" y2="10"></line><line x1="9" y1="10" x2="9" y2="21"></line><line x1="15" y1="10" x2="15" y2="21"></line></svg>
+        Calendario
+      </button>
+      <button data-tab="disponibilidad">
+        <svg class="icono-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"></circle><polyline points="12 7 12 12 15.5 14"></polyline></svg>
+        Disponibilidad
+      </button>
+      <button data-tab="pacientes">
+        <svg class="icono-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="8.5" cy="8" r="3"></circle><path d="M2.5 20c0-3.3 2.7-6 6-6s6 2.7 6 6"></path><circle cx="17" cy="8.5" r="2.5"></circle><path d="M15.5 14.2c2.6.4 4.5 2.6 4.5 5.3"></path></svg>
+        Mis pacientes
+      </button>
+      <button data-tab="config">
+        <svg class="icono-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 13a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V19a2 2 0 0 1-4 0v-.09a1.65 1.65 0 0 0-1.08-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H4a2 2 0 0 1 0-4h.09a1.65 1.65 0 0 0 1.51-1.08 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33h.05A1.65 1.65 0 0 0 11 4.09V4a2 2 0 0 1 4 0v.09c0 .66.4 1.25 1 1.51h.05a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82v.05c.26.6.85 1 1.51 1H20a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+        Configuración
+      </button>
     </nav>
 
     <div class="sidebar-user">
