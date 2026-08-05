@@ -74,6 +74,28 @@
   a.card{transition:border-color .15s;}
   a.card:hover{border-color:var(--primario);}
   .filtros{display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;}
+
+  .pac-toolbar{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:18px;}
+  .select-orden{width:auto;min-width:200px;padding:9px 12px;font-size:12.5px;}
+
+  .grid-pacientes{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:14px;}
+  .pac-card{background:#fff;border:1.5px solid var(--line);border-radius:16px;padding:18px;cursor:grab;transition:box-shadow .15s,border-color .15s,opacity .15s;}
+  .pac-card:active{cursor:grabbing;}
+  .pac-card.arrastrando{opacity:.4;}
+  .pac-card.zona-drop{border-color:var(--primario);border-style:dashed;}
+  .pac-card-top{display:flex;align-items:center;gap:11px;margin-bottom:12px;}
+  .pac-avatar{width:42px;height:42px;border-radius:50%;background:var(--primario-suave);color:#fff;font-weight:800;font-size:14px;display:flex;align-items:center;justify-content:center;flex-shrink:0;overflow:hidden;background-size:cover;background-position:center;}
+  .pac-nombre{font-size:14.5px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .pac-correo{font-size:11.5px;color:var(--gray);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .pac-motivo{font-size:12.5px;color:#555;line-height:1.5;margin-bottom:12px;min-height:19px;overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;}
+  .pac-estado-tag{display:inline-block;font-size:10px;font-weight:800;letter-spacing:.5px;text-transform:uppercase;padding:3px 9px;border-radius:20px;margin-bottom:12px;}
+  .pac-estado-tag.activo{background:#E4F3E1;color:var(--primario);}
+  .pac-estado-tag.pausa{background:#FFF1DB;color:#B5680A;}
+  .pac-estado-tag.dado_de_alta{background:#E4EEFB;color:#1a5cb0;}
+  .pac-acciones{display:flex;flex-wrap:wrap;gap:6px;}
+  .pac-btn{flex:1 1 auto;text-align:center;font-size:11px;padding:8px 8px;border-radius:10px;border:1.5px solid var(--line);background:#fff;cursor:pointer;font-family:inherit;font-weight:700;color:var(--ink);white-space:nowrap;}
+  .pac-btn:hover{border-color:var(--primario);color:var(--primario);}
+  .pac-btn.pac-btn-peligro:hover{border-color:var(--err);color:var(--err);}
   .chip{border:1.5px solid var(--line);background:none;border-radius:20px;padding:8px 15px;font-size:12.5px;font-weight:700;cursor:pointer;font-family:inherit;color:var(--gray);}
   .chip.sel{border-color:var(--primario);background:#EAF5E8;color:var(--ink);}
   .bloque{border:1.5px solid var(--line);border-radius:16px;padding:22px 24px;margin-bottom:18px;background:#fff;}
@@ -284,11 +306,22 @@
 
   <section id="tab-pacientes">
     <h2>Mis pacientes</h2>
-    <p class="sub">Da de alta a tus pacientes y compárteles su liga de registro. Solo ellos podrán ver tu agenda.</p>
+    <p class="sub">Arrastra las tarjetas para acomodarlas como quieras, o usa un orden automático.</p>
 
-    <button class="btn btn-primary" id="btnNuevoPaciente">Invitar paciente</button>
+    <div class="pac-toolbar">
+      <button class="btn btn-primary" id="btnNuevoPaciente">Invitar paciente</button>
+      <select id="ordenPacientes" class="select-orden">
+        <option value="manual">Orden manual (arrastrar)</option>
+        <option value="ingresos">Por ingresos generados</option>
+        <option value="sesiones">Por número de sesiones</option>
+        <option value="antiguo">Más antiguo primero</option>
+        <option value="reciente">Más reciente primero</option>
+      </select>
+    </div>
 
-    <div id="listaPacientes" style="margin-top:24px;"><p class="empty">Cargando...</p></div>
+    <div class="filtros" id="filtrosPacientes"></div>
+
+    <div id="listaPacientes" class="grid-pacientes"><p class="empty">Cargando...</p></div>
   </section>
 
   <section id="tab-config">
@@ -597,59 +630,210 @@ async function borrarBloque(id){
 }
 window.borrarBloque = borrarBloque;
 
-/* ---------- pacientes ---------- */
+/* ---------- pacientes (tarjetas kanban) ---------- */
 let pacientesCache = [];
+let citasPorPaciente = {}; // { paciente_id: { sesiones, ingresos } }
 let filtroPacientes = 'activo';
+let ordenActual = 'manual';
+let idArrastrado = null;
 
 async function cargarPacientes(){
   const cont = document.getElementById('listaPacientes');
   const { data, error } = await sb.from('pacientes')
-    .select('*').eq('psicologo_id', yo.id).order('nombre');
+    .select('*').eq('psicologo_id', yo.id).order('orden', {ascending:true});
 
   if(error){ cont.innerHTML = `<p class="empty">Error: ${escapar(error.message)}</p>`; return; }
   pacientesCache = data || [];
+
+  // Agregados por paciente, para los órdenes automáticos.
+  const { data: citasP } = await sb.from('citas')
+    .select('paciente_id, precio, estado').eq('psicologo_id', yo.id);
+
+  citasPorPaciente = {};
+  (citasP||[]).forEach(c=>{
+    if(!citasPorPaciente[c.paciente_id]) citasPorPaciente[c.paciente_id] = { sesiones:0, ingresos:0 };
+    if(c.estado !== 'cancelada') citasPorPaciente[c.paciente_id].sesiones++;
+    if(c.estado === 'confirmada' || c.estado === 'completada'){
+      citasPorPaciente[c.paciente_id].ingresos += Number(c.precio) || 0;
+    }
+  });
+
+  pintarFiltrosPacientes();
   pintarPacientes();
+}
+
+function pintarFiltrosPacientes(){
+  const activos      = pacientesCache.filter(p=> p.estado === 'activo').length;
+  const pausa        = pacientesCache.filter(p=> p.estado === 'pausa').length;
+  const dadosDeAlta  = pacientesCache.filter(p=> p.estado === 'dado_de_alta').length;
+  const archivados   = pacientesCache.filter(p=> p.estado === 'archivado').length;
+
+  document.getElementById('filtrosPacientes').innerHTML = `
+    <button class="chip ${filtroPacientes==='activo'?'sel':''}" onclick="filtrarPacientes('activo')">Activos (${activos})</button>
+    <button class="chip ${filtroPacientes==='pausa'?'sel':''}" onclick="filtrarPacientes('pausa')">En pausa (${pausa})</button>
+    <button class="chip ${filtroPacientes==='dado_de_alta'?'sel':''}" onclick="filtrarPacientes('dado_de_alta')">Dados de alta (${dadosDeAlta})</button>
+    ${archivados ? `<button class="chip ${filtroPacientes==='archivado'?'sel':''}" onclick="filtrarPacientes('archivado')">Archivados (${archivados})</button>` : ''}
+  `;
+}
+
+function filtrarPacientes(estado){
+  filtroPacientes = estado;
+  pintarFiltrosPacientes();
+  pintarPacientes();
+}
+window.filtrarPacientes = filtrarPacientes;
+
+document.getElementById('ordenPacientes').addEventListener('change', (e)=>{
+  ordenActual = e.target.value;
+  pintarPacientes();
+});
+
+function listaOrdenada(lista){
+  const copia = [...lista];
+  if(ordenActual === 'ingresos'){
+    copia.sort((a,b)=> (citasPorPaciente[b.id]?.ingresos||0) - (citasPorPaciente[a.id]?.ingresos||0));
+  } else if(ordenActual === 'sesiones'){
+    copia.sort((a,b)=> (citasPorPaciente[b.id]?.sesiones||0) - (citasPorPaciente[a.id]?.sesiones||0));
+  } else if(ordenActual === 'antiguo'){
+    copia.sort((a,b)=> new Date(a.creado_en) - new Date(b.creado_en));
+  } else if(ordenActual === 'reciente'){
+    copia.sort((a,b)=> new Date(b.creado_en) - new Date(a.creado_en));
+  }
+  // 'manual' respeta el orden que ya trae (columna orden).
+  return copia;
 }
 
 function pintarPacientes(){
   const cont = document.getElementById('listaPacientes');
-
-  const activos   = pacientesCache.filter(p=> (p.estado||'activo') === 'activo');
-  const inactivos = pacientesCache.filter(p=> (p.estado||'activo') === 'inactivo');
-  const lista = filtroPacientes === 'activo' ? activos : inactivos;
-
-  const filtros = `
-    <div class="filtros">
-      <button class="chip ${filtroPacientes==='activo'?'sel':''}" onclick="filtrarPacientes('activo')">Activos (${activos.length})</button>
-      <button class="chip ${filtroPacientes==='inactivo'?'sel':''}" onclick="filtrarPacientes('inactivo')">Inactivos (${inactivos.length})</button>
-    </div>`;
 
   if(!pacientesCache.length){
     cont.innerHTML = '<p class="empty">Todavía no tienes pacientes registrados. Usa el botón de arriba para invitar al primero.</p>';
     return;
   }
 
+  const lista = listaOrdenada(pacientesCache.filter(p=> p.estado === filtroPacientes));
+
   if(!lista.length){
-    cont.innerHTML = filtros + `<p class="empty">No tienes pacientes ${filtroPacientes === 'activo' ? 'activos' : 'inactivos'}.</p>`;
+    cont.innerHTML = '<p class="empty">No tienes pacientes en esta categoría.</p>';
     return;
   }
 
-  cont.innerHTML = filtros + lista.map(p=>`
-    <a class="card flex" href="./expediente.html?id=${p.id}">
-      <div>
-        <h3>${escapar(p.nombre)}</h3>
-        <p>${escapar(p.correo)}${p.motivo_consulta ? ' · ' + escapar(recortar(p.motivo_consulta, 60)) : ''}</p>
-      </div>
-      <span class="btn btn-ghost">Ver expediente</span>
-    </a>
-  `).join('');
+  const arrastrable = ordenActual === 'manual';
+
+  cont.innerHTML = lista.map(p=>{
+    const agg = citasPorPaciente[p.id] || { sesiones:0, ingresos:0 };
+    const avatarEstilo = p.foto_url
+      ? `style="background-image:url(${p.foto_url})"`
+      : '';
+    const inicial = (p.nombre||'?').charAt(0).toUpperCase();
+
+    return `
+      <div class="pac-card" draggable="${arrastrable}" data-id="${p.id}">
+        <div class="pac-card-top">
+          <div class="pac-avatar" ${avatarEstilo}>${p.foto_url ? '' : inicial}</div>
+          <div style="min-width:0;">
+            <div class="pac-nombre">${escapar(p.nombre)}</div>
+            <div class="pac-correo">${escapar(p.correo)}</div>
+          </div>
+        </div>
+        <span class="pac-estado-tag ${p.estado}">${etiquetaEstadoPaciente(p.estado)}</span>
+        <p class="pac-motivo">${p.motivo_consulta ? escapar(recortar(p.motivo_consulta, 90)) : 'Sin motivo de consulta registrado.'}</p>
+        <p style="font-size:11px;color:var(--gray);margin-bottom:12px;">${agg.sesiones} sesión(es) · $${agg.ingresos.toLocaleString('es-MX')} generados</p>
+        <div class="pac-acciones">
+          <a class="pac-btn" href="./expediente.html?id=${p.id}">Expediente</a>
+          ${botonesEstado(p)}
+        </div>
+      </div>`;
+  }).join('');
+
+  if(arrastrable) activarArrastre();
 }
 
-function filtrarPacientes(estado){
-  filtroPacientes = estado;
-  pintarPacientes();
+function etiquetaEstadoPaciente(estado){
+  return {activo:'Activo', pausa:'En pausa', dado_de_alta:'Dado de alta', archivado:'Archivado'}[estado] || estado;
 }
-window.filtrarPacientes = filtrarPacientes;
+
+function botonesEstado(p){
+  const botones = [];
+  if(p.estado !== 'activo') botones.push(`<button class="pac-btn" onclick="cambiarEstadoPaciente('${p.id}','activo')">Activar</button>`);
+  if(p.estado !== 'pausa') botones.push(`<button class="pac-btn" onclick="cambiarEstadoPaciente('${p.id}','pausa')">Pausar</button>`);
+  if(p.estado !== 'dado_de_alta') botones.push(`<button class="pac-btn" onclick="cambiarEstadoPaciente('${p.id}','dado_de_alta')">Dar de alta</button>`);
+  if(p.estado !== 'archivado'){
+    botones.push(`<button class="pac-btn pac-btn-peligro" onclick="archivarPaciente('${p.id}')">Eliminar</button>`);
+  } else {
+    botones.push(`<button class="pac-btn" onclick="cambiarEstadoPaciente('${p.id}','activo')">Restaurar</button>`);
+  }
+  return botones.join('');
+}
+
+async function cambiarEstadoPaciente(id, nuevoEstado){
+  const { error } = await sb.from('pacientes').update({estado: nuevoEstado}).eq('id', id);
+  if(error){ alert('Error: ' + error.message); return; }
+  cargarPacientes();
+}
+window.cambiarEstadoPaciente = cambiarEstadoPaciente;
+
+async function archivarPaciente(id){
+  if(!confirm('¿Eliminar este paciente de tu lista? No se borra su historial clínico, solo se archiva y deja de aparecer en tus pestañas normales.')) return;
+  const { error } = await sb.from('pacientes').update({estado:'archivado'}).eq('id', id);
+  if(error){ alert('Error: ' + error.message); return; }
+  cargarPacientes();
+}
+window.archivarPaciente = archivarPaciente;
+
+/* ---------- arrastrar y soltar (orden manual) ---------- */
+function activarArrastre(){
+  const tarjetas = document.querySelectorAll('.pac-card[draggable="true"]');
+  tarjetas.forEach(card=>{
+    card.addEventListener('dragstart', (e)=>{
+      idArrastrado = card.dataset.id;
+      card.classList.add('arrastrando');
+    });
+    card.addEventListener('dragend', ()=>{
+      card.classList.remove('arrastrando');
+      document.querySelectorAll('.pac-card').forEach(c=>c.classList.remove('zona-drop'));
+    });
+    card.addEventListener('dragover', (e)=>{
+      e.preventDefault();
+      if(card.dataset.id !== idArrastrado) card.classList.add('zona-drop');
+    });
+    card.addEventListener('dragleave', ()=>{
+      card.classList.remove('zona-drop');
+    });
+    card.addEventListener('drop', async (e)=>{
+      e.preventDefault();
+      card.classList.remove('zona-drop');
+      const idDestino = card.dataset.id;
+      if(!idArrastrado || idArrastrado === idDestino) return;
+      await reordenarPacientes(idArrastrado, idDestino);
+    });
+  });
+}
+
+async function reordenarPacientes(idOrigen, idDestino){
+  const lista = pacientesCache.filter(p=> p.estado === filtroPacientes);
+  const iOrigen = lista.findIndex(p=> p.id === idOrigen);
+  const iDestino = lista.findIndex(p=> p.id === idDestino);
+  if(iOrigen === -1 || iDestino === -1) return;
+
+  const [movido] = lista.splice(iOrigen, 1);
+  lista.splice(iDestino, 0, movido);
+
+  // Reasigna el campo "orden" para todo el grupo visible, de 10 en 10
+  // (deja huecos por si luego se necesita insertar sin reescribir todo).
+  const actualizaciones = lista.map((p, i) => ({ id: p.id, orden: (i+1) * 10 }));
+
+  for(const p of pacientesCache){
+    const nuevo = actualizaciones.find(a=> a.id === p.id);
+    if(nuevo) p.orden = nuevo.orden;
+  }
+
+  pintarPacientes();
+
+  for(const a of actualizaciones){
+    await sb.from('pacientes').update({orden: a.orden}).eq('id', a.id);
+  }
+}
 
 function recortar(t, n){
   return t.length > n ? t.slice(0,n) + '...' : t;
