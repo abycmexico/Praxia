@@ -62,6 +62,15 @@
   .switch .slider::before{content:"";position:absolute;height:16px;width:16px;left:3px;bottom:3px;background:#fff;border-radius:50%;transition:.2s;}
   .switch input:checked + .slider{background:var(--yellow);}
   .switch input:checked + .slider::before{transform:translateX(16px);}
+
+  .grid-dashboard{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-top:26px;}
+  .card-dash{border:1.5px solid var(--line);border-radius:16px;padding:20px;}
+  .card-dash-num{font-size:26px;font-weight:800;}
+  .card-dash-label{font-size:12px;color:var(--gray);margin-top:4px;line-height:1.5;}
+  .card-dash-dinero{grid-column:span 2;background:#FAFAF8;}
+  .card-dash-dinero .card-dash-num{color:var(--yellow);}
+  @media(max-width:760px){.grid-dashboard{grid-template-columns:1fr 1fr;}.card-dash-dinero{grid-column:span 2;}}
+  @media(max-width:480px){.grid-dashboard{grid-template-columns:1fr;}.card-dash-dinero{grid-column:span 1;}}
   label{display:block;font-size:12.5px;font-weight:700;margin-bottom:6px;}
   input,select,textarea{width:100%;padding:11px 13px;border:1.5px solid var(--line);border-radius:10px;font-family:inherit;font-size:14px;background:#fff;color:var(--ink);}
   input:focus,select:focus,textarea:focus{outline:none;border-color:var(--yellow);}
@@ -129,7 +138,8 @@
 </header>
 
 <nav class="tabs">
-  <button class="active" data-tab="citas">Mis citas</button>
+  <button class="active" data-tab="resumen">Resumen</button>
+  <button data-tab="citas">Mis citas</button>
   <button data-tab="disponibilidad">Disponibilidad</button>
   <button data-tab="pacientes">Mis pacientes</button>
   <button data-tab="config">Configuración</button>
@@ -137,7 +147,45 @@
 
 <main>
 
-  <section id="tab-citas" class="active">
+  <section id="tab-resumen" class="active">
+    <h2>Hola, <span id="saludoNombre"></span></h2>
+    <p class="sub" id="saludoFecha"></p>
+
+    <div class="grid-dashboard">
+      <div class="card-dash">
+        <div class="card-dash-num" id="numPacientesActivos">—</div>
+        <div class="card-dash-label">Pacientes activos</div>
+      </div>
+      <div class="card-dash">
+        <div class="card-dash-num" id="numPacientesInactivos">—</div>
+        <div class="card-dash-label">Pacientes inactivos</div>
+      </div>
+      <div class="card-dash">
+        <div class="card-dash-num" id="numSesionesHoy">—</div>
+        <div class="card-dash-label">Sesiones hoy</div>
+      </div>
+      <div class="card-dash">
+        <div class="card-dash-num" id="numProximasSesiones">—</div>
+        <div class="card-dash-label">Próximas 7 días</div>
+      </div>
+      <div class="card-dash card-dash-dinero">
+        <div class="card-dash-num" id="montoIngresos">—</div>
+        <div class="card-dash-label">Ingresos estimados este mes <span class="badge-proximamente">No verificado</span></div>
+      </div>
+      <div class="card-dash card-dash-dinero">
+        <div class="card-dash-num" id="montoPendiente">—</div>
+        <div class="card-dash-label">Por cobrar (citas pendientes de pago)</div>
+      </div>
+    </div>
+
+    <h2 style="margin-top:44px;">Sesiones de hoy</h2>
+    <div id="listaHoy"><p class="empty">Cargando...</p></div>
+
+    <h2 style="margin-top:40px;">Próximas sesiones</h2>
+    <div id="listaProximasResumen"><p class="empty">Cargando...</p></div>
+  </section>
+
+  <section id="tab-citas">
     <h2>Próximas citas</h2>
     <p class="sub">Aquí aparecen las sesiones que tus pacientes agendaron contigo.</p>
     <div id="listaCitas"><p class="empty">Cargando...</p></div>
@@ -378,6 +426,7 @@ async function iniciar(){
   cargarDisponibilidad();
   cargarPacientes();
   cargarConfig();
+  cargarResumen();
 }
 
 document.getElementById('btnSalir').addEventListener('click', async ()=>{
@@ -527,6 +576,69 @@ document.getElementById('btnCopiarLiga').addEventListener('click', async ()=>{
 });
 
 /* ---------- citas ---------- */
+/* ---------- resumen (dashboard) ---------- */
+async function cargarResumen(){
+  document.getElementById('saludoNombre').textContent = yo.nombre.split(' ')[0];
+  document.getElementById('saludoFecha').textContent =
+    capitalizar(new Date().toLocaleDateString('es-MX', {weekday:'long', day:'numeric', month:'long'}));
+
+  const { data: pacientesDash } = await sb.from('pacientes')
+    .select('estado').eq('psicologo_id', yo.id);
+  const activos = (pacientesDash||[]).filter(p=> (p.estado||'activo')==='activo').length;
+  const inactivos = (pacientesDash||[]).filter(p=> p.estado==='inactivo').length;
+  document.getElementById('numPacientesActivos').textContent = activos;
+  document.getElementById('numPacientesInactivos').textContent = inactivos;
+
+  const { data: citasDash } = await sb.from('citas')
+    .select('*, pacientes(nombre)').eq('psicologo_id', yo.id).order('fecha_hora');
+
+  const ahora = new Date();
+  const inicioHoy = new Date(); inicioHoy.setHours(0,0,0,0);
+  const finHoy = new Date(); finHoy.setHours(23,59,59,999);
+  const en7dias = new Date(); en7dias.setDate(en7dias.getDate()+7);
+  const inicioMes = new Date(ahora.getFullYear(), ahora.getMonth(), 1);
+  const finMes = new Date(ahora.getFullYear(), ahora.getMonth()+1, 0, 23,59,59);
+
+  const activas = (citasDash||[]).filter(c=> c.estado !== 'cancelada');
+
+  const hoy = activas.filter(c=>{
+    const f = new Date(c.fecha_hora);
+    return f >= inicioHoy && f <= finHoy;
+  });
+
+  const proximos7 = activas.filter(c=>{
+    const f = new Date(c.fecha_hora);
+    return f >= ahora && f <= en7dias;
+  });
+
+  const delMes = activas.filter(c=>{
+    const f = new Date(c.fecha_hora);
+    return f >= inicioMes && f <= finMes && (c.estado === 'confirmada' || c.estado === 'completada');
+  });
+  const ingresosMes = delMes.reduce((sum,c)=> sum + (Number(c.precio)||0), 0);
+
+  const pendientes = activas.filter(c=> c.estado === 'pendiente_pago' && new Date(c.fecha_hora) >= ahora);
+  const montoPendiente = pendientes.reduce((sum,c)=> sum + (Number(c.precio)||0), 0);
+
+  document.getElementById('numSesionesHoy').textContent = hoy.length;
+  document.getElementById('numProximasSesiones').textContent = proximos7.length;
+  document.getElementById('montoIngresos').textContent = '$' + ingresosMes.toLocaleString('es-MX');
+  document.getElementById('montoPendiente').textContent = '$' + montoPendiente.toLocaleString('es-MX');
+
+  const contHoy = document.getElementById('listaHoy');
+  contHoy.innerHTML = hoy.length
+    ? hoy.map(c=>tarjetaCita(c, true)).join('')
+    : '<p class="empty">No tienes sesiones hoy.</p>';
+
+  const proximasOrdenadas = activas
+    .filter(c=> new Date(c.fecha_hora) >= ahora)
+    .slice(0, 5);
+  const contProx = document.getElementById('listaProximasResumen');
+  contProx.innerHTML = proximasOrdenadas.length
+    ? proximasOrdenadas.map(c=>tarjetaCita(c, true)).join('')
+    : '<p class="empty">No tienes próximas sesiones agendadas.</p>';
+}
+
 async function cargarCitas(){
   const contProx = document.getElementById('listaCitas');
   const contHist = document.getElementById('listaHistorial');
@@ -774,6 +886,7 @@ document.getElementById('btnConfirmarCancelar').addEventListener('click', async 
   msg.className = 'msg ok';
   btn.disabled = false;
   cargarCitas();
+  cargarResumen();
   setTimeout(()=>cerrarModal('modalCancelar'), 1300);
 });
 
@@ -917,6 +1030,7 @@ document.getElementById('btnConfirmarReprogramar').addEventListener('click', asy
   msg.textContent = r.mensaje;
   msg.className = 'msg ok';
   cargarCitas();
+  cargarResumen();
   setTimeout(()=>cerrarModal('modalReprogramar'), 1200);
 });
 
