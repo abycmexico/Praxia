@@ -872,6 +872,11 @@ async function iniciar(){
     return;
   }
 
+  if(!psi.perfil_completo){
+    location.href = './completar-perfil-psicologo.html';
+    return;
+  }
+
   yo = psi;
   document.getElementById('quien').textContent = psi.nombre;
   document.getElementById('avatarIniciales').textContent = iniciales(psi.nombre);
