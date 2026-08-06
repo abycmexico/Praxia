@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow">
+<title>Confirmar cita | Praxia</title>
+<link rel="icon" type="image/png" href="./assets/praxia-isotipo.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,400;1,600&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  :root{--primario:#2E7D32;--primario-claro:#7BC043;--ink:#1A1A1A;--gray:#7a7a7a;--line:#ececec;--err:#c62828;--ok:#2e7d32;}
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{background:#F7F9F6;color:var(--ink);font-family:'Montserrat',Arial,sans-serif;font-weight:500;min-height:100vh;display:flex;flex-direction:column;}
+  a{color:inherit;text-decoration:none;}
+  header{display:flex;align-items:center;justify-content:center;padding:24px;}
+  header img{height:32px;}
+  main{flex:1;display:flex;align-items:center;justify-content:center;padding:24px;}
+  .box{width:100%;max-width:440px;background:#fff;border-radius:22px;padding:32px;box-shadow:0 4px 20px rgba(0,0,0,.06);text-align:center;}
+  .box h1{font-size:21px;margin-bottom:6px;}
+  .box p.sub{color:var(--gray);font-size:13.5px;margin-bottom:26px;}
+  .detalle{border:1.5px solid var(--line);border-radius:14px;padding:18px;margin-bottom:24px;text-align:left;}
+  .detalle-fila{display:flex;justify-content:space-between;font-size:13.5px;padding:6px 0;}
+  .detalle-fila strong{font-weight:700;}
+  .acciones{display:flex;gap:10px;}
+  .btn{flex:1;padding:13px;border-radius:30px;font-size:14px;font-weight:700;border:none;cursor:pointer;font-family:inherit;}
+  .btn-aceptar{background:var(--primario);color:#fff;}
+  .btn-aceptar:hover{background:var(--primario-claro);}
+  .btn-rechazar{background:none;border:1.5px solid var(--line);color:var(--ink);}
+  .btn-rechazar:hover{border-color:var(--err);color:var(--err);}
+  .btn:disabled{opacity:.5;cursor:default;}
+  .estado-final{padding:18px;border-radius:14px;font-size:14px;font-weight:700;}
+  .estado-final.ok{background:#E4F3E1;color:var(--primario);}
+  .estado-final.err{background:#FBE0E0;color:var(--err);}
+  .msg{font-size:13px;margin-top:14px;min-height:17px;}
+  .msg.err{color:var(--err);}
+</style>
+</head>
+<body>
+
+<header><img src="./assets/praxia-logo-completo.png" alt="Praxia"></header>
+
+<main>
+  <div class="box" id="caja">
+    <p>Cargando...</p>
+  </div>
+</main>
+
+<script>
+const SUPABASE_URL = 'https://uxbpfyeahqpertamhdxt.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_xaaA4lYAQZjdcMFRhMGtuQ_fvIeJKv7';
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+const token = new URLSearchParams(location.search).get('t');
+const caja = document.getElementById('caja');
+
+async function cargar(){
+  if(!token){
+    caja.innerHTML = '<h1>Liga no válida</h1><p class="sub">Esta página necesita una liga completa. Pídele a tu psicólogo que te la comparta de nuevo.</p>';
+    return;
+  }
+
+  const { data, error } = await sb.rpc('obtener_cita_por_token', { p_token: token });
+  const r = Array.isArray(data) ? data[0] : data;
+
+  if(error || !r || !r.ok){
+    caja.innerHTML = `<h1>Liga no válida</h1><p class="sub">${escapar(r?.mensaje || 'No se encontró esta cita.')}</p>`;
+    return;
+  }
+
+  const f = new Date(r.fecha_hora);
+  const fechaTexto = capitalizar(f.toLocaleDateString('es-MX', {weekday:'long', day:'numeric', month:'long', year:'numeric'}));
+  const horaTexto = f.toLocaleTimeString('es-MX', {hour:'2-digit', minute:'2-digit'});
+
+  if(r.estado !== 'pendiente_confirmacion'){
+    const yaFue = {
+      pendiente_pago: 'Ya confirmaste esta cita. Cuando esté disponible el cobro en línea, te avisaremos.',
+      confirmada: 'Esta cita ya está confirmada.',
+      completada: 'Esta cita ya ocurrió.',
+      cancelada: 'Esta cita fue cancelada.'
+    }[r.estado] || 'Esta cita ya fue procesada.';
+    caja.innerHTML = `
+      <h1>Hola, ${escapar(r.nombre_paciente)}</h1>
+      <div class="detalle">
+        <div class="detalle-fila"><span>Psicólogo</span><strong>${escapar(r.nombre_psicologo)}</strong></div>
+        <div class="detalle-fila"><span>Fecha</span><strong>${fechaTexto}</strong></div>
+        <div class="detalle-fila"><span>Hora</span><strong>${horaTexto}</strong></div>
+      </div>
+      <div class="estado-final ${r.estado==='cancelada' ? 'err':'ok'}">${yaFue}</div>
+    `;
+    return;
+  }
+
+  caja.innerHTML = `
+    <h1>Hola, ${escapar(r.nombre_paciente)}</h1>
+    <p class="sub">${escapar(r.nombre_psicologo)} te propuso esta sesión:</p>
+    <div class="detalle">
+      <div class="detalle-fila"><span>Fecha</span><strong>${fechaTexto}</strong></div>
+      <div class="detalle-fila"><span>Hora</span><strong>${horaTexto}</strong></div>
+      <div class="detalle-fila"><span>Duración</span><strong>${r.duracion_minutos} minutos</strong></div>
+      ${r.precio > 0 ? `<div class="detalle-fila"><span>Costo</span><strong>$${Number(r.precio).toLocaleString('es-MX')} MXN</strong></div>` : ''}
+    </div>
+    <div class="acciones">
+      <button class="btn btn-rechazar" id="btnRechazar">No puedo</button>
+      <button class="btn btn-aceptar" id="btnAceptar">Confirmar</button>
+    </div>
+    <p class="msg" id="msg"></p>
+  `;
+
+  document.getElementById('btnAceptar').addEventListener('click', ()=>responder('aceptar_cita_por_token'));
+  document.getElementById('btnRechazar').addEventListener('click', ()=>{
+    if(confirm('¿Seguro que no puedes asistir a esta sesión?')) responder('rechazar_cita_por_token');
+  });
+}
+
+async function responder(funcion){
+  const msg = document.getElementById('msg');
+  document.getElementById('btnAceptar').disabled = true;
+  document.getElementById('btnRechazar').disabled = true;
+  msg.textContent = 'Procesando...';
+  msg.className = 'msg';
+
+  const { data, error } = await sb.rpc(funcion, { p_token: token });
+  const r = Array.isArray(data) ? data[0] : data;
+
+  if(error || !r || !r.ok){
+    msg.textContent = r?.mensaje || 'Hubo un error, intenta de nuevo.';
+    msg.className = 'msg err';
+    document.getElementById('btnAceptar').disabled = false;
+    document.getElementById('btnRechazar').disabled = false;
+    return;
+  }
+
+  cargar(); // repinta con el nuevo estado ya confirmado/rechazado
+}
+
+function capitalizar(t){ return t.charAt(0).toUpperCase() + t.slice(1); }
+function escapar(t){
+  const d = document.createElement('div');
+  d.textContent = t == null ? '' : t;
+  return d.innerHTML;
+}
+
+cargar();
+</script>
+
+<div class="marca-pie" style="display:flex;justify-content:center;padding:20px 0;opacity:.35;"><img src="./assets/praxia-isotipo.png" alt="Praxia" style="height:16px;"></div>
+
+</body>
+</html>

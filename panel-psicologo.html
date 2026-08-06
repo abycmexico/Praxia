@@ -68,6 +68,7 @@
   .avatar-cita{width:38px;height:38px;border-radius:50%;background:var(--primario-suave);color:#fff;font-weight:800;font-size:14px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
   .tag{display:inline-block;font-size:10.5px;font-weight:800;letter-spacing:.5px;text-transform:uppercase;padding:4px 10px;border-radius:20px;}
   .tag.confirmada{background:#E4F3E1;color:var(--primario);}
+  .tag.pendiente_confirmacion{background:#E4EEFB;color:#1a5cb0;}
   .tag.pendiente_pago{background:#FFF1DB;color:#B5680A;}
   .tag.completada{background:#EDEDED;color:#666;}
   .tag.cancelada{background:#FBE0E0;color:var(--err);}
@@ -356,7 +357,8 @@
 
   <section id="tab-citas">
     <h2>Próximas citas</h2>
-    <p class="sub">Aquí aparecen las sesiones que tus pacientes agendaron contigo.</p>
+    <p class="sub">Aquí aparecen las sesiones que tus pacientes agendaron contigo, o que tú les propusiste.</p>
+    <button class="btn btn-primary" id="btnAbrirAgendarPaciente" style="margin-bottom:18px;">Agendar para un paciente</button>
     <div id="listaCitas"><p class="empty">Cargando...</p></div>
 
     <h2 style="margin-top:40px;">Historial</h2>
@@ -633,6 +635,46 @@
   </div>
 </div>
 
+<div class="modal-bg" id="modalAgendarPaciente">
+  <div class="modal">
+    <div id="apPaso1">
+      <h3>Agendar para un paciente</h3>
+      <p class="modal-sub">Elige a tu paciente y el horario. Le va a llegar una liga para que confirme.</p>
+
+      <div class="campo" style="margin-bottom:16px;">
+        <label for="apSelectPaciente">Paciente</label>
+        <select id="apSelectPaciente"></select>
+      </div>
+
+      <div class="dias" id="apDias"></div>
+      <div class="horas" id="apHoras"><p class="empty" style="grid-column:1/-1;">Selecciona un día.</p></div>
+
+      <p class="msg" id="msgAgendarPaciente"></p>
+      <div class="modal-actions">
+        <button class="btn btn-ghost" onclick="cerrarModal('modalAgendarPaciente')">Cancelar</button>
+        <button class="btn btn-primary" id="btnConfirmarAgendarPaciente" disabled>Crear cita</button>
+      </div>
+    </div>
+
+    <div id="apPaso2" style="display:none;">
+      <h3>Cita creada</h3>
+      <p class="modal-sub">Ahora comparte la liga con tu paciente para que la confirme.</p>
+
+      <div class="invite-box" id="apLigaTexto"></div>
+
+      <div class="modal-actions" style="justify-content:flex-start;flex-wrap:wrap;">
+        <button class="btn btn-primary" id="apBtnCopiar">Copiar liga</button>
+        <a class="btn btn-ghost" id="apBtnWhatsapp" href="#" target="_blank">Enviar por WhatsApp</a>
+        <a class="btn btn-ghost" id="apBtnCorreo" href="#">Enviar por correo</a>
+      </div>
+      <p class="disp-ayuda" style="margin-top:14px;">Los botones abren WhatsApp o tu correo con el mensaje ya escrito — solo confirmas el envío desde ahí.</p>
+
+      <div class="modal-actions">
+        <button class="btn btn-primary" onclick="cerrarModal('modalAgendarPaciente')">Listo</button>
+      </div>
+    </div>
+  </div>
+</div>
 
 <script>
 const SUPABASE_URL = 'https://uxbpfyeahqpertamhdxt.supabase.co';
@@ -1258,7 +1300,7 @@ function tarjetaCita(c, esProxima){
 }
 
 function etiquetaEstado(e){
-  return {pendiente_pago:'Pendiente de pago', confirmada:'Confirmada', completada:'Completada', cancelada:'Cancelada'}[e] || e;
+  return {pendiente_confirmacion:'Esperando confirmación', pendiente_pago:'Pendiente de pago', confirmada:'Confirmada', completada:'Completada', cancelada:'Cancelada'}[e] || e;
 }
 
 // La sala se habilita 10 min antes y hasta 2 h después del inicio
@@ -1723,6 +1765,168 @@ document.getElementById('btnConfirmarReprogramar').addEventListener('click', asy
 });
 
 function capitalizar(t){ return t.charAt(0).toUpperCase() + t.slice(1); }
+
+/* ---------- agendar para un paciente ---------- */
+let apDiaSel = null;
+let apHoraSel = null;
+
+document.getElementById('btnAbrirAgendarPaciente').addEventListener('click', async ()=>{
+  document.getElementById('apPaso1').style.display = 'block';
+  document.getElementById('apPaso2').style.display = 'none';
+  document.getElementById('msgAgendarPaciente').textContent = '';
+  document.getElementById('btnConfirmarAgendarPaciente').disabled = true;
+  apDiaSel = null; apHoraSel = null;
+
+  const activos = pacientesCache.filter(p=> p.estado === 'activo');
+  const sel = document.getElementById('apSelectPaciente');
+  sel.innerHTML = activos.length
+    ? activos.map(p=>`<option value="${p.id}">${escapar(p.nombre)}</option>`).join('')
+    : '<option value="">No tienes pacientes activos</option>';
+
+  await cargarAgendaParaRepro(); // reutiliza disponibilidad/ocupación ya cargadas para reprogramar
+  pintarDiasAp();
+  document.getElementById('apHoras').innerHTML = '<p class="empty" style="grid-column:1/-1;">Selecciona un día.</p>';
+  abrirModal('modalAgendarPaciente');
+});
+
+function pintarDiasAp(){
+  const cont = document.getElementById('apDias');
+  const hoy = new Date();
+  hoy.setHours(0,0,0,0);
+  const maxDias = (config && config.dias_max_anticipacion) ? config.dias_max_anticipacion : 30;
+
+  let html = '';
+  for(let i=0; i<maxDias; i++){
+    const d = new Date(hoy);
+    d.setDate(hoy.getDate()+i);
+    if(!bloquesDisp.some(b=> b.dia_semana === d.getDay())) continue;
+    html += `
+      <div class="dia-chip" data-fecha="${d.toISOString()}" onclick="apElegirDia(this)">
+        <div class="dn">${DIAS_CORTO[d.getDay()]}</div>
+        <div class="df">${d.getDate()}</div>
+        <div class="dm">${MESES[d.getMonth()]}</div>
+      </div>`;
+  }
+  cont.innerHTML = html || '<p class="empty" style="width:100%;">No tienes horarios publicados en Disponibilidad.</p>';
+}
+
+function apElegirDia(el){
+  document.querySelectorAll('#apDias .dia-chip').forEach(c=>c.classList.remove('sel'));
+  el.classList.add('sel');
+  apDiaSel = new Date(el.dataset.fecha);
+  apHoraSel = null;
+  document.getElementById('btnConfirmarAgendarPaciente').disabled = true;
+  pintarHorasAp();
+}
+window.apElegirDia = apElegirDia;
+
+function pintarHorasAp(){
+  const cont = document.getElementById('apHoras');
+  const espacios = espaciosDelDia(apDiaSel);
+  const ahora = Date.now();
+
+  if(!espacios.length){
+    cont.innerHTML = '<p class="empty" style="grid-column:1/-1;">No hay horarios ese día.</p>';
+    return;
+  }
+
+  cont.innerHTML = espacios.map(e=>{
+    const t = e.getTime();
+    const ocupado = ocupadas.includes(t);
+    const pasado = t <= ahora;
+    const hhmm = e.toLocaleTimeString('es-MX',{hour:'2-digit',minute:'2-digit'});
+    return `<button class="hora-btn" ${ocupado||pasado ? 'disabled' : ''}
+              onclick="apElegirHora(this, ${t})">${hhmm}</button>`;
+  }).join('');
+}
+
+function apElegirHora(btn, timestamp){
+  document.querySelectorAll('#apHoras .hora-btn').forEach(b=>b.classList.remove('sel'));
+  btn.classList.add('sel');
+  apHoraSel = new Date(timestamp);
+  document.getElementById('btnConfirmarAgendarPaciente').disabled = false;
+}
+window.apElegirHora = apElegirHora;
+
+document.getElementById('btnConfirmarAgendarPaciente').addEventListener('click', async ()=>{
+  const btn = document.getElementById('btnConfirmarAgendarPaciente');
+  const msg = document.getElementById('msgAgendarPaciente');
+  if(!apHoraSel) return;
+
+  const pacienteId = document.getElementById('apSelectPaciente').value;
+  if(!pacienteId){
+    msg.textContent = 'Elige un paciente.';
+    msg.className = 'msg err';
+    return;
+  }
+
+  btn.disabled = true;
+  msg.className = 'msg';
+  msg.textContent = 'Creando cita...';
+
+  const { data, error } = await sb.rpc('crear_cita_para_paciente', {
+    p_paciente_id: pacienteId,
+    p_fecha_hora: apHoraSel.toISOString()
+  });
+
+  if(error){
+    msg.textContent = 'No se pudo crear: ' + error.message;
+    msg.className = 'msg err';
+    btn.disabled = false;
+    return;
+  }
+
+  const r = Array.isArray(data) ? data[0] : data;
+  if(!r || !r.ok){
+    msg.textContent = r ? r.mensaje : 'No se pudo crear la cita.';
+    msg.className = 'msg err';
+    btn.disabled = false;
+    return;
+  }
+
+  const paciente = pacientesCache.find(p=> p.id === pacienteId);
+  const liga = new URL(`./confirmar-cita.html?t=${r.token}`, location.href).href;
+
+  const fechaTexto = capitalizar(apHoraSel.toLocaleDateString('es-MX',{weekday:'long',day:'numeric',month:'long'}));
+  const horaTexto = apHoraSel.toLocaleTimeString('es-MX',{hour:'2-digit',minute:'2-digit'});
+  const mensaje = `Hola ${paciente ? paciente.nombre.split(' ')[0] : ''}, te propongo una sesión el ${fechaTexto} a las ${horaTexto}. Confírmala aquí: ${liga}`;
+
+  document.getElementById('apLigaTexto').textContent = liga;
+
+  const telefono = (paciente?.telefono || '').replace(/\D/g,'');
+  const telWa = telefono.length === 10 ? '52'+telefono : telefono;
+  document.getElementById('apBtnWhatsapp').href = telWa
+    ? `https://wa.me/${telWa}?text=${encodeURIComponent(mensaje)}`
+    : '#';
+  if(!telWa){
+    document.getElementById('apBtnWhatsapp').textContent = 'Sin teléfono registrado';
+    document.getElementById('apBtnWhatsapp').style.pointerEvents = 'none';
+    document.getElementById('apBtnWhatsapp').style.opacity = '.5';
+  }
+
+  document.getElementById('apBtnCorreo').href = paciente?.correo
+    ? `mailto:${paciente.correo}?subject=${encodeURIComponent('Propuesta de sesión - Praxia')}&body=${encodeURIComponent(mensaje)}`
+    : '#';
+
+  document.getElementById('apPaso1').style.display = 'none';
+  document.getElementById('apPaso2').style.display = 'block';
+  btn.disabled = false;
+
+  cargarCitas();
+  cargarResumen();
+  cargarCalendario();
+});
+
+document.getElementById('apBtnCopiar').addEventListener('click', async ()=>{
+  const btn = document.getElementById('apBtnCopiar');
+  try{
+    await navigator.clipboard.writeText(document.getElementById('apLigaTexto').textContent);
+    btn.textContent = 'Copiada';
+    setTimeout(()=>btn.textContent='Copiar liga', 1800);
+  }catch(e){
+    btn.textContent = 'Copia manual';
+  }
+});
 
 /* ---------- calendario ---------- */
 const MESES_LARGO = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];

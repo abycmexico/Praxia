@@ -84,6 +84,7 @@
   .pago-mock-dos{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
   .tag{display:inline-block;font-size:10.5px;font-weight:800;letter-spacing:.8px;text-transform:uppercase;padding:4px 9px;border-radius:20px;}
   .tag.confirmada{background:#D4EDDA;color:#2e7d32;}
+  .tag.pendiente_confirmacion{background:#E4EEFB;color:#1a5cb0;}
   .tag.pendiente_pago{background:#FFF3CD;color:#8a6d1a;}
   .tag.completada{background:#E7E7E7;color:#555;}
   .tag.cancelada{background:#F8D7DA;color:#c62828;}
@@ -578,13 +579,14 @@ function tarjeta(c, esProxima){
   const fecha = f.toLocaleDateString('es-MX', {weekday:'long', day:'numeric', month:'long'});
   const hora  = f.toLocaleTimeString('es-MX', {hour:'2-digit', minute:'2-digit'});
   const puedeEntrar = c.estado === 'confirmada' && dentroDeVentana(f);
-  const modificable = esProxima && c.estado !== 'cancelada' && f > new Date();
+  const modificable = esProxima && c.estado !== 'cancelada' && c.estado !== 'pendiente_confirmacion' && f > new Date();
 
   // Aviso si cancelar ahora quedaría fuera de política
   const horasFaltantes = (f.getTime() - Date.now()) / 3600000;
   const fueraDePolitica = horasFaltantes < cfg.horas_minimas_cancelar;
 
   let detalle = `${c.duracion_minutos} minutos`;
+  if(c.estado === 'pendiente_confirmacion') detalle += ' · revisa tu WhatsApp o correo para confirmarla';
   if(c.precio > 0) detalle += ` · $${Number(c.precio).toLocaleString('es-MX')} ${cfg.moneda}`;
   if(c.reprogramada_desde) detalle += ' · reprogramada';
   if(c.estado === 'cancelada'){
@@ -619,7 +621,7 @@ function tarjeta(c, esProxima){
 }
 
 function etiqueta(e){
-  return {pendiente_pago:'Pendiente de pago', confirmada:'Confirmada', completada:'Completada', cancelada:'Cancelada'}[e] || e;
+  return {pendiente_confirmacion:'Esperando tu confirmación', pendiente_pago:'Pendiente de pago', confirmada:'Confirmada', completada:'Completada', cancelada:'Cancelada'}[e] || e;
 }
 
 function dentroDeVentana(fecha){
