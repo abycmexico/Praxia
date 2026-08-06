@@ -13,152 +13,397 @@
 <style>
   :root{--primario:#2E7D32;--primario-claro:#7BC043;--primario-suave:#A8C99B;--bg:#F7F9F6;--ink:#1A1A1A;--gray:#7a7a7a;--line:#ececec;--err:#c62828;--ok:#2e7d32;}
   *{box-sizing:border-box;margin:0;padding:0;}
-  body{background:var(--bg,#F7F9F6);color:var(--ink);font-family:'Montserrat',Arial,sans-serif;font-weight:500;min-height:100vh;}
+  body{background:var(--bg);color:var(--ink);font-family:'Montserrat',Arial,sans-serif;font-weight:500;}
   a{color:inherit;text-decoration:none;}
-  header{display:flex;align-items:center;justify-content:space-between;padding:24px 32px;border-bottom:1.5px solid var(--line);}
-  header .logo{display:flex;align-items:center;gap:10px;}
-  header .logo img{height:26px;width:auto;}
-  .badge-admin{background:var(--primario);color:#fff;font-size:10px;font-weight:800;letter-spacing:1px;padding:3px 9px;border-radius:20px;}
-  header button{background:none;border:1.5px solid var(--line);border-radius:20px;padding:8px 16px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;}
-  main{max-width:900px;margin:0 auto;padding:40px 24px 80px;}
-  h1{font-size:26px;margin-bottom:8px;}
-  p.sub{color:var(--gray);font-size:14px;margin-bottom:32px;}
-  .row{display:flex;align-items:center;justify-content:space-between;gap:16px;border:1.5px solid var(--line);border-radius:14px;padding:18px 20px;margin-bottom:14px;}
-  .row .info h3{font-size:15.5px;margin-bottom:4px;}
-  .row .info p{font-size:13px;color:var(--gray);}
-  .tag{display:inline-block;font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;padding:4px 10px;border-radius:20px;margin-left:8px;}
-  .tag.pendiente{background:#FFF3CD;color:#8a6d1a;}
-  .tag.aprobado{background:#D4EDDA;color:#2e7d32;}
-  .tag.rechazado{background:#F8D7DA;color:#c62828;}
-  .btns{display:flex;gap:8px;flex-shrink:0;}
-  .btns button{padding:9px 18px;border-radius:20px;font-size:13px;font-weight:700;border:none;cursor:pointer;font-family:inherit;}
-  .btn-aprobar{background:var(--primario);color:var(--ink);}
-  .btn-aprobar:hover{background:var(--primario-claro);}
-  .btn-rechazar{background:none;border:1.5px solid var(--line);color:var(--ink);}
-  .empty{color:var(--gray);font-size:14px;text-align:center;padding:40px 0;}
-  .gate{max-width:420px;margin:100px auto;text-align:center;}
-  .gate input{width:100%;padding:12px 14px;border:1.5px solid var(--line);border-radius:10px;font-family:inherit;font-size:15px;margin-top:16px;}
-  .gate button{margin-top:16px;width:100%;padding:14px;border:none;border-radius:30px;background:var(--primario);color:var(--ink);font-weight:700;font-size:15px;cursor:pointer;font-family:inherit;}
 
-  .marca-pie{display:flex;justify-content:center;padding:24px 0 8px;opacity:.35;}
-  .marca-pie img{height:18px;width:auto;}
+  .gate{max-width:420px;margin:100px auto;text-align:center;padding:0 24px;}
+  .gate h1{font-size:24px;margin-bottom:8px;}
+  .gate .sub{color:var(--gray);font-size:14px;margin-bottom:24px;}
+  .gate input{width:100%;padding:12px 14px;border:1.5px solid var(--line);border-radius:10px;font-family:inherit;font-size:15px;margin-top:14px;}
+  .gate button{margin-top:16px;width:100%;padding:14px;border:none;border-radius:30px;background:var(--primario);color:#fff;font-weight:700;font-size:15px;cursor:pointer;font-family:inherit;}
+
+  .app-shell{display:flex;min-height:100vh;}
+  .sidebar{width:230px;flex-shrink:0;background:#111;border-right:1.5px solid #222;display:flex;flex-direction:column;padding:24px 16px;position:sticky;top:0;height:100vh;}
+  .sidebar-logo{display:flex;align-items:center;padding:0 8px 22px;}
+  .sidebar-logo img{width:100%;max-width:160px;filter:brightness(0) invert(1);}
+  nav.sidebar-nav{display:flex;flex-direction:column;gap:3px;flex:1;}
+  nav.sidebar-nav button{display:flex;align-items:center;gap:11px;background:none;border:none;padding:11px 12px;border-radius:12px;font-size:13.5px;font-weight:700;cursor:pointer;font-family:inherit;color:#999;text-align:left;width:100%;}
+  nav.sidebar-nav button:hover{background:#1c1c1c;color:#fff;}
+  nav.sidebar-nav button.active{background:var(--primario);color:#fff;}
+  nav.sidebar-nav .icono-svg{width:18px;height:18px;flex-shrink:0;}
+  .badge-superadmin{background:var(--primario-claro);color:#111;font-size:9.5px;font-weight:800;letter-spacing:1px;text-transform:uppercase;padding:4px 10px;border-radius:20px;display:inline-block;margin-bottom:20px;margin-left:8px;}
+  .btn-salir{background:none;border:1.5px solid #333;border-radius:20px;padding:9px;font-size:11.5px;font-weight:700;cursor:pointer;font-family:inherit;color:#999;margin-top:12px;}
+  .btn-salir:hover{border-color:var(--err);color:var(--err);}
+
+  .content-area{flex:1;min-width:0;padding:32px 36px 90px;max-width:1100px;}
+  section{display:none;}
+  section.active{display:block;}
+  h2{font-size:22px;margin-bottom:6px;}
+  p.sub{color:var(--gray);font-size:13.5px;margin-bottom:26px;line-height:1.6;}
+
+  .grid-dashboard{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:36px;}
+  .card-dash{background:#fff;border-radius:18px;padding:20px;box-shadow:0 2px 12px rgba(0,0,0,.05);}
+  .card-dash-num{font-size:26px;font-weight:800;}
+  .card-dash-label{font-size:11.5px;color:var(--gray);margin-top:4px;}
+
+  .filtros{display:flex;gap:8px;margin-bottom:18px;flex-wrap:wrap;}
+  .chip{border:1.5px solid var(--line);background:#fff;border-radius:20px;padding:8px 15px;font-size:12.5px;font-weight:700;cursor:pointer;font-family:inherit;color:var(--gray);}
+  .chip.sel{border-color:var(--primario);background:#EAF5E8;color:var(--ink);}
+
+  .fila-usuario{background:#fff;border-radius:16px;padding:16px 20px;margin-bottom:10px;display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;box-shadow:0 2px 10px rgba(0,0,0,.04);}
+  .fila-usuario h3{font-size:14.5px;margin-bottom:3px;}
+  .fila-usuario p{font-size:12px;color:var(--gray);}
+  .tag{display:inline-block;font-size:10px;font-weight:800;letter-spacing:.5px;text-transform:uppercase;padding:4px 10px;border-radius:20px;margin-left:6px;vertical-align:middle;}
+  .tag.pendiente{background:#FFF1DB;color:#B5680A;}
+  .tag.aprobado{background:#E4F3E1;color:var(--primario);}
+  .tag.rechazado{background:#FBE0E0;color:var(--err);}
+  .tag.suspendido{background:#EDEDED;color:#555;}
+  .acciones-fila{display:flex;gap:6px;flex-wrap:wrap;}
+  .btn-mini{padding:8px 14px;border-radius:20px;font-size:11.5px;font-weight:700;border:1.5px solid var(--line);background:#fff;cursor:pointer;font-family:inherit;color:var(--ink);}
+  .btn-mini:hover{border-color:var(--primario);color:var(--primario);}
+  .btn-mini.peligro:hover{border-color:var(--err);color:var(--err);}
+  .btn-mini.primario{background:var(--primario);color:#fff;border-color:var(--primario);}
+  .btn-mini.primario:hover{background:var(--primario-claro);border-color:var(--primario-claro);color:#fff;}
+  .empty{color:var(--gray);font-size:13.5px;text-align:center;padding:34px 0;border:1.5px dashed var(--line);border-radius:14px;background:#fff;}
+
+  .auditoria-item{background:#fff;border-radius:14px;padding:14px 18px;margin-bottom:8px;font-size:12.5px;box-shadow:0 2px 10px rgba(0,0,0,.04);}
+  .auditoria-item .accion{font-weight:700;}
+  .auditoria-item .cuando{color:var(--gray);font-size:11px;margin-top:3px;}
+
+  .bloque{background:#fff;border-radius:18px;padding:24px;margin-bottom:18px;box-shadow:0 2px 12px rgba(0,0,0,.05);}
+  .bloque h3{font-size:15px;margin-bottom:6px;}
+  .bloque p.bh{font-size:12.5px;color:var(--gray);margin-bottom:16px;line-height:1.6;}
+  .switch{position:relative;display:inline-block;width:42px;height:24px;flex-shrink:0;}
+  .switch input{opacity:0;width:0;height:0;}
+  .switch .slider{position:absolute;cursor:pointer;inset:0;background:#ddd;border-radius:24px;transition:.2s;}
+  .switch .slider::before{content:"";position:absolute;height:18px;width:18px;left:3px;bottom:3px;background:#fff;border-radius:50%;transition:.2s;}
+  .switch input:checked + .slider{background:var(--err);}
+  .switch input:checked + .slider::before{transform:translateX(18px);}
+  textarea{width:100%;padding:12px 14px;border:1.5px solid var(--line);border-radius:10px;font-family:inherit;font-size:14px;resize:vertical;min-height:80px;margin-top:12px;}
+  .msg{font-size:13px;margin-top:12px;min-height:17px;}
+  .msg.err{color:var(--err);}
+  .msg.ok{color:var(--ok);}
+  @media(max-width:900px){.grid-dashboard{grid-template-columns:1fr 1fr;}.content-area{padding:24px 18px;}}
 </style>
 </head>
 <body>
 
 <div id="gate" class="gate">
   <h1>Acceso administrador</h1>
-  <p class="sub">Inicia sesión con tu cuenta de AbyC.</p>
+  <p class="sub">Panel exclusivo para superadministradores de Praxia.</p>
   <input type="email" id="adminCorreo" placeholder="Correo">
   <input type="password" id="adminPassword" placeholder="Contraseña">
   <button id="btnGateLogin">Entrar</button>
-  <p class="msg" id="gateMsg" style="color:var(--err);font-size:13px;margin-top:12px;"></p>
+  <p class="msg err" id="gateMsg"></p>
 </div>
 
 <div id="app" style="display:none;">
-  <header>
-    <a class="logo" href="./index.html">
-    <img src="./assets/praxia-logo-completo.png" alt="Praxia">
-      <span class="badge-admin">ADMIN</span>
-    </a>
-    <button id="btnLogout">Cerrar sesión</button>
-  </header>
+  <div class="app-shell">
+    <aside class="sidebar">
+      <div class="sidebar-logo"><img src="./assets/praxia-logo-completo.png" alt="Praxia"></div>
+      <span class="badge-superadmin">Superadmin</span>
 
-  <main>
-    <h1>Psicólogos registrados</h1>
-    <p class="sub">Aprueba o rechaza las cuentas nuevas.</p>
-    <div id="lista"></div>
-  </main>
-<div class="marca-pie"><img src="./assets/praxia-isotipo.png" alt="Praxia"></div>
+      <nav class="sidebar-nav">
+        <button class="active" data-tab="dashboard">
+          <svg class="icono-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="12" width="4" height="8"></rect><rect x="10" y="7" width="4" height="13"></rect><rect x="17" y="3" width="4" height="17"></rect></svg>
+          Dashboard
+        </button>
+        <button data-tab="psicologos">
+          <svg class="icono-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="8.5" cy="8" r="3"></circle><path d="M2.5 20c0-3.3 2.7-6 6-6s6 2.7 6 6"></path><circle cx="17" cy="8.5" r="2.5"></circle><path d="M15.5 14.2c2.6.4 4.5 2.6 4.5 5.3"></path></svg>
+          Psicólogos
+        </button>
+        <button data-tab="auditoria">
+          <svg class="icono-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"></path><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path></svg>
+          Auditoría
+        </button>
+        <button data-tab="plataforma">
+          <svg class="icono-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 13a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V19a2 2 0 0 1-4 0v-.09a1.65 1.65 0 0 0-1.08-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H4a2 2 0 0 1 0-4h.09a1.65 1.65 0 0 0 1.51-1.08 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33h.05A1.65 1.65 0 0 0 11 4.09V4a2 2 0 0 1 4 0v.09c0 .66.4 1.25 1 1.51h.05a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82v.05c.26.6.85 1 1.51 1H20a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+          Plataforma
+        </button>
+      </nav>
 
+      <button id="btnLogout" class="btn-salir">Cerrar sesión</button>
+    </aside>
+
+    <div class="content-area">
+
+      <section id="tab-dashboard" class="active">
+        <h2>Dashboard</h2>
+        <p class="sub">Estado general de Praxia en tiempo real.</p>
+
+        <div class="grid-dashboard">
+          <div class="card-dash"><div class="card-dash-num" id="dPsicologosTotal">—</div><div class="card-dash-label">Psicólogos registrados</div></div>
+          <div class="card-dash"><div class="card-dash-num" id="dPsicologosPendientes">—</div><div class="card-dash-label">Pendientes de aprobar</div></div>
+          <div class="card-dash"><div class="card-dash-num" id="dPacientesTotal">—</div><div class="card-dash-label">Pacientes registrados</div></div>
+          <div class="card-dash"><div class="card-dash-num" id="dCitasTotal">—</div><div class="card-dash-label">Citas agendadas (total)</div></div>
+          <div class="card-dash"><div class="card-dash-num" id="dCitasHoy">—</div><div class="card-dash-label">Citas hoy, en toda la plataforma</div></div>
+          <div class="card-dash"><div class="card-dash-num" id="dCitasConfirmadas">—</div><div class="card-dash-label">Citas confirmadas</div></div>
+          <div class="card-dash"><div class="card-dash-num" id="dCitasCanceladas">—</div><div class="card-dash-label">Citas canceladas</div></div>
+          <div class="card-dash"><div class="card-dash-num" id="dPsicologosSuspendidos">—</div><div class="card-dash-label">Psicólogos suspendidos</div></div>
+        </div>
+      </section>
+
+      <section id="tab-psicologos">
+        <h2>Psicólogos</h2>
+        <p class="sub">Aprueba, suspende o reactiva cuentas.</p>
+
+        <div class="filtros" id="filtrosPsi"></div>
+        <div id="listaPsi"><p class="empty">Cargando...</p></div>
+      </section>
+
+      <section id="tab-auditoria">
+        <h2>Auditoría</h2>
+        <p class="sub">Registro de las últimas acciones administrativas.</p>
+        <div id="listaAuditoria"><p class="empty">Cargando...</p></div>
+      </section>
+
+      <section id="tab-plataforma">
+        <h2>Plataforma</h2>
+        <p class="sub">Configuración global de Praxia.</p>
+
+        <div class="bloque">
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:16px;">
+            <div>
+              <h3>Modo mantenimiento</h3>
+              <p class="bh" style="margin-bottom:0;">Cuando está activo, todas las páginas muestran el mensaje de abajo en vez del contenido normal.</p>
+            </div>
+            <label class="switch">
+              <input type="checkbox" id="mantenimientoActivo">
+              <span class="slider"></span>
+            </label>
+          </div>
+          <textarea id="mensajeMantenimiento" placeholder="Mensaje que verán los usuarios"></textarea>
+          <p class="msg" id="msgPlataforma"></p>
+          <button class="btn-mini primario" id="btnGuardarPlataforma" style="margin-top:12px;">Guardar</button>
+        </div>
+      </section>
+
+    </div>
+  </div>
 </div>
 
 <script>
-  const SUPABASE_URL = 'https://uxbpfyeahqpertamhdxt.supabase.co';
-  const SUPABASE_KEY = 'sb_publishable_xaaA4lYAQZjdcMFRhMGtuQ_fvIeJKv7';
-  const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+const SUPABASE_URL = 'https://uxbpfyeahqpertamhdxt.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_xaaA4lYAQZjdcMFRhMGtuQ_fvIeJKv7';
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-  // Lista de correos con permiso de administrador.
-  // Ajusta este arreglo con tu(s) correo(s) real(es).
-  const ADMIN_EMAILS = ['abycmexico@gmail.com'];
+const ADMIN_EMAILS = ['abycmexico@gmail.com'];
+let adminEmail = null;
+let psicologosCache = [];
+let filtroPsi = 'pendiente';
 
-  const gate = document.getElementById('gate');
-  const app = document.getElementById('app');
-  const gateMsg = document.getElementById('gateMsg');
-
-  async function checkSession(){
-    const { data: { session } } = await sb.auth.getSession();
-    if (session && ADMIN_EMAILS.includes(session.user.email)) {
-      gate.style.display = 'none';
-      app.style.display = 'block';
-      cargarPsicologos();
-    } else {
-      gate.style.display = 'block';
-      app.style.display = 'none';
-    }
-  }
-
-  document.getElementById('btnGateLogin').addEventListener('click', async () => {
-    const correo = document.getElementById('adminCorreo').value.trim();
-    const password = document.getElementById('adminPassword').value;
-    const { data, error } = await sb.auth.signInWithPassword({ email: correo, password });
-    if (error) {
-      gateMsg.textContent = 'Correo o contraseña incorrectos.';
-      return;
-    }
-    if (!ADMIN_EMAILS.includes(data.user.email)) {
-      gateMsg.textContent = 'Esta cuenta no tiene permisos de administrador.';
-      await sb.auth.signOut();
-      return;
-    }
-    checkSession();
-  });
-
-  document.getElementById('btnLogout').addEventListener('click', async () => {
-    await sb.auth.signOut();
-    location.reload();
-  });
-
-  async function cargarPsicologos(){
-    const lista = document.getElementById('lista');
-    lista.innerHTML = '<p class="empty">Cargando...</p>';
-
-    const { data, error } = await sb.from('psicologos').select('*').order('creado_en', { ascending: false });
-
-    if (error) {
-      lista.innerHTML = '<p class="empty">Error al cargar: ' + error.message + '</p>';
-      return;
-    }
-    if (!data || data.length === 0) {
-      lista.innerHTML = '<p class="empty">Todavía no hay psicólogos registrados.</p>';
-      return;
-    }
-
-    lista.innerHTML = data.map(p => `
-      <div class="row" data-id="${p.id}">
-        <div class="info">
-          <h3>${p.nombre} <span class="tag ${p.estado}">${p.estado}</span></h3>
-          <p>${p.correo} · registrado ${new Date(p.creado_en).toLocaleDateString('es-MX')}</p>
-        </div>
-        <div class="btns">
-          ${p.estado !== 'aprobado' ? `<button class="btn-aprobar" onclick="cambiarEstado('${p.id}','aprobado')">Aprobar</button>` : ''}
-          ${p.estado !== 'rechazado' ? `<button class="btn-rechazar" onclick="cambiarEstado('${p.id}','rechazado')">Rechazar</button>` : ''}
-        </div>
-      </div>
-    `).join('');
-  }
-
-  async function cambiarEstado(id, nuevoEstado){
-    const { error } = await sb.from('psicologos').update({ estado: nuevoEstado }).eq('id', id);
-    if (error) {
-      alert('Error al actualizar: ' + error.message);
-      return;
-    }
+/* ---------- acceso ---------- */
+async function checkSession(){
+  const { data:{ session } } = await sb.auth.getSession();
+  if(session && ADMIN_EMAILS.includes(session.user.email)){
+    adminEmail = session.user.email;
+    document.getElementById('gate').style.display = 'none';
+    document.getElementById('app').style.display = 'block';
+    cargarDashboard();
     cargarPsicologos();
+    cargarAuditoria();
+    cargarPlataforma();
+  } else {
+    document.getElementById('gate').style.display = 'block';
+    document.getElementById('app').style.display = 'none';
   }
-  window.cambiarEstado = cambiarEstado;
+}
 
+document.getElementById('btnGateLogin').addEventListener('click', async ()=>{
+  const correo = document.getElementById('adminCorreo').value.trim();
+  const password = document.getElementById('adminPassword').value;
+  const { data, error } = await sb.auth.signInWithPassword({ email: correo, password });
+  const msg = document.getElementById('gateMsg');
+  if(error){ msg.textContent = 'Correo o contraseña incorrectos.'; return; }
+  if(!ADMIN_EMAILS.includes(data.user.email)){
+    msg.textContent = 'Esta cuenta no tiene permisos de administrador.';
+    await sb.auth.signOut();
+    return;
+  }
   checkSession();
+});
+
+document.getElementById('btnLogout').addEventListener('click', async ()=>{
+  await sb.auth.signOut();
+  location.reload();
+});
+
+/* ---------- pestañas ---------- */
+document.querySelectorAll('.sidebar-nav button[data-tab]').forEach(b=>{
+  b.addEventListener('click', ()=>{
+    document.querySelectorAll('.sidebar-nav button').forEach(x=>x.classList.remove('active'));
+    document.querySelectorAll('.content-area section').forEach(s=>s.classList.remove('active'));
+    b.classList.add('active');
+    document.getElementById('tab-'+b.dataset.tab).classList.add('active');
+  });
+});
+
+/* ---------- auditoría (registrar) ---------- */
+async function registrarAuditoria(accion, entidad, entidadId, valorAnterior, valorNuevo){
+  await sb.from('auditoria').insert({
+    admin_email: adminEmail,
+    accion, entidad, entidad_id: entidadId,
+    valor_anterior: valorAnterior ?? null,
+    valor_nuevo: valorNuevo ?? null
+  });
+}
+
+async function cargarAuditoria(){
+  const cont = document.getElementById('listaAuditoria');
+  const { data, error } = await sb.from('auditoria')
+    .select('*').order('creado_en', {ascending:false}).limit(50);
+
+  if(error){ cont.innerHTML = `<p class="empty">Error: ${escapar(error.message)}</p>`; return; }
+  if(!data || !data.length){ cont.innerHTML = '<p class="empty">Todavía no hay acciones registradas.</p>'; return; }
+
+  cont.innerHTML = data.map(a=>`
+    <div class="auditoria-item">
+      <div class="accion">${escapar(a.admin_email)} · ${escapar(etiquetaAccion(a.accion))}</div>
+      <div class="cuando">${new Date(a.creado_en).toLocaleString('es-MX')}${a.entidad ? ' · '+escapar(a.entidad) : ''}</div>
+    </div>
+  `).join('');
+}
+
+function etiquetaAccion(a){
+  return {
+    aprobar_psicologo:'Aprobó un psicólogo',
+    rechazar_psicologo:'Rechazó un psicólogo',
+    suspender_psicologo:'Suspendió un psicólogo',
+    reactivar_psicologo:'Reactivó un psicólogo',
+    cambiar_mantenimiento:'Cambió el modo mantenimiento'
+  }[a] || a;
+}
+
+/* ---------- dashboard ---------- */
+async function cargarDashboard(){
+  const { data: psi } = await sb.from('psicologos').select('estado');
+  const { data: pac } = await sb.from('pacientes').select('id');
+  const { data: citas } = await sb.from('citas').select('estado, fecha_hora');
+
+  const total = (psi||[]).length;
+  const pendientes = (psi||[]).filter(p=>p.estado==='pendiente').length;
+  const suspendidos = (psi||[]).filter(p=>p.estado==='suspendido').length;
+
+  const hoy = new Date();
+  const inicioHoy = new Date(hoy.getFullYear(),hoy.getMonth(),hoy.getDate());
+  const finHoy = new Date(hoy.getFullYear(),hoy.getMonth(),hoy.getDate(),23,59,59);
+  const citasHoy = (citas||[]).filter(c=>{
+    const f = new Date(c.fecha_hora);
+    return f>=inicioHoy && f<=finHoy;
+  }).length;
+
+  document.getElementById('dPsicologosTotal').textContent = total;
+  document.getElementById('dPsicologosPendientes').textContent = pendientes;
+  document.getElementById('dPsicologosSuspendidos').textContent = suspendidos;
+  document.getElementById('dPacientesTotal').textContent = (pac||[]).length;
+  document.getElementById('dCitasTotal').textContent = (citas||[]).length;
+  document.getElementById('dCitasHoy').textContent = citasHoy;
+  document.getElementById('dCitasConfirmadas').textContent = (citas||[]).filter(c=>c.estado==='confirmada').length;
+  document.getElementById('dCitasCanceladas').textContent = (citas||[]).filter(c=>c.estado==='cancelada').length;
+}
+
+/* ---------- psicólogos ---------- */
+async function cargarPsicologos(){
+  const { data, error } = await sb.from('psicologos').select('*').order('creado_en', {ascending:false});
+  const cont = document.getElementById('listaPsi');
+  if(error){ cont.innerHTML = `<p class="empty">Error: ${escapar(error.message)}</p>`; return; }
+  psicologosCache = data || [];
+  pintarFiltrosPsi();
+  pintarPsicologos();
+}
+
+function pintarFiltrosPsi(){
+  const contar = e => psicologosCache.filter(p=>p.estado===e).length;
+  document.getElementById('filtrosPsi').innerHTML = `
+    <button class="chip ${filtroPsi==='pendiente'?'sel':''}" onclick="filtrarPsi('pendiente')">Pendientes (${contar('pendiente')})</button>
+    <button class="chip ${filtroPsi==='aprobado'?'sel':''}" onclick="filtrarPsi('aprobado')">Aprobados (${contar('aprobado')})</button>
+    <button class="chip ${filtroPsi==='suspendido'?'sel':''}" onclick="filtrarPsi('suspendido')">Suspendidos (${contar('suspendido')})</button>
+    <button class="chip ${filtroPsi==='rechazado'?'sel':''}" onclick="filtrarPsi('rechazado')">Rechazados (${contar('rechazado')})</button>
+  `;
+}
+
+function filtrarPsi(estado){
+  filtroPsi = estado;
+  pintarFiltrosPsi();
+  pintarPsicologos();
+}
+window.filtrarPsi = filtrarPsi;
+
+function pintarPsicologos(){
+  const cont = document.getElementById('listaPsi');
+  const lista = psicologosCache.filter(p=>p.estado===filtroPsi);
+
+  if(!lista.length){ cont.innerHTML = '<p class="empty">No hay psicólogos en esta categoría.</p>'; return; }
+
+  cont.innerHTML = lista.map(p=>`
+    <div class="fila-usuario">
+      <div>
+        <h3>${escapar(p.nombre)} <span class="tag ${p.estado}">${p.estado}</span></h3>
+        <p>${escapar(p.correo)} · registrado ${new Date(p.creado_en).toLocaleDateString('es-MX')}${p.especialidad ? ' · '+escapar(p.especialidad) : ''}</p>
+      </div>
+      <div class="acciones-fila">
+        ${p.estado!=='aprobado' ? `<button class="btn-mini primario" onclick="cambiarEstadoPsi('${p.id}','aprobado','aprobar_psicologo')">Aprobar</button>` : ''}
+        ${p.estado==='aprobado' ? `<button class="btn-mini peligro" onclick="cambiarEstadoPsi('${p.id}','suspendido','suspender_psicologo')">Suspender</button>` : ''}
+        ${p.estado==='suspendido' ? `<button class="btn-mini primario" onclick="cambiarEstadoPsi('${p.id}','aprobado','reactivar_psicologo')">Reactivar</button>` : ''}
+        ${p.estado!=='rechazado' ? `<button class="btn-mini peligro" onclick="cambiarEstadoPsi('${p.id}','rechazado','rechazar_psicologo')">Rechazar</button>` : ''}
+      </div>
+    </div>
+  `).join('');
+}
+
+async function cambiarEstadoPsi(id, nuevoEstado, accion){
+  const anterior = psicologosCache.find(p=>p.id===id);
+  const { error } = await sb.from('psicologos').update({estado: nuevoEstado}).eq('id', id);
+  if(error){ alert('Error: ' + error.message); return; }
+  await registrarAuditoria(accion, 'psicologo', id, {estado: anterior?.estado}, {estado: nuevoEstado});
+  cargarPsicologos();
+  cargarDashboard();
+  cargarAuditoria();
+}
+window.cambiarEstadoPsi = cambiarEstadoPsi;
+
+/* ---------- plataforma ---------- */
+async function cargarPlataforma(){
+  const { data } = await sb.from('config_plataforma').select('*').eq('id', 1).maybeSingle();
+  if(!data) return;
+  document.getElementById('mantenimientoActivo').checked = !!data.mantenimiento_activo;
+  document.getElementById('mensajeMantenimiento').value = data.mensaje_mantenimiento || '';
+}
+
+document.getElementById('btnGuardarPlataforma').addEventListener('click', async ()=>{
+  const msg = document.getElementById('msgPlataforma');
+  msg.className = 'msg';
+  msg.textContent = 'Guardando...';
+
+  const nuevoValor = document.getElementById('mantenimientoActivo').checked;
+  const mensaje = document.getElementById('mensajeMantenimiento').value;
+
+  const { error } = await sb.from('config_plataforma').update({
+    mantenimiento_activo: nuevoValor,
+    mensaje_mantenimiento: mensaje,
+    actualizado_en: new Date().toISOString()
+  }).eq('id', 1);
+
+  if(error){
+    msg.textContent = 'No se pudo guardar: ' + error.message;
+    msg.className = 'msg err';
+    return;
+  }
+
+  await registrarAuditoria('cambiar_mantenimiento', 'plataforma', null, null, {mantenimiento_activo: nuevoValor});
+  msg.textContent = 'Guardado.';
+  msg.className = 'msg ok';
+  cargarAuditoria();
+});
+
+/* ---------- util ---------- */
+function escapar(t){
+  const d = document.createElement('div');
+  d.textContent = t == null ? '' : t;
+  return d.innerHTML;
+}
+
+checkSession();
 </script>
 
 </body>
