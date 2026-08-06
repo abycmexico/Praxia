@@ -231,6 +231,23 @@
   .btn:disabled{opacity:.5;cursor:default;}
   .btn-pago-temporal{background:#FFF1DB;color:#B5680A;border:1.5px solid #FFE0A8;}
   .btn-pago-temporal:hover{background:#FFE7BD;}
+
+  .btn-flotante-mas{position:fixed;bottom:28px;right:28px;width:58px;height:58px;border-radius:50%;background:var(--primario);color:#fff;border:none;font-size:30px;font-weight:400;line-height:1;cursor:pointer;box-shadow:0 4px 18px rgba(46,125,50,.4);z-index:60;transition:transform .15s,background .15s;}
+  .btn-flotante-mas:hover{background:var(--primario-claro);transform:scale(1.06);}
+
+  .cr-opciones{display:flex;flex-direction:column;gap:12px;margin:20px 0;}
+  .cr-opcion{text-align:left;border:1.5px solid var(--line);border-radius:14px;padding:16px 18px;background:#fff;cursor:pointer;font-family:inherit;}
+  .cr-opcion:hover{border-color:var(--primario);}
+  .cr-opcion strong{display:block;font-size:14.5px;margin-bottom:4px;}
+  .cr-opcion span{font-size:12.5px;color:var(--gray);line-height:1.5;}
+
+  .cr-lista-pacientes{max-height:220px;overflow-y:auto;border:1.5px solid var(--line);border-radius:12px;}
+  .cr-fila-paciente{display:flex;align-items:center;gap:10px;padding:11px 14px;cursor:pointer;border-bottom:1px solid var(--line);}
+  .cr-fila-paciente:last-child{border-bottom:none;}
+  .cr-fila-paciente:hover{background:#FAFAF8;}
+  .cr-fila-paciente.sel{background:#EAF5E8;}
+  .cr-fila-avatar{width:30px;height:30px;border-radius:50%;background:var(--primario-suave);color:#fff;font-weight:800;font-size:12px;display:flex;align-items:center;justify-content:center;flex-shrink:0;overflow:hidden;background-size:cover;background-position:center;}
+  .cr-fila-nombre{font-size:13.5px;font-weight:700;}
   .msg{font-size:13px;margin-top:12px;min-height:17px;}
   .msg.err{color:var(--err);}
   .msg.ok{color:var(--ok);}
@@ -742,6 +759,78 @@
 
       <div class="modal-actions">
         <button class="btn btn-primary" onclick="cerrarModal('modalAgendarPaciente')">Listo</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<button id="btnFlotanteMas" class="btn-flotante-mas" title="Nueva consulta rápida">+</button>
+
+<div class="modal-bg" id="modalConsultaRapida">
+  <div class="modal">
+    <div id="crPasoTipo">
+      <h3>Nueva consulta rápida</h3>
+      <p class="modal-sub">Para una sesión que no estaba agendada: un imprevisto, un espacio libre, o alguien nuevo.</p>
+
+      <div class="cr-opciones">
+        <button class="cr-opcion" id="crBtnExistente">
+          <strong>Un paciente que ya tengo</strong>
+          <span>Busco en mi lista y creo la sesión de una vez.</span>
+        </button>
+        <button class="cr-opcion" id="crBtnNuevo">
+          <strong>Alguien nuevo, sin cuenta todavía</strong>
+          <span>Genero un link de videollamada al instante, sin expediente por ahora.</span>
+        </button>
+      </div>
+
+      <div class="modal-actions">
+        <button class="btn btn-ghost" onclick="cerrarModal('modalConsultaRapida')">Cancelar</button>
+      </div>
+    </div>
+
+    <div id="crPasoExistente" style="display:none;">
+      <h3>Elige al paciente</h3>
+      <p class="modal-sub">Busca por nombre.</p>
+
+      <input type="text" id="crBuscarPaciente" placeholder="Escribe un nombre..." style="margin-bottom:14px;">
+      <div id="crListaPacientes" class="cr-lista-pacientes"></div>
+
+      <div id="crDetalleCosto" style="display:none;margin-top:18px;">
+        <div class="campo">
+          <label for="crPrecio">Costo de esta sesión (MXN, opcional)</label>
+          <input type="number" id="crPrecio" min="0" step="50" value="0">
+        </div>
+        <p class="disp-ayuda">Si dejas $0, la sesión queda confirmada de inmediato. Si pones un costo, queda pendiente de pago como cualquier otra cita.</p>
+      </div>
+
+      <p class="msg" id="msgConsultaRapida"></p>
+      <div class="modal-actions">
+        <button class="btn btn-ghost" onclick="crVolverInicio()">Atrás</button>
+        <button class="btn btn-primary" id="crBtnCrear" style="display:none;">Crear e iniciar</button>
+      </div>
+    </div>
+
+    <div id="crPasoNuevo" style="display:none;">
+      <h3>Sesión con alguien nuevo</h3>
+      <p class="modal-sub">Se genera un link de videollamada ya mismo. Esta persona no queda registrada como tu paciente — si después lo es, invítala normal desde "Mis pacientes".</p>
+
+      <div id="crNuevoAntes">
+        <div class="modal-actions" style="justify-content:flex-start;">
+          <button class="btn btn-ghost" onclick="crVolverInicio()">Atrás</button>
+          <button class="btn btn-primary" id="crBtnGenerarRapida">Generar sala ahora</button>
+        </div>
+        <p class="msg" id="msgSalaRapida"></p>
+      </div>
+
+      <div id="crNuevoDespues" style="display:none;">
+        <div class="invite-box" id="crLigaRapida"></div>
+        <div class="modal-actions" style="justify-content:flex-start;flex-wrap:wrap;">
+          <button class="btn btn-primary" id="crBtnEntrarRapida">Entrar ahora</button>
+          <button class="btn btn-ghost" id="crBtnCopiarRapida">Copiar link</button>
+        </div>
+        <div class="modal-actions">
+          <button class="btn btn-ghost" onclick="cerrarModal('modalConsultaRapida')">Listo</button>
+        </div>
       </div>
     </div>
   </div>
@@ -2304,6 +2393,183 @@ async function marcarComoPagada(citaId){
   cargarCalendario();
 }
 window.marcarComoPagada = marcarComoPagada;
+
+/* ---------- consulta rápida (botón flotante +) ---------- */
+const EDGE_SALA_RAPIDA = 'https://uxbpfyeahqpertamhdxt.supabase.co/functions/v1/crear-sala-rapida';
+let crPacienteSel = null;
+
+document.getElementById('btnFlotanteMas').addEventListener('click', ()=>{
+  crMostrarPaso('crPasoTipo');
+  abrirModal('modalConsultaRapida');
+});
+
+function crMostrarPaso(id){
+  ['crPasoTipo','crPasoExistente','crPasoNuevo'].forEach(p=>{
+    document.getElementById(p).style.display = (p===id) ? 'block' : 'none';
+  });
+}
+
+function crVolverInicio(){
+  crMostrarPaso('crPasoTipo');
+}
+window.crVolverInicio = crVolverInicio;
+
+document.getElementById('crBtnExistente').addEventListener('click', ()=>{
+  crPacienteSel = null;
+  document.getElementById('crBuscarPaciente').value = '';
+  document.getElementById('crDetalleCosto').style.display = 'none';
+  document.getElementById('crBtnCrear').style.display = 'none';
+  document.getElementById('msgConsultaRapida').textContent = '';
+  crPintarListaPacientes('');
+  crMostrarPaso('crPasoExistente');
+});
+
+document.getElementById('crBuscarPaciente').addEventListener('input', (e)=>{
+  crPintarListaPacientes(e.target.value);
+});
+
+function crPintarListaPacientes(filtro){
+  const cont = document.getElementById('crListaPacientes');
+  const disponibles = pacientesCache.filter(p=> p.estado !== 'archivado');
+  const filtrados = filtro
+    ? disponibles.filter(p=> p.nombre.toLowerCase().includes(filtro.toLowerCase()))
+    : disponibles;
+
+  if(!filtrados.length){
+    cont.innerHTML = '<p class="empty" style="border:none;">No se encontró ningún paciente.</p>';
+    return;
+  }
+
+  cont.innerHTML = filtrados.map(p=>{
+    const inicial = p.nombre.charAt(0).toUpperCase();
+    const foto = p.foto_url ? `style="background-image:url(${p.foto_url})"` : '';
+    return `
+      <div class="cr-fila-paciente ${crPacienteSel===p.id?'sel':''}" onclick="crElegirPaciente('${p.id}')">
+        <div class="cr-fila-avatar" ${foto}>${p.foto_url ? '' : inicial}</div>
+        <div class="cr-fila-nombre">${escapar(p.nombre)}</div>
+      </div>`;
+  }).join('');
+}
+
+function crElegirPaciente(id){
+  crPacienteSel = id;
+  crPintarListaPacientes(document.getElementById('crBuscarPaciente').value);
+  document.getElementById('crDetalleCosto').style.display = 'block';
+  document.getElementById('crBtnCrear').style.display = 'inline-block';
+}
+window.crElegirPaciente = crElegirPaciente;
+
+document.getElementById('crBtnCrear').addEventListener('click', async ()=>{
+  const btn = document.getElementById('crBtnCrear');
+  const msg = document.getElementById('msgConsultaRapida');
+  if(!crPacienteSel) return;
+
+  btn.disabled = true;
+  msg.className = 'msg';
+  msg.textContent = 'Creando...';
+
+  const precio = parseFloat(document.getElementById('crPrecio').value) || 0;
+
+  const { data, error } = await sb.rpc('crear_consulta_rapida', {
+    p_paciente_id: crPacienteSel,
+    p_precio: precio
+  });
+
+  if(error){
+    msg.textContent = 'No se pudo crear: ' + error.message;
+    msg.className = 'msg err';
+    btn.disabled = false;
+    return;
+  }
+
+  const r = Array.isArray(data) ? data[0] : data;
+  if(!r || !r.ok){
+    msg.textContent = r ? r.mensaje : 'No se pudo crear la consulta.';
+    msg.className = 'msg err';
+    btn.disabled = false;
+    return;
+  }
+
+  cargarCitas();
+  cargarResumen();
+  cargarCalendario();
+
+  if(r.estado === 'confirmada'){
+    msg.textContent = 'Consulta creada. Abriendo videollamada...';
+    msg.className = 'msg ok';
+    await entrarVideollamada(r.cita_id, btn);
+    cerrarModal('modalConsultaRapida');
+  } else {
+    msg.textContent = 'Consulta creada como pendiente de pago. La puedes marcar como pagada desde "Mis citas" para activar la videollamada.';
+    msg.className = 'msg ok';
+    setTimeout(()=>cerrarModal('modalConsultaRapida'), 2500);
+  }
+
+  btn.disabled = false;
+});
+
+document.getElementById('crBtnNuevo').addEventListener('click', ()=>{
+  document.getElementById('crNuevoAntes').style.display = 'block';
+  document.getElementById('crNuevoDespues').style.display = 'none';
+  document.getElementById('msgSalaRapida').textContent = '';
+  crMostrarPaso('crPasoNuevo');
+});
+
+document.getElementById('crBtnGenerarRapida').addEventListener('click', async ()=>{
+  const btn = document.getElementById('crBtnGenerarRapida');
+  const msg = document.getElementById('msgSalaRapida');
+  btn.disabled = true;
+  msg.className = 'msg';
+  msg.textContent = 'Generando sala...';
+
+  const { data: { session } } = await sb.auth.getSession();
+  if(!session){
+    msg.textContent = 'Tu sesión expiró, vuelve a iniciar sesión.';
+    msg.className = 'msg err';
+    btn.disabled = false;
+    return;
+  }
+
+  try {
+    const res = await fetch(EDGE_SALA_RAPIDA, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${session.access_token}`,
+        'apikey': SUPABASE_KEY
+      },
+      body: JSON.stringify({})
+    });
+    const data = await res.json();
+
+    if(!res.ok || !data.ok){
+      msg.textContent = 'No se pudo generar la sala: ' + (data.error || 'error desconocido');
+      msg.className = 'msg err';
+      btn.disabled = false;
+      return;
+    }
+
+    document.getElementById('crLigaRapida').textContent = data.url;
+    document.getElementById('crBtnEntrarRapida').onclick = ()=> window.open(data.url, '_blank');
+    document.getElementById('crNuevoAntes').style.display = 'none';
+    document.getElementById('crNuevoDespues').style.display = 'block';
+  } catch(e){
+    msg.textContent = 'No se pudo generar la sala: ' + e.message;
+    msg.className = 'msg err';
+  }
+  btn.disabled = false;
+});
+
+document.getElementById('crBtnCopiarRapida').addEventListener('click', async ()=>{
+  const btn = document.getElementById('crBtnCopiarRapida');
+  try{
+    await navigator.clipboard.writeText(document.getElementById('crLigaRapida').textContent);
+    btn.textContent = 'Copiado';
+    setTimeout(()=>btn.textContent='Copiar link', 1800);
+  }catch(e){
+    btn.textContent = 'Copia manual';
+  }
+});
 
 function iniciales(nombre){
   return (nombre||'').trim().split(/\s+/).slice(0,2).map(p=>p[0].toUpperCase()).join('');
