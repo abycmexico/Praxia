@@ -209,7 +209,8 @@
   .btn-ghost:hover{border-color:var(--primario);}
   .btn-danger{background:none;border:1.5px solid var(--line);color:var(--err);}
   .btn:disabled{opacity:.5;cursor:default;}
-  .btn-videollamada-pendiente{background:#f2f2f2;color:#999;cursor:not-allowed;border:1.5px solid var(--line);}
+  .btn-pago-temporal{background:#FFF1DB;color:#B5680A;border:1.5px solid #FFE0A8;}
+  .btn-pago-temporal:hover{background:#FFE7BD;}
   .msg{font-size:13px;margin-top:12px;min-height:17px;}
   .msg.err{color:var(--err);}
   .msg.ok{color:var(--ok);}
@@ -1362,9 +1363,10 @@ function tarjetaCita(c, esProxima){
       </div>
       <div style="display:flex;gap:8px;flex-wrap:wrap;">
         ${puedeEntrar
-          ? (c.daily_room_url
-              ? `<a class="btn btn-primary" href="${c.daily_room_url}" target="_blank">Entrar a la sesión</a>`
-              : `<button class="btn btn-videollamada-pendiente" disabled title="La videollamada aún no está conectada">Videollamada · Próximamente</button>`)
+          ? `<button class="btn btn-primary" onclick="entrarVideollamada('${c.id}', this)">Entrar a la sesión</button>`
+          : ''}
+        ${c.estado === 'pendiente_pago' && f > new Date()
+          ? `<button class="btn btn-ghost btn-pago-temporal" onclick="marcarComoPagada('${c.id}')" title="Provisional mientras Stripe no está conectado">Marcar como pagada (temporal)</button>`
           : ''}
         ${c.paciente_id ? `<a class="btn btn-ghost" href="./expediente.html?id=${c.paciente_id}">Expediente</a>` : ''}
         ${modificable ? `<button class="btn btn-ghost" onclick="abrirReprogramar('${c.id}')">Reprogramar</button>` : ''}
@@ -2131,6 +2133,61 @@ function pintarCalSemana(){
     </div>`;
 }
 window.mostrarCitasDelDia = mostrarCitasDelDia;
+
+/* ---------- videollamada (Daily.co vía Edge Function) ---------- */
+const EDGE_CREAR_SALA = 'https://uxbpfyeahqpertamhdxt.supabase.co/functions/v1/crear-sala-daily';
+
+async function entrarVideollamada(citaId, boton){
+  const textoOriginal = boton.textContent;
+  boton.disabled = true;
+  boton.textContent = 'Conectando...';
+
+  const { data: { session } } = await sb.auth.getSession();
+  if(!session){
+    alert('Tu sesión expiró, vuelve a iniciar sesión.');
+    boton.disabled = false; boton.textContent = textoOriginal;
+    return;
+  }
+
+  try {
+    const res = await fetch(EDGE_CREAR_SALA, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${session.access_token}`,
+        'apikey': SUPABASE_KEY
+      },
+      body: JSON.stringify({ cita_id: citaId })
+    });
+    const data = await res.json();
+
+    if(!res.ok || !data.ok){
+      alert('No se pudo conectar la videollamada: ' + (data.error || 'error desconocido'));
+      boton.disabled = false; boton.textContent = textoOriginal;
+      return;
+    }
+
+    window.open(data.url, '_blank');
+    boton.disabled = false; boton.textContent = textoOriginal;
+  } catch(e){
+    alert('No se pudo conectar la videollamada: ' + e.message);
+    boton.disabled = false; boton.textContent = textoOriginal;
+  }
+}
+window.entrarVideollamada = entrarVideollamada;
+
+/* ---------- marcar como pagada (temporal, mientras no hay Stripe) ---------- */
+async function marcarComoPagada(citaId){
+  if(!confirm('Esto es provisional mientras Stripe no está conectado: confirma que ya recibiste el pago fuera de la plataforma. ¿Continuar?')) return;
+
+  const { error } = await sb.from('citas').update({ estado: 'confirmada' }).eq('id', citaId);
+  if(error){ alert('Error: ' + error.message); return; }
+
+  cargarCitas();
+  cargarResumen();
+  cargarCalendario();
+}
+window.marcarComoPagada = marcarComoPagada;
 
 function iniciales(nombre){
   return (nombre||'').trim().split(/\s+/).slice(0,2).map(p=>p[0].toUpperCase()).join('');

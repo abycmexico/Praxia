@@ -610,9 +610,7 @@ function tarjeta(c, esProxima){
           ? `<button class="btn btn-pagar" onclick="abrirPago('${c.id}', ${c.precio || 0})">Pagar ahora</button>`
           : ''}
         ${puedeEntrar
-          ? (c.daily_room_url
-              ? `<a class="btn btn-primary" href="${c.daily_room_url}" target="_blank">Entrar a la sesión</a>`
-              : `<button class="btn btn-videollamada-pendiente" disabled title="La videollamada aún no está conectada">Videollamada · Próximamente</button>`)
+          ? `<button class="btn btn-primary" onclick="entrarVideollamada('${c.id}', this)">Entrar a la sesión</button>`
           : ''}
         ${modificable ? `<button class="btn btn-ghost" onclick="abrirReprogramar('${c.id}')">Reprogramar</button>` : ''}
         ${modificable ? `<button class="btn btn-danger" onclick="abrirCancelar('${c.id}')">Cancelar</button>` : ''}
@@ -995,6 +993,48 @@ document.getElementById('btnConfirmarReprogramar').addEventListener('click', asy
 });
 
 function capitalizar(t){ return t.charAt(0).toUpperCase() + t.slice(1); }
+
+/* ---------- videollamada (Daily.co vía Edge Function) ---------- */
+const EDGE_CREAR_SALA = 'https://uxbpfyeahqpertamhdxt.supabase.co/functions/v1/crear-sala-daily';
+
+async function entrarVideollamada(citaId, boton){
+  const textoOriginal = boton.textContent;
+  boton.disabled = true;
+  boton.textContent = 'Conectando...';
+
+  const { data: { session } } = await sb.auth.getSession();
+  if(!session){
+    alert('Tu sesión expiró, vuelve a iniciar sesión.');
+    boton.disabled = false; boton.textContent = textoOriginal;
+    return;
+  }
+
+  try {
+    const res = await fetch(EDGE_CREAR_SALA, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${session.access_token}`,
+        'apikey': SUPABASE_KEY
+      },
+      body: JSON.stringify({ cita_id: citaId })
+    });
+    const data = await res.json();
+
+    if(!res.ok || !data.ok){
+      alert('No se pudo conectar la videollamada: ' + (data.error || 'error desconocido'));
+      boton.disabled = false; boton.textContent = textoOriginal;
+      return;
+    }
+
+    window.open(data.url, '_blank');
+    boton.disabled = false; boton.textContent = textoOriginal;
+  } catch(e){
+    alert('No se pudo conectar la videollamada: ' + e.message);
+    boton.disabled = false; boton.textContent = textoOriginal;
+  }
+}
+window.entrarVideollamada = entrarVideollamada;
 
 function escapar(t){
   const d = document.createElement('div');
