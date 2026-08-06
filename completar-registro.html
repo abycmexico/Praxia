@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow">
+<title>Completando tu registro | Praxia</title>
+<link rel="icon" type="image/png" href="./assets/praxia-isotipo.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,400;1,600&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  :root{--primario:#2E7D32;--primario-claro:#7BC043;--ink:#1A1A1A;--gray:#7a7a7a;--line:#ececec;--err:#c62828;--ok:#2e7d32;}
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{background:#F7F9F6;color:var(--ink);font-family:'Montserrat',Arial,sans-serif;font-weight:500;min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;text-align:center;}
+  img.logo{height:32px;margin-bottom:26px;}
+  .box{width:100%;max-width:420px;background:#fff;border-radius:22px;padding:30px;box-shadow:0 4px 20px rgba(0,0,0,.06);text-align:left;}
+  .box h1{font-size:19px;margin-bottom:8px;text-align:center;}
+  .box p.sub{color:var(--gray);font-size:13px;margin-bottom:22px;text-align:center;}
+  label{display:block;font-size:12.5px;font-weight:700;margin-bottom:6px;margin-top:14px;}
+  input{width:100%;padding:11px 13px;border:1.5px solid var(--line);border-radius:10px;font-family:inherit;font-size:14px;}
+  input:focus{outline:none;border-color:var(--primario);}
+  button{width:100%;margin-top:22px;padding:13px;border:none;border-radius:30px;background:var(--primario);color:#fff;font-weight:700;font-size:14px;cursor:pointer;font-family:inherit;}
+  button:disabled{opacity:.6;}
+  .msg{margin-top:14px;font-size:13px;text-align:center;}
+  .msg.err{color:var(--err);}
+  .consentimiento-box{border:1.5px solid var(--line);border-radius:12px;padding:14px;margin-top:18px;background:#FAFAFA;}
+  .consentimiento-texto{font-size:11.5px;color:#555;line-height:1.6;max-height:110px;overflow-y:auto;margin-bottom:12px;}
+  .consentimiento-check{display:flex;gap:8px;align-items:flex-start;font-size:12px;font-weight:600;cursor:pointer;}
+  .consentimiento-check input{width:auto;margin-top:2px;}
+</style>
+</head>
+<body>
+
+<img class="logo" src="./assets/praxia-logo-completo.png" alt="Praxia">
+
+<div class="box" id="caja">
+  <p style="text-align:center;">Un momento...</p>
+</div>
+
+<script>
+const SUPABASE_URL = 'https://uxbpfyeahqpertamhdxt.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_xaaA4lYAQZjdcMFRhMGtuQ_fvIeJKv7';
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+const params = new URLSearchParams(location.search);
+const rolParam = params.get('rol');
+const psicologoIdParam = params.get('p');
+const caja = document.getElementById('caja');
+
+async function iniciar(){
+  const { data: { session } } = await sb.auth.getSession();
+  if(!session){
+    caja.innerHTML = '<p>No se detectó sesión. <a href="./login.html">Vuelve a iniciar sesión</a>.</p>';
+    return;
+  }
+
+  const uid = session.user.id;
+
+  // Si ya existe su fila (no es la primera vez), lo mandamos directo a su panel.
+  const { data: psiExistente } = await sb.from('psicologos').select('estado').eq('id', uid).maybeSingle();
+  if(psiExistente){
+    location.href = './panel-psicologo.html';
+    return;
+  }
+  const { data: pacExistente } = await sb.from('pacientes').select('id').eq('id', uid).maybeSingle();
+  if(pacExistente){
+    location.href = './panel-paciente.html';
+    return;
+  }
+
+  // Primera vez: hay que crear su fila. El rol viene del botón que usó
+  // para llegar aquí (registro de psicólogo o liga de invitación de paciente).
+  const nombreGoogle = session.user.user_metadata?.full_name || session.user.user_metadata?.name || session.user.email;
+  const correoGoogle = session.user.email;
+
+  if(rolParam === 'psicologo'){
+    pintarFormPsicologo(nombreGoogle);
+  } else if(rolParam === 'paciente' && psicologoIdParam){
+    await pintarFormPaciente(nombreGoogle, psicologoIdParam);
+  } else {
+    caja.innerHTML = `
+      <h1>Falta un dato</h1>
+      <p class="sub">No sabemos si te registras como psicólogo o llegaste por la liga de un psicólogo. Vuelve a intentarlo desde el botón correcto.</p>
+      <button onclick="location.href='./login.html'">Volver</button>`;
+  }
+}
+
+function pintarFormPsicologo(nombreSugerido){
+  caja.innerHTML = `
+    <h1>Ya casi, ${escapar(nombreSugerido.split(' ')[0])}</h1>
+    <p class="sub">Confirma tu nombre para tu cuenta de psicólogo. Queda pendiente de aprobación.</p>
+    <label for="nombre">Nombre completo</label>
+    <input type="text" id="nombre" value="${escapar(nombreSugerido)}">
+    <button id="btnConfirmar">Crear mi cuenta</button>
+    <p class="msg" id="msg"></p>
+  `;
+
+  document.getElementById('btnConfirmar').addEventListener('click', async ()=>{
+    const btn = document.getElementById('btnConfirmar');
+    const msg = document.getElementById('msg');
+    btn.disabled = true;
+    msg.textContent = 'Creando...';
+
+    const { data: { session } } = await sb.auth.getSession();
+    const { error } = await sb.from('psicologos').insert({
+      id: session.user.id,
+      nombre: document.getElementById('nombre').value.trim(),
+      correo: session.user.email,
+      estado: 'pendiente'
+    });
+
+    if(error){
+      msg.textContent = 'Error: ' + error.message;
+      msg.className = 'msg err';
+      btn.disabled = false;
+      return;
+    }
+
+    caja.innerHTML = '<h1>Cuenta creada</h1><p class="sub">Queda pendiente de aprobación. Te avisamos por correo en cuanto esté activa.</p>';
+  });
+}
+
+async function pintarFormPaciente(nombreSugerido, psicologoId){
+  const { data: psi, error } = await sb.from('psicologos_publicos')
+    .select('nombre').eq('id', psicologoId).maybeSingle();
+
+  if(error || !psi){
+    caja.innerHTML = '<h1>Liga no válida</h1><p class="sub">Pídele a tu psicólogo que te comparta la liga de nuevo.</p>';
+    return;
+  }
+
+  const TEXTO_BASE = 'Al registrarte, autorizas a tu psicólogo a recabar y tratar tus datos personales y de salud con el único fin de brindarte atención psicológica, conforme a la Ley Federal de Protección de Datos Personales en Posesión de los Particulares. Tus datos de sesión son confidenciales y solo tu psicólogo tiene acceso a tus notas clínicas.';
+
+  caja.innerHTML = `
+    <h1>Ya casi, ${escapar(nombreSugerido.split(' ')[0])}</h1>
+    <p class="sub">Tu psicólogo: <strong>${escapar(psi.nombre)}</strong></p>
+    <label for="nombre">Nombre completo</label>
+    <input type="text" id="nombre" value="${escapar(nombreSugerido)}">
+
+    <div class="consentimiento-box">
+      <div class="consentimiento-texto">${escapar(TEXTO_BASE)}</div>
+      <label class="consentimiento-check">
+        <input type="checkbox" id="checkConsentimiento">
+        <span>He leído y acepto lo anterior.</span>
+      </label>
+    </div>
+
+    <button id="btnConfirmar">Crear mi cuenta</button>
+    <p class="msg" id="msg"></p>
+  `;
+
+  document.getElementById('btnConfirmar').addEventListener('click', async ()=>{
+    const btn = document.getElementById('btnConfirmar');
+    const msg = document.getElementById('msg');
+
+    if(!document.getElementById('checkConsentimiento').checked){
+      msg.textContent = 'Necesitas aceptar el consentimiento para continuar.';
+      msg.className = 'msg err';
+      return;
+    }
+
+    btn.disabled = true;
+    msg.textContent = 'Creando...';
+
+    const { data: { session } } = await sb.auth.getSession();
+    const nombre = document.getElementById('nombre').value.trim();
+
+    const { error: errPerfil } = await sb.from('pacientes').insert({
+      id: session.user.id,
+      nombre,
+      correo: session.user.email,
+      psicologo_id: psicologoId
+    });
+
+    if(errPerfil){
+      msg.textContent = 'Error: ' + errPerfil.message;
+      msg.className = 'msg err';
+      btn.disabled = false;
+      return;
+    }
+
+    await sb.from('consentimientos').insert({
+      paciente_id: session.user.id,
+      psicologo_id: psicologoId,
+      texto_aceptado: TEXTO_BASE,
+      user_agent: navigator.userAgent
+    });
+
+    location.href = './panel-paciente.html';
+  });
+}
+
+function escapar(t){
+  const d = document.createElement('div');
+  d.textContent = t == null ? '' : t;
+  return d.innerHTML;
+}
+
+iniciar();
+</script>
+
+</body>
+</html>

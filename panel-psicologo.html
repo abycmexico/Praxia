@@ -650,9 +650,10 @@
 
         <div class="integracion-fila">
           <div class="integracion-info">
-            <div class="integracion-nombre">Google Calendar <span class="badge-proximamente">Próximamente</span></div>
-            <p class="integracion-desc">Sincronización en ambos sentidos: tus citas de Praxia aparecerán en tu Google Calendar, y los horarios que ya tengas ocupados ahí se bloquearán aquí para que nadie agende encima.</p>
-            <button type="button" class="btn btn-ghost" disabled title="Disponible próximamente" style="margin-top:10px;">Conectar con Google Calendar</button>
+            <div class="integracion-nombre">Google Calendar <span class="badge-proximamente" id="badgeGoogleEstado">Sin conectar</span></div>
+            <p class="integracion-desc">Al conectarlo, las videollamadas de tus sesiones se crean como reuniones de Google Meet en tu propio calendario. Cada psicólogo conecta su propia cuenta.</p>
+            <button type="button" class="btn btn-ghost" id="btnConectarGoogle" style="margin-top:10px;">Conectar con Google Calendar</button>
+            <button type="button" class="btn btn-ghost" id="btnDesconectarGoogle" style="margin-top:10px;display:none;">Desconectar</button>
           </div>
         </div>
       </div>
@@ -1637,7 +1638,61 @@ async function cargarConfig(){
   document.getElementById('whatsappActivo').checked = !!config.whatsapp_activo;
 
   cargarPerfil();
+  cargarEstadoGoogle();
 }
+
+/* ---------- Google Calendar ---------- */
+async function cargarEstadoGoogle(){
+  const { data, error } = await sb.rpc('esta_conectado_google_calendar');
+  const badge = document.getElementById('badgeGoogleEstado');
+  const btnConectar = document.getElementById('btnConectarGoogle');
+  const btnDesconectar = document.getElementById('btnDesconectarGoogle');
+
+  if(error){ return; }
+
+  if(data === true){
+    badge.textContent = 'Conectado';
+    badge.style.background = '#E4F3E1';
+    badge.style.color = 'var(--primario)';
+    btnConectar.style.display = 'none';
+    btnDesconectar.style.display = 'inline-block';
+  } else {
+    badge.textContent = 'Sin conectar';
+    badge.style.background = '#FFF1DB';
+    badge.style.color = '#B5680A';
+    btnConectar.style.display = 'inline-block';
+    btnDesconectar.style.display = 'none';
+  }
+}
+
+document.getElementById('btnConectarGoogle').addEventListener('click', async ()=>{
+  const btn = document.getElementById('btnConectarGoogle');
+  btn.disabled = true;
+  btn.textContent = 'Conectando...';
+
+  const { data: state, error } = await sb.rpc('crear_estado_oauth_google');
+  if(error || !state){
+    alert('No se pudo iniciar la conexión: ' + (error?.message || 'intenta de nuevo'));
+    btn.disabled = false;
+    btn.textContent = 'Conectar con Google Calendar';
+    return;
+  }
+
+  const clientId = 'PON_AQUI_TU_GOOGLE_CLIENT_ID';
+  const redirectUri = 'https://uxbpfyeahqpertamhdxt.supabase.co/functions/v1/google-oauth-callback';
+  const scope = 'https://www.googleapis.com/auth/calendar.events';
+  const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code&scope=${encodeURIComponent(scope)}&access_type=offline&prompt=consent&state=${state}`;
+
+  window.open(authUrl, '_blank');
+  btn.disabled = false;
+  btn.textContent = 'Conectar con Google Calendar';
+});
+
+document.getElementById('btnDesconectarGoogle').addEventListener('click', async ()=>{
+  if(!confirm('¿Desconectar Google Calendar? Las videollamadas ya creadas siguen funcionando, pero las nuevas no se crearán hasta que vuelvas a conectar.')) return;
+  await sb.rpc('desconectar_google_calendar');
+  cargarEstadoGoogle();
+});
 
 /* ---------- perfil: foto, especialidad, bio ---------- */
 function cargarPerfil(){
@@ -2340,7 +2395,7 @@ function pintarCalSemana(){
 window.mostrarCitasDelDia = mostrarCitasDelDia;
 
 /* ---------- videollamada (Daily.co vía Edge Function) ---------- */
-const EDGE_CREAR_SALA = 'https://uxbpfyeahqpertamhdxt.supabase.co/functions/v1/crear-sala-daily';
+const EDGE_CREAR_SALA = 'https://uxbpfyeahqpertamhdxt.supabase.co/functions/v1/crear-evento-meet';
 
 async function entrarVideollamada(citaId, boton){
   const textoOriginal = boton.textContent;
@@ -2395,7 +2450,7 @@ async function marcarComoPagada(citaId){
 window.marcarComoPagada = marcarComoPagada;
 
 /* ---------- consulta rápida (botón flotante +) ---------- */
-const EDGE_SALA_RAPIDA = 'https://uxbpfyeahqpertamhdxt.supabase.co/functions/v1/crear-sala-rapida';
+const EDGE_SALA_RAPIDA = 'https://uxbpfyeahqpertamhdxt.supabase.co/functions/v1/crear-evento-meet';
 let crPacienteSel = null;
 
 document.getElementById('btnFlotanteMas').addEventListener('click', ()=>{

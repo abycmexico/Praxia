@@ -32,6 +32,10 @@
   .msg.err{color:var(--err);}
   .msg.ok{color:var(--ok);}
   .foot{margin-top:24px;font-size:13px;color:var(--gray);text-align:center;}
+  .separador{display:flex;align-items:center;gap:12px;margin:22px 0;color:var(--gray);font-size:12px;}
+  .separador::before,.separador::after{content:"";flex:1;height:1px;background:var(--line);}
+  .btn-google{width:100%;display:flex;align-items:center;justify-content:center;gap:10px;padding:13px;border:1.5px solid var(--line);border-radius:30px;background:#fff;font-weight:700;font-size:14px;cursor:pointer;font-family:inherit;color:var(--ink);}
+  .btn-google:hover{border-color:var(--primario);}
   .foot a{color:var(--ink);font-weight:700;border-bottom:1.5px solid var(--primario);}
 
   .marca-pie{display:flex;justify-content:center;padding:24px 0 8px;opacity:.35;}
@@ -65,16 +69,28 @@
       <p class="msg" id="msg"></p>
     </form>
 
+    <div class="separador"><span>o</span></div>
+    <button class="btn-google" id="btnGoogle">
+      <svg viewBox="0 0 48 48" width="18" height="18"><path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3C33.7 32.9 29.3 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.1 8 3l6-6C34.5 5.1 29.5 3 24 3 12.4 3 3 12.4 3 24s9.4 21 21 21 21-9.4 21-21c0-1.4-.1-2.7-.4-4z"/><path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.5 15.9 18.9 13 24 13c3.1 0 5.8 1.1 8 3l6-6C34.5 5.1 29.5 3 24 3 16.3 3 9.7 7.3 6.3 14.7z"/><path fill="#4CAF50" d="M24 45c5.2 0 9.9-1.7 13.6-4.7l-6.3-5.3c-2 1.5-4.7 2.5-7.3 2.5-5.3 0-9.7-3.4-11.3-8.1l-6.5 5C9.5 40.5 16.2 45 24 45z"/><path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.4-2.3 4.4-4.2 5.9l6.3 5.3C41.4 36.4 45 30.8 45 24c0-1.4-.1-2.7-.4-3.5z"/></svg>
+      Continuar con Google
+    </button>
+
     <p class="foot">¿Ya tienes cuenta? <a href="./login.html">Inicia sesión</a></p>
   </div>
 </main>
 <div class="marca-pie"><img src="./assets/praxia-isotipo.png" alt="Praxia"></div>
 
-
 <script>
   const SUPABASE_URL = 'https://uxbpfyeahqpertamhdxt.supabase.co';
   const SUPABASE_KEY = 'sb_publishable_xaaA4lYAQZjdcMFRhMGtuQ_fvIeJKv7';
   const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+  document.getElementById('btnGoogle').addEventListener('click', async ()=>{
+    await sb.auth.signInWithOAuth({
+      provider: 'google',
+      options: { redirectTo: `${location.origin}${location.pathname.replace(/[^/]+$/,'')}completar-registro.html?rol=psicologo` }
+    });
+  });
 
   const form = document.getElementById('formRegistro');
   const btn = document.getElementById('btnRegistrar');
