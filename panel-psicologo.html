@@ -1678,7 +1678,7 @@ document.getElementById('btnConectarGoogle').addEventListener('click', async ()=
     return;
   }
 
-  const clientId = 'PON_AQUI_TU_GOOGLE_CLIENT_ID';
+  const clientId = '471531887554-823cutg1s2c5bue23ufod092qpn07p8u.apps.googleusercontent.com';
   const redirectUri = 'https://uxbpfyeahqpertamhdxt.supabase.co/functions/v1/google-oauth-callback';
   const scope = 'https://www.googleapis.com/auth/calendar.events';
   const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code&scope=${encodeURIComponent(scope)}&access_type=offline&prompt=consent&state=${state}`;
