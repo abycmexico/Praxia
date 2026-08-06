@@ -131,6 +131,13 @@
   .cal-evento-semana{background:var(--primario);color:#fff;font-size:10px;font-weight:700;border-radius:6px;padding:3px 6px;line-height:1.3;overflow:hidden;cursor:pointer;}
   .cal-evento-semana.cancelada{background:#ddd;color:#888;}
 
+  .disp-rango-personalizado{background:#fff;border:1.5px solid var(--line);border-radius:16px;padding:18px;margin-bottom:16px;}
+  .disp-dias-check{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:14px;}
+  .disp-dias-check label{display:flex;align-items:center;gap:6px;font-size:12.5px;font-weight:700;cursor:pointer;}
+  .disp-dias-check input{width:auto;cursor:pointer;}
+  .disp-rango-campos{display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+  .disp-rango-campos input[type="time"]{width:auto;padding:9px 12px;}
+  .disp-rango-campos span{color:var(--gray);font-size:13px;}
   .disp-atajos{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;}
   .disp-ayuda{font-size:12px;color:var(--gray);margin-bottom:16px;}
   .disp-grid{border:1.5px solid var(--line);border-radius:16px;overflow:hidden;background:#fff;overflow-x:auto;}
@@ -388,6 +395,24 @@
     <div id="vistaDisponibilidad" style="display:none;">
       <p class="sub">Marca las horas en que atiendes. Tus pacientes solo podrán agendar dentro de lo que marques aquí. Cada celda representa 15 minutos.</p>
 
+      <div class="disp-rango-personalizado">
+        <div class="disp-dias-check">
+          <label><input type="checkbox" class="disp-dia-cb" value="1"> Lun</label>
+          <label><input type="checkbox" class="disp-dia-cb" value="2"> Mar</label>
+          <label><input type="checkbox" class="disp-dia-cb" value="3"> Mié</label>
+          <label><input type="checkbox" class="disp-dia-cb" value="4"> Jue</label>
+          <label><input type="checkbox" class="disp-dia-cb" value="5"> Vie</label>
+          <label><input type="checkbox" class="disp-dia-cb" value="6"> Sáb</label>
+          <label><input type="checkbox" class="disp-dia-cb" value="0"> Dom</label>
+        </div>
+        <div class="disp-rango-campos">
+          <input type="time" id="dispRangoInicio" value="09:00" step="900">
+          <span>a</span>
+          <input type="time" id="dispRangoFin" value="14:00" step="900">
+          <button class="btn btn-primary" id="btnDispAplicarRango">Aplicar a los días marcados</button>
+        </div>
+      </div>
+
       <div class="disp-atajos">
         <button class="btn btn-ghost" id="btnDispLunAVie">Copiar lunes a L–V</button>
         <button class="btn btn-ghost" id="btnDispPreset9a14">Aplicar 9:00–14:00 (L–V)</button>
@@ -639,20 +664,36 @@
   <div class="modal">
     <div id="apPaso1">
       <h3>Agendar para un paciente</h3>
-      <p class="modal-sub">Elige a tu paciente y el horario. Le va a llegar una liga para que confirme.</p>
+      <p class="modal-sub">Elige a tu paciente, la fecha, hora, duración y precio que quieras. Le va a llegar una liga para que confirme.</p>
 
       <div class="campo" style="margin-bottom:16px;">
         <label for="apSelectPaciente">Paciente</label>
         <select id="apSelectPaciente"></select>
       </div>
 
-      <div class="dias" id="apDias"></div>
-      <div class="horas" id="apHoras"><p class="empty" style="grid-column:1/-1;">Selecciona un día.</p></div>
+      <div class="rejilla" style="margin-bottom:16px;">
+        <div class="campo">
+          <label for="apFecha">Fecha</label>
+          <input type="date" id="apFecha">
+        </div>
+        <div class="campo">
+          <label for="apHora">Hora</label>
+          <input type="time" id="apHora">
+        </div>
+        <div class="campo">
+          <label for="apDuracion">Duración (minutos)</label>
+          <input type="number" id="apDuracion" min="5" max="480" step="5">
+        </div>
+        <div class="campo">
+          <label for="apPrecio">Precio (MXN)</label>
+          <input type="number" id="apPrecio" min="0" step="50">
+        </div>
+      </div>
 
       <p class="msg" id="msgAgendarPaciente"></p>
       <div class="modal-actions">
         <button class="btn btn-ghost" onclick="cerrarModal('modalAgendarPaciente')">Cancelar</button>
-        <button class="btn btn-primary" id="btnConfirmarAgendarPaciente" disabled>Crear cita</button>
+        <button class="btn btn-primary" id="btnConfirmarAgendarPaciente">Crear cita</button>
       </div>
     </div>
 
@@ -859,6 +900,40 @@ function dispToggleDia(dia){
 }
 
 /* ---------- atajos ---------- */
+/* ---------- rango personalizado (elige días + horario libre) ---------- */
+document.getElementById('btnDispAplicarRango').addEventListener('click', ()=>{
+  const msg = document.getElementById('msgDisp');
+  const diasMarcados = Array.from(document.querySelectorAll('.disp-dia-cb:checked')).map(cb=>cb.value);
+  const inicioStr = document.getElementById('dispRangoInicio').value;
+  const finStr = document.getElementById('dispRangoFin').value;
+
+  if(!diasMarcados.length){
+    msg.textContent = 'Marca al menos un día.';
+    msg.className = 'msg err';
+    return;
+  }
+  if(!inicioStr || !finStr || finStr <= inicioStr){
+    msg.textContent = 'La hora de fin debe ser posterior a la de inicio.';
+    msg.className = 'msg err';
+    return;
+  }
+
+  const [hi, mi] = inicioStr.split(':').map(Number);
+  const [hf, mf] = finStr.split(':').map(Number);
+  const minIni = hi*60 + mi;
+  const minFin = hf*60 + mf;
+
+  diasMarcados.forEach(dia=>{
+    for(let m=minIni; m<minFin; m+=DISP_PASO){
+      dispEstado[dia][m] = true;
+    }
+  });
+
+  pintarDispGrid();
+  msg.textContent = `Marcado de ${inicioStr} a ${finStr} en ${diasMarcados.length} día(s). No olvides guardar.`;
+  msg.className = 'msg ok';
+});
+
 document.getElementById('btnDispLunAVie').addEventListener('click', ()=>{
   const patronLunes = { ...dispEstado[1] };
   [2,3,4,5].forEach(d=>{ dispEstado[d] = { ...patronLunes }; });
@@ -1766,16 +1841,11 @@ document.getElementById('btnConfirmarReprogramar').addEventListener('click', asy
 
 function capitalizar(t){ return t.charAt(0).toUpperCase() + t.slice(1); }
 
-/* ---------- agendar para un paciente ---------- */
-let apDiaSel = null;
-let apHoraSel = null;
-
-document.getElementById('btnAbrirAgendarPaciente').addEventListener('click', async ()=>{
+/* ---------- agendar para un paciente (libertad total) ---------- */
+document.getElementById('btnAbrirAgendarPaciente').addEventListener('click', ()=>{
   document.getElementById('apPaso1').style.display = 'block';
   document.getElementById('apPaso2').style.display = 'none';
   document.getElementById('msgAgendarPaciente').textContent = '';
-  document.getElementById('btnConfirmarAgendarPaciente').disabled = true;
-  apDiaSel = null; apHoraSel = null;
 
   const activos = pacientesCache.filter(p=> p.estado === 'activo');
   const sel = document.getElementById('apSelectPaciente');
@@ -1783,90 +1853,49 @@ document.getElementById('btnAbrirAgendarPaciente').addEventListener('click', asy
     ? activos.map(p=>`<option value="${p.id}">${escapar(p.nombre)}</option>`).join('')
     : '<option value="">No tienes pacientes activos</option>';
 
-  await cargarAgendaParaRepro(); // reutiliza disponibilidad/ocupación ya cargadas para reprogramar
-  pintarDiasAp();
-  document.getElementById('apHoras').innerHTML = '<p class="empty" style="grid-column:1/-1;">Selecciona un día.</p>';
+  // Precargamos con tu configuración, pero el psicólogo puede cambiar
+  // fecha, hora, duración y precio libremente para esta cita específica.
+  const manana = new Date();
+  manana.setDate(manana.getDate()+1);
+  document.getElementById('apFecha').value = manana.toISOString().slice(0,10);
+  document.getElementById('apHora').value = '10:00';
+  document.getElementById('apDuracion').value = (config && config.duracion_sesion) ? config.duracion_sesion : 50;
+  document.getElementById('apPrecio').value = (config && config.precio_sesion) ? config.precio_sesion : 0;
+
   abrirModal('modalAgendarPaciente');
 });
-
-function pintarDiasAp(){
-  const cont = document.getElementById('apDias');
-  const hoy = new Date();
-  hoy.setHours(0,0,0,0);
-  const maxDias = (config && config.dias_max_anticipacion) ? config.dias_max_anticipacion : 30;
-
-  let html = '';
-  for(let i=0; i<maxDias; i++){
-    const d = new Date(hoy);
-    d.setDate(hoy.getDate()+i);
-    if(!bloquesDisp.some(b=> b.dia_semana === d.getDay())) continue;
-    html += `
-      <div class="dia-chip" data-fecha="${d.toISOString()}" onclick="apElegirDia(this)">
-        <div class="dn">${DIAS_CORTO[d.getDay()]}</div>
-        <div class="df">${d.getDate()}</div>
-        <div class="dm">${MESES[d.getMonth()]}</div>
-      </div>`;
-  }
-  cont.innerHTML = html || '<p class="empty" style="width:100%;">No tienes horarios publicados en Disponibilidad.</p>';
-}
-
-function apElegirDia(el){
-  document.querySelectorAll('#apDias .dia-chip').forEach(c=>c.classList.remove('sel'));
-  el.classList.add('sel');
-  apDiaSel = new Date(el.dataset.fecha);
-  apHoraSel = null;
-  document.getElementById('btnConfirmarAgendarPaciente').disabled = true;
-  pintarHorasAp();
-}
-window.apElegirDia = apElegirDia;
-
-function pintarHorasAp(){
-  const cont = document.getElementById('apHoras');
-  const espacios = espaciosDelDia(apDiaSel);
-  const ahora = Date.now();
-
-  if(!espacios.length){
-    cont.innerHTML = '<p class="empty" style="grid-column:1/-1;">No hay horarios ese día.</p>';
-    return;
-  }
-
-  cont.innerHTML = espacios.map(e=>{
-    const t = e.getTime();
-    const ocupado = ocupadas.includes(t);
-    const pasado = t <= ahora;
-    const hhmm = e.toLocaleTimeString('es-MX',{hour:'2-digit',minute:'2-digit'});
-    return `<button class="hora-btn" ${ocupado||pasado ? 'disabled' : ''}
-              onclick="apElegirHora(this, ${t})">${hhmm}</button>`;
-  }).join('');
-}
-
-function apElegirHora(btn, timestamp){
-  document.querySelectorAll('#apHoras .hora-btn').forEach(b=>b.classList.remove('sel'));
-  btn.classList.add('sel');
-  apHoraSel = new Date(timestamp);
-  document.getElementById('btnConfirmarAgendarPaciente').disabled = false;
-}
-window.apElegirHora = apElegirHora;
 
 document.getElementById('btnConfirmarAgendarPaciente').addEventListener('click', async ()=>{
   const btn = document.getElementById('btnConfirmarAgendarPaciente');
   const msg = document.getElementById('msgAgendarPaciente');
-  if(!apHoraSel) return;
 
   const pacienteId = document.getElementById('apSelectPaciente').value;
-  if(!pacienteId){
-    msg.textContent = 'Elige un paciente.';
+  const fechaStr = document.getElementById('apFecha').value;
+  const horaStr = document.getElementById('apHora').value;
+  const duracion = parseInt(document.getElementById('apDuracion').value, 10);
+  const precio = parseFloat(document.getElementById('apPrecio').value) || 0;
+
+  msg.className = 'msg';
+
+  if(!pacienteId){ msg.textContent = 'Elige un paciente.'; msg.className='msg err'; return; }
+  if(!fechaStr || !horaStr){ msg.textContent = 'Falta la fecha o la hora.'; msg.className='msg err'; return; }
+  if(!duracion || duracion < 5){ msg.textContent = 'La duración mínima es 5 minutos.'; msg.className='msg err'; return; }
+
+  const fechaHora = new Date(`${fechaStr}T${horaStr}:00`);
+  if(fechaHora <= new Date()){
+    msg.textContent = 'Elige una fecha y hora futuras.';
     msg.className = 'msg err';
     return;
   }
 
   btn.disabled = true;
-  msg.className = 'msg';
   msg.textContent = 'Creando cita...';
 
   const { data, error } = await sb.rpc('crear_cita_para_paciente', {
     p_paciente_id: pacienteId,
-    p_fecha_hora: apHoraSel.toISOString()
+    p_fecha_hora: fechaHora.toISOString(),
+    p_duracion_minutos: duracion,
+    p_precio: precio
   });
 
   if(error){
@@ -1887,8 +1916,8 @@ document.getElementById('btnConfirmarAgendarPaciente').addEventListener('click',
   const paciente = pacientesCache.find(p=> p.id === pacienteId);
   const liga = new URL(`./confirmar-cita.html?t=${r.token}`, location.href).href;
 
-  const fechaTexto = capitalizar(apHoraSel.toLocaleDateString('es-MX',{weekday:'long',day:'numeric',month:'long'}));
-  const horaTexto = apHoraSel.toLocaleTimeString('es-MX',{hour:'2-digit',minute:'2-digit'});
+  const fechaTexto = capitalizar(fechaHora.toLocaleDateString('es-MX',{weekday:'long',day:'numeric',month:'long'}));
+  const horaTexto = fechaHora.toLocaleTimeString('es-MX',{hour:'2-digit',minute:'2-digit'});
   const mensaje = `Hola ${paciente ? paciente.nombre.split(' ')[0] : ''}, te propongo una sesión el ${fechaTexto} a las ${horaTexto}. Confírmala aquí: ${liga}`;
 
   document.getElementById('apLigaTexto').textContent = liga;
