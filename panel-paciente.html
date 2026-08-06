@@ -15,17 +15,38 @@
   *{box-sizing:border-box;margin:0;padding:0;}
   body{background:var(--bg,#F7F9F6);color:var(--ink);font-family:'Montserrat',Arial,sans-serif;font-weight:500;}
   a{color:inherit;text-decoration:none;}
-  header{display:flex;align-items:center;justify-content:space-between;padding:20px 32px;border-bottom:1.5px solid var(--line);position:sticky;top:0;background:#fff;z-index:10;}
-  header .logo{display:flex;align-items:center;gap:10px;}
-  header .logo img{height:26px;width:auto;}
-  header button{background:none;border:1.5px solid var(--line);border-radius:20px;padding:8px 16px;font-size:12.5px;font-weight:700;cursor:pointer;font-family:inherit;}
-  header button:hover{border-color:var(--primario);}
-  main{max-width:760px;margin:0 auto;padding:36px 24px 90px;}
-  nav.tabs{display:flex;gap:4px;padding:0 32px;border-bottom:1.5px solid var(--line);overflow-x:auto;background:#fff;}
-  nav.tabs button{background:none;border:none;padding:14px 18px;font-size:13.5px;font-weight:700;cursor:pointer;font-family:inherit;color:var(--gray);border-bottom:2.5px solid transparent;white-space:nowrap;}
-  nav.tabs button.active{color:var(--ink);border-bottom-color:var(--primario);}
+  body{background:var(--bg,#F7F9F6);color:var(--ink);font-family:'Montserrat',Arial,sans-serif;font-weight:500;}
+  a{color:inherit;text-decoration:none;}
+
+  .app-shell{display:flex;min-height:100vh;}
+  .sidebar{width:230px;flex-shrink:0;background:#fff;border-right:1.5px solid var(--line);display:flex;flex-direction:column;padding:24px 16px;position:sticky;top:0;height:100vh;}
+  .sidebar-logo{display:flex;align-items:center;padding:0 8px 22px;}
+  .sidebar-logo img{width:100%;max-width:170px;height:auto;}
+  nav.sidebar-nav{display:flex;flex-direction:column;gap:3px;flex:1;}
+  nav.sidebar-nav button{display:flex;align-items:center;gap:11px;background:none;border:none;padding:11px 12px;border-radius:12px;font-size:13.5px;font-weight:700;cursor:pointer;font-family:inherit;color:var(--gray);text-align:left;width:100%;}
+  nav.sidebar-nav button:hover{background:#F2F6F1;}
+  nav.sidebar-nav button.active{background:var(--primario);color:#fff;}
+  nav.sidebar-nav .icono-svg{width:18px;height:18px;flex-shrink:0;}
+  .sidebar-user{display:flex;align-items:center;gap:10px;padding:14px 8px;margin-top:10px;border-top:1.5px solid var(--line);}
+  .sidebar-avatar{width:34px;height:34px;border-radius:50%;background:var(--primario-suave);color:#fff;font-weight:800;font-size:12.5px;display:flex;align-items:center;justify-content:center;flex-shrink:0;overflow:hidden;background-size:cover;background-position:center;}
+  .sidebar-user-info{min-width:0;}
+  .sidebar-user-nombre{font-size:12.5px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .sidebar-user-rol{font-size:10.5px;color:var(--gray);}
+  .btn-salir{background:none;border:1.5px solid var(--line);border-radius:20px;padding:9px;font-size:11.5px;font-weight:700;cursor:pointer;font-family:inherit;color:var(--gray);margin-top:8px;}
+  .btn-salir:hover{border-color:var(--err);color:var(--err);}
+
+  .content-area{flex:1;min-width:0;}
+  main{max-width:720px;margin:0 auto;padding:36px 24px 40px;}
+  nav.tabs{display:flex;gap:4px;}
   section{display:none;}
   section.active{display:block;}
+  @media(max-width:900px){
+    .app-shell{flex-direction:column;}
+    .sidebar{width:100%;height:auto;position:static;flex-direction:row;align-items:center;padding:12px 16px;overflow-x:auto;}
+    .sidebar-logo{padding:0 12px 0 0;}
+    nav.sidebar-nav{flex-direction:row;flex:none;}
+    .sidebar-user,.btn-salir{display:none;}
+  }
   .bloque{border:1.5px solid var(--line);border-radius:16px;padding:22px 24px;margin-bottom:18px;background:#fff;}
   .perfil-foto-fila{display:flex;align-items:center;gap:20px;}
   .perfil-foto-preview{width:64px;height:64px;border-radius:50%;background:var(--primario-suave);color:#fff;font-weight:800;font-size:20px;display:flex;align-items:center;justify-content:center;flex-shrink:0;overflow:hidden;background-size:cover;background-position:center;}
@@ -41,14 +62,25 @@
   .barra-guardar{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;margin-top:4px;}
   .filtros{display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;}
   .chip{border:1.5px solid var(--line);background:none;border-radius:20px;padding:8px 15px;font-size:12.5px;font-weight:700;cursor:pointer;font-family:inherit;color:var(--gray);}
-  .chip.sel{border-color:var(--primario);background:#FFFBF0;color:var(--ink);}
+  .chip.sel{border-color:var(--primario);background:#EAF5E8;color:var(--ink);}
   @media(max-width:640px){nav.tabs{padding:0 16px;}.rejilla{grid-template-columns:1fr;}}
   h2{font-size:21px;margin-bottom:6px;}
   p.sub{color:var(--gray);font-size:13.5px;margin-bottom:24px;line-height:1.6;}
-  .psi-box{border:1.5px solid var(--line);border-radius:14px;padding:16px 18px;margin-bottom:34px;background:#FAFAFA;}
+  .psi-box{display:flex;align-items:center;gap:14px;border:1.5px solid var(--line);border-radius:16px;padding:16px 18px;margin-bottom:20px;background:#fff;box-shadow:0 2px 10px rgba(0,0,0,.04);}
+  .psi-box-avatar{width:44px;height:44px;border-radius:50%;background:var(--primario-suave);color:#fff;font-weight:800;font-size:16px;display:flex;align-items:center;justify-content:center;flex-shrink:0;overflow:hidden;background-size:cover;background-position:center;}
   .psi-box .et{font-size:10.5px;letter-spacing:1.2px;text-transform:uppercase;color:var(--gray);font-weight:700;margin-bottom:4px;}
   .psi-box .nom{font-size:16px;font-weight:700;}
   .psi-box .datos-sesion{font-size:12.5px;color:var(--gray);margin-top:5px;}
+
+  .card-proxima-pac{position:relative;overflow:hidden;background:linear-gradient(135deg, var(--primario), var(--primario-claro));border-radius:22px;padding:24px 26px;margin-bottom:24px;color:#fff;}
+  .card-proxima-pac .cpp-blob{position:absolute;width:180px;height:180px;background:rgba(255,255,255,.12);border-radius:60% 40% 55% 45% / 50% 55% 45% 50%;top:-70px;right:-50px;}
+  .card-proxima-pac .cpp-label{position:relative;font-size:10.5px;font-weight:800;letter-spacing:1px;text-transform:uppercase;opacity:.9;margin-bottom:10px;}
+  .card-proxima-pac .cpp-cuando{position:relative;font-size:19px;font-weight:800;margin-bottom:4px;}
+  .card-proxima-pac .cpp-detalle{position:relative;font-size:13px;opacity:.9;margin-bottom:16px;}
+  .card-proxima-pac .cpp-vacio{position:relative;font-size:14px;opacity:.95;}
+  .card-proxima-pac .btn-primary{background:#fff;color:var(--primario);}
+  .card-proxima-pac .btn-primary:hover{background:#F0F0F0;}
+
   .politicas{border:1.5px solid var(--line);border-radius:14px;padding:16px 18px;margin-bottom:34px;font-size:12.5px;color:#555;line-height:1.7;}
   .acciones{display:flex;gap:8px;flex-wrap:wrap;}
   .btn-danger{background:none;border:1.5px solid var(--line);color:var(--err);}
@@ -71,7 +103,7 @@
   .card p{font-size:13px;color:var(--gray);}
   .empty{color:var(--gray);font-size:13.5px;text-align:center;padding:34px 0;border:1.5px dashed var(--line);border-radius:14px;}
   .btn{padding:11px 20px;border-radius:24px;font-size:13px;font-weight:700;border:none;cursor:pointer;font-family:inherit;white-space:nowrap;}
-  .btn-primary{background:var(--primario);color:var(--ink);}
+  .btn-primary{background:var(--primario);color:#fff;}
   .btn-primary:hover{background:var(--primario-claro);}
   .btn-ghost{background:none;border:1.5px solid var(--line);color:var(--ink);}
   .btn:disabled{opacity:.5;cursor:default;}
@@ -90,14 +122,14 @@
   .tag.cancelada{background:#F8D7DA;color:#c62828;}
   .dias{display:flex;gap:8px;overflow-x:auto;padding-bottom:10px;margin-bottom:20px;}
   .dia-chip{flex:0 0 auto;border:1.5px solid var(--line);border-radius:12px;padding:10px 14px;cursor:pointer;text-align:center;min-width:74px;}
-  .dia-chip.sel{border-color:var(--primario);background:#FFFBF0;}
+  .dia-chip.sel{border-color:var(--primario);background:#EAF5E8;}
   .dia-chip .dn{font-size:10.5px;text-transform:uppercase;letter-spacing:.8px;color:var(--gray);font-weight:700;}
   .dia-chip .df{font-size:17px;font-weight:800;margin-top:2px;}
   .dia-chip .dm{font-size:10.5px;color:var(--gray);}
   .horas{display:grid;grid-template-columns:repeat(auto-fill,minmax(96px,1fr));gap:10px;}
   .hora-btn{border:1.5px solid var(--line);border-radius:10px;padding:12px 6px;font-size:13.5px;font-weight:700;cursor:pointer;background:#fff;font-family:inherit;color:var(--ink);}
   .hora-btn:hover:not(:disabled){border-color:var(--primario);}
-  .hora-btn.sel{border-color:var(--primario);background:var(--primario);}
+  .hora-btn.sel{border-color:var(--primario);background:var(--primario);color:#fff;}
   .hora-btn:disabled{opacity:.35;cursor:default;text-decoration:line-through;}
   .msg{font-size:13px;margin-top:14px;min-height:17px;line-height:1.6;}
   .msg.err{color:var(--err);}
@@ -113,25 +145,49 @@
 </head>
 <body>
 
-<header>
-  <a class="logo" href="./panel-paciente.html">
-    <img src="./assets/praxia-logo-completo.png" alt="Praxia">
-  </a>
-  <button id="btnSalir">Cerrar sesión</button>
-</header>
+<div class="app-shell">
+  <aside class="sidebar">
+    <a class="sidebar-logo" href="./panel-paciente.html">
+      <img src="./assets/praxia-logo-completo.png" alt="Praxia">
+    </a>
 
-<nav class="tabs">
-  <button class="active" data-tab="agendar">Agendar</button>
-  <button data-tab="sesiones">Mis sesiones</button>
-  <button data-tab="perfil">Mis datos</button>
-</nav>
+    <nav class="tabs sidebar-nav">
+      <button class="active" data-tab="agendar">
+        <svg class="icono-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="17" rx="2"></rect><line x1="3" y1="9" x2="21" y2="9"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="16" y1="2" x2="16" y2="6"></line></svg>
+        Agendar
+      </button>
+      <button data-tab="sesiones">
+        <svg class="icono-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"></circle><polyline points="12 7 12 12 15.5 14"></polyline></svg>
+        Mis sesiones
+      </button>
+      <button data-tab="perfil">
+        <svg class="icono-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"></circle><path d="M4 20c0-4.4 3.6-8 8-8s8 3.6 8 8"></path></svg>
+        Mis datos
+      </button>
+    </nav>
 
-<main>
+    <div class="sidebar-user">
+      <div class="sidebar-avatar" id="avatarSidebarPaciente"></div>
+      <div class="sidebar-user-info">
+        <div class="sidebar-user-nombre" id="nombreSidebarPaciente"></div>
+        <div class="sidebar-user-rol">Paciente</div>
+      </div>
+    </div>
+    <button id="btnSalir" class="btn-salir">Cerrar sesión</button>
+  </aside>
+
+  <div class="content-area">
+    <main>
   <div class="psi-box">
-    <div class="et">Tu psicólogo</div>
-    <div class="nom" id="nombrePsicologo">Cargando...</div>
-    <div class="datos-sesion" id="datosSesion"></div>
+    <div class="psi-box-avatar" id="avatarPsicologo"></div>
+    <div>
+      <div class="et">Tu psicólogo</div>
+      <div class="nom" id="nombrePsicologo">Cargando...</div>
+      <div class="datos-sesion" id="datosSesion"></div>
+    </div>
   </div>
+
+  <div id="proximaSesionPaciente"></div>
 
   <section id="tab-agendar" class="active">
     <div class="politicas" id="politicasBox" style="display:none;"></div>
@@ -223,8 +279,10 @@
       </div>
     </form>
   </section>
-</main>
-<div class="marca-pie"><img src="./assets/praxia-isotipo.png" alt="Praxia"></div>
+    </main>
+    <div class="marca-pie"><img src="./assets/praxia-isotipo.png" alt="Praxia"></div>
+  </div>
+</div>
 
 
 <div class="modal-bg" id="modalCancelar">
@@ -326,8 +384,11 @@ async function iniciar(){
   }
   yo = pac;
 
+  document.getElementById('nombreSidebarPaciente').textContent = yo.nombre;
+  pintarAvatarSidebarPaciente();
+
   const { data: psi } = await sb.from('psicologos_publicos')
-    .select('nombre').eq('id', pac.psicologo_id).maybeSingle();
+    .select('nombre, foto_url, especialidad').eq('id', pac.psicologo_id).maybeSingle();
 
   const { data: conf } = await sb.from('configuracion')
     .select('*').eq('psicologo_id', pac.psicologo_id).maybeSingle();
@@ -337,12 +398,28 @@ async function iniciar(){
   document.getElementById('nombrePsicologo').textContent =
     cfg.nombre_consultorio ? cfg.nombre_consultorio : nombrePsi;
 
+  const avatarPsi = document.getElementById('avatarPsicologo');
+  if(psi && psi.foto_url){
+    avatarPsi.style.backgroundImage = `url(${psi.foto_url})`;
+  } else {
+    avatarPsi.textContent = nombrePsi.charAt(0).toUpperCase();
+  }
+
   pintarDatosSesion();
   pintarPerfil();
 
   await cargarDisponibilidad();
   await cargarCitas();
   pintarDias();
+}
+
+function pintarAvatarSidebarPaciente(){
+  const cont = document.getElementById('avatarSidebarPaciente');
+  if(yo.foto_url){
+    cont.style.backgroundImage = `url(${yo.foto_url})`;
+  } else {
+    cont.textContent = (yo.nombre||'').trim().split(/\s+/).slice(0,2).map(p=>p[0].toUpperCase()).join('');
+  }
 }
 
 /* ---------- pestañas ---------- */
@@ -435,6 +512,7 @@ document.getElementById('inputFotoPerfil').addEventListener('change', async (e)=
 
   yo.foto_url = firmada.signedUrl;
   pintarFoto(firmada.signedUrl);
+  pintarAvatarSidebarPaciente();
   msg.textContent = 'Foto actualizada.';
   msg.className = 'msg ok';
   setTimeout(()=>{ if(msg.textContent==='Foto actualizada.') msg.textContent=''; }, 3000);
@@ -535,10 +613,46 @@ async function cargarCitas(){
     : '<p class="empty">No tienes sesiones agendadas.</p>';
 
   pintarHistorial();
+  pintarProximaSesionPaciente(proximas.filter(c=> c.estado !== 'pendiente_confirmacion').sort((a,b)=> new Date(a.fecha_hora)-new Date(b.fecha_hora))[0]);
 
   const { data: ocupadas } = await sb.from('ocupacion_psicologo')
     .select('fecha_hora').eq('psicologo_id', yo.psicologo_id);
   citasOcupadas = (ocupadas||[]).map(c=> new Date(c.fecha_hora).getTime());
+}
+
+function pintarProximaSesionPaciente(cita){
+  const cont = document.getElementById('proximaSesionPaciente');
+  if(!cita){
+    cont.innerHTML = `
+      <div class="card-proxima-pac">
+        <div class="cpp-blob"></div>
+        <div class="cpp-label">Próxima sesión</div>
+        <p class="cpp-vacio">No tienes ninguna sesión agendada. Elige un horario abajo para agendar la primera.</p>
+      </div>`;
+    return;
+  }
+
+  const f = new Date(cita.fecha_hora);
+  const minutosFaltan = Math.round((f.getTime() - Date.now()) / 60000);
+  let cuando;
+  if(minutosFaltan < 60) cuando = `En ${minutosFaltan} minuto${minutosFaltan===1?'':'s'}`;
+  else if(minutosFaltan < 60*24) cuando = `Hoy a las ${f.toLocaleTimeString('es-MX',{hour:'2-digit',minute:'2-digit'})}`;
+  else cuando = `${capitalizar(f.toLocaleDateString('es-MX',{weekday:'long',day:'numeric',month:'long'}))} a las ${f.toLocaleTimeString('es-MX',{hour:'2-digit',minute:'2-digit'})}`;
+
+  const puedeEntrarYa = cita.estado === 'confirmada' && dentroDeVentana(f);
+  const esPendientePago = cita.estado === 'pendiente_pago';
+
+  cont.innerHTML = `
+    <div class="card-proxima-pac">
+      <div class="cpp-blob"></div>
+      <div class="cpp-label">Próxima sesión</div>
+      <div class="cpp-cuando">${cuando}</div>
+      <div class="cpp-detalle">${cita.duracion_minutos} minutos${cita.precio > 0 ? ` · $${Number(cita.precio).toLocaleString('es-MX')} ${cfg.moneda||'MXN'}` : ''}</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;position:relative;">
+        ${puedeEntrarYa ? `<button class="btn btn-primary" onclick="entrarVideollamada('${cita.id}', this)">Entrar a la sesión</button>` : ''}
+        ${esPendientePago ? `<button class="btn btn-primary" onclick="abrirPago('${cita.id}', ${cita.precio||0})">Pagar ahora</button>` : ''}
+      </div>
+    </div>`;
 }
 
 function pintarHistorial(){
