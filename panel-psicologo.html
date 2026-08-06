@@ -179,9 +179,29 @@
   .switch input:checked + .slider{background:var(--primario);}
   .switch input:checked + .slider::before{transform:translateX(16px);}
 
-  .saludo-card{background:linear-gradient(135deg, var(--primario), var(--primario-claro));border-radius:24px;padding:26px 28px;margin-bottom:22px;color:#fff;}
-  .saludo-card h2{color:#fff;font-size:22px;margin-bottom:4px;}
-  .saludo-card .sub{color:rgba(255,255,255,.85);margin-bottom:0;}
+  .saludo-card{position:relative;overflow:hidden;background:linear-gradient(135deg, var(--primario), var(--primario-claro));border-radius:24px;padding:28px 30px;margin-bottom:20px;color:#fff;}
+  .saludo-blob{position:absolute;width:220px;height:220px;background:rgba(255,255,255,.12);border-radius:60% 40% 55% 45% / 50% 55% 45% 50%;top:-90px;right:-70px;}
+  .saludo-texto{position:relative;}
+  .saludo-card h2{color:#fff;font-size:23px;margin-bottom:4px;font-weight:800;}
+  .saludo-card .sub{color:rgba(255,255,255,.85);margin-bottom:6px;}
+  .saludo-narrativa{font-size:13.5px;color:rgba(255,255,255,.95);font-weight:600;max-width:520px;line-height:1.6;}
+
+  .card-proxima{position:relative;overflow:hidden;background:#fff;border-radius:22px;padding:22px 26px;margin-bottom:20px;box-shadow:0 3px 16px rgba(0,0,0,.06);border-left:5px solid var(--primario);}
+  .card-proxima .cp-label{font-size:10.5px;font-weight:800;letter-spacing:1px;text-transform:uppercase;color:var(--primario);margin-bottom:10px;}
+  .card-proxima .cp-fila{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;}
+  .card-proxima .cp-info{display:flex;align-items:center;gap:14px;}
+  .cp-avatar{width:50px;height:50px;border-radius:50%;background:var(--primario-suave);color:#fff;font-weight:800;font-size:17px;display:flex;align-items:center;justify-content:center;flex-shrink:0;overflow:hidden;background-size:cover;background-position:center;}
+  .cp-nombre{font-size:16px;font-weight:800;}
+  .cp-cuando{font-size:13px;color:var(--gray);margin-top:2px;}
+  .cp-vacio{color:var(--gray);font-size:14px;}
+
+  .hoy-pacientes-fila{margin-bottom:24px;}
+  .hoy-pacientes-fila h4{font-size:12px;letter-spacing:.6px;text-transform:uppercase;color:var(--gray);font-weight:800;margin-bottom:12px;}
+  .hoy-avatares{display:flex;gap:14px;overflow-x:auto;padding-bottom:6px;}
+  .hoy-avatar-item{display:flex;flex-direction:column;align-items:center;gap:6px;flex-shrink:0;cursor:pointer;width:64px;text-align:center;}
+  .hoy-avatar-item .ha-circulo{width:52px;height:52px;border-radius:50%;background:var(--primario-suave);color:#fff;font-weight:800;font-size:16px;display:flex;align-items:center;justify-content:center;overflow:hidden;background-size:cover;background-position:center;border:2.5px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,.1);}
+  .hoy-avatar-item .ha-nombre{font-size:10.5px;font-weight:700;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:64px;}
+  .hoy-avatar-item .ha-hora{font-size:9.5px;color:var(--gray);}
 
   .grid-dashboard{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-top:0;}
   .card-dash{background:#fff;border:none;border-radius:20px;padding:22px;box-shadow:0 2px 14px rgba(0,0,0,.05);}
@@ -305,10 +325,19 @@
 
   <section id="tab-resumen" class="active">
     <div class="saludo-card">
-      <div>
-        <h2>Hola, <span id="saludoNombre"></span> 👋</h2>
+      <div class="saludo-blob"></div>
+      <div class="saludo-texto">
+        <h2 id="saludoNombre"></h2>
         <p class="sub" id="saludoFecha"></p>
+        <p class="saludo-narrativa" id="saludoNarrativa"></p>
       </div>
+    </div>
+
+    <div id="proximaSesionCard"></div>
+
+    <div class="hoy-pacientes-fila" id="hoyPacientesFila" style="display:none;">
+      <h4>Pacientes de hoy</h4>
+      <div class="hoy-avatares" id="hoyAvatares"></div>
     </div>
 
     <div class="grid-dashboard">
@@ -1242,7 +1271,9 @@ document.getElementById('btnCopiarLiga').addEventListener('click', async ()=>{
 /* ---------- citas ---------- */
 /* ---------- resumen (dashboard) ---------- */
 async function cargarResumen(){
-  document.getElementById('saludoNombre').textContent = yo.nombre.split(' ')[0];
+  const horaActual = new Date().getHours();
+  const saludoHora = horaActual < 12 ? 'Buenos días' : horaActual < 19 ? 'Buenas tardes' : 'Buenas noches';
+  document.getElementById('saludoNombre').textContent = `${saludoHora}, ${yo.nombre.split(' ')[0]} 👋`;
   document.getElementById('saludoFecha').textContent =
     capitalizar(new Date().toLocaleDateString('es-MX', {weekday:'long', day:'numeric', month:'long'}));
 
@@ -1254,7 +1285,7 @@ async function cargarResumen(){
   document.getElementById('numPacientesInactivos').textContent = inactivos;
 
   const { data: citasDash } = await sb.from('citas')
-    .select('*, pacientes(nombre)').eq('psicologo_id', yo.id).order('fecha_hora');
+    .select('*, pacientes(nombre, foto_url)').eq('psicologo_id', yo.id).order('fecha_hora');
 
   const ahora = new Date();
   const inicioHoy = new Date(); inicioHoy.setHours(0,0,0,0);
@@ -1284,6 +1315,48 @@ async function cargarResumen(){
   const pendientes = activas.filter(c=> c.estado === 'pendiente_pago' && new Date(c.fecha_hora) >= ahora);
   const montoPendiente = pendientes.reduce((sum,c)=> sum + (Number(c.precio)||0), 0);
 
+  // Narrativa del saludo: cuenta en una frase qué tiene hoy.
+  const narrCont = document.getElementById('saludoNarrativa');
+  if(hoy.length === 0){
+    narrCont.textContent = 'No tienes sesiones agendadas para hoy.';
+  } else {
+    const primera = [...hoy].sort((a,b)=> new Date(a.fecha_hora)-new Date(b.fecha_hora))[0];
+    const horaPrimera = new Date(primera.fecha_hora).toLocaleTimeString('es-MX',{hour:'2-digit',minute:'2-digit'});
+    const nombrePrimera = primera.pacientes ? primera.pacientes.nombre.split(' ')[0] : 'tu paciente';
+    narrCont.textContent = hoy.length === 1
+      ? `Tienes 1 sesión hoy, a las ${horaPrimera} con ${nombrePrimera}.`
+      : `Tienes ${hoy.length} sesiones hoy. La primera es a las ${horaPrimera} con ${nombrePrimera}.`;
+  }
+
+  // Tarjeta de próxima sesión: la más cercana en el futuro, sin importar el día.
+  const futurasOrdenadas = activas
+    .filter(c=> new Date(c.fecha_hora) >= ahora)
+    .sort((a,b)=> new Date(a.fecha_hora)-new Date(b.fecha_hora));
+  pintarProximaSesion(futurasOrdenadas[0]);
+
+  // Fila de fotos de los pacientes de hoy.
+  const filaHoy = document.getElementById('hoyPacientesFila');
+  const contAvatares = document.getElementById('hoyAvatares');
+  if(hoy.length){
+    filaHoy.style.display = 'block';
+    contAvatares.innerHTML = hoy
+      .sort((a,b)=> new Date(a.fecha_hora)-new Date(b.fecha_hora))
+      .map(c=>{
+        const nombre = c.pacientes ? c.pacientes.nombre : 'Paciente';
+        const inicial = nombre.charAt(0).toUpperCase();
+        const foto = c.pacientes && c.pacientes.foto_url ? `style="background-image:url(${c.pacientes.foto_url})"` : '';
+        const hora = new Date(c.fecha_hora).toLocaleTimeString('es-MX',{hour:'2-digit',minute:'2-digit'});
+        return `
+          <div class="hoy-avatar-item" onclick="location.href='./expediente.html?id=${c.paciente_id}'">
+            <div class="ha-circulo" ${foto}>${c.pacientes && c.pacientes.foto_url ? '' : inicial}</div>
+            <div class="ha-nombre">${escapar(nombre.split(' ')[0])}</div>
+            <div class="ha-hora">${hora}</div>
+          </div>`;
+      }).join('');
+  } else {
+    filaHoy.style.display = 'none';
+  }
+
   document.getElementById('numSesionesHoy').textContent = hoy.length;
   document.getElementById('numProximasSesiones').textContent = proximos7.length;
   document.getElementById('montoIngresos').textContent = '$' + ingresosMes.toLocaleString('es-MX');
@@ -1306,6 +1379,49 @@ async function cargarResumen(){
   contProx.innerHTML = proximasOrdenadas.length
     ? proximasOrdenadas.map(c=>tarjetaCita(c, true)).join('')
     : '<p class="empty">No tienes próximas sesiones agendadas.</p>';
+}
+
+function pintarProximaSesion(cita){
+  const cont = document.getElementById('proximaSesionCard');
+  if(!cita){
+    cont.innerHTML = `
+      <div class="card-proxima">
+        <div class="cp-label">Próxima sesión</div>
+        <p class="cp-vacio">No tienes ninguna sesión agendada todavía. Ve a "Mis citas" para agendar una.</p>
+      </div>`;
+    return;
+  }
+
+  const f = new Date(cita.fecha_hora);
+  const nombre = cita.pacientes ? cita.pacientes.nombre : 'Paciente';
+  const foto = cita.pacientes && cita.pacientes.foto_url ? `style="background-image:url(${cita.pacientes.foto_url})"` : '';
+  const inicial = nombre.charAt(0).toUpperCase();
+
+  const minutosFaltan = Math.round((f.getTime() - Date.now()) / 60000);
+  let cuando;
+  if(minutosFaltan < 60) cuando = `en ${minutosFaltan} minuto${minutosFaltan===1?'':'s'}`;
+  else if(minutosFaltan < 60*24) cuando = `hoy a las ${f.toLocaleTimeString('es-MX',{hour:'2-digit',minute:'2-digit'})}`;
+  else cuando = `${capitalizar(f.toLocaleDateString('es-MX',{weekday:'long',day:'numeric',month:'long'}))} a las ${f.toLocaleTimeString('es-MX',{hour:'2-digit',minute:'2-digit'})}`;
+
+  const puedeEntrarYa = cita.estado === 'confirmada' && dentroDeVentana(f);
+
+  cont.innerHTML = `
+    <div class="card-proxima">
+      <div class="cp-label">Próxima sesión</div>
+      <div class="cp-fila">
+        <div class="cp-info">
+          <div class="cp-avatar" ${foto}>${cita.pacientes && cita.pacientes.foto_url ? '' : inicial}</div>
+          <div>
+            <div class="cp-nombre">${escapar(nombre)}</div>
+            <div class="cp-cuando">${cuando} · ${cita.duracion_minutos} min</div>
+          </div>
+        </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+          ${puedeEntrarYa ? `<button class="btn btn-primary" onclick="entrarVideollamada('${cita.id}', this)">Entrar a la sesión</button>` : ''}
+          <a class="btn btn-ghost" href="./expediente.html?id=${cita.paciente_id}">Ver expediente</a>
+        </div>
+      </div>
+    </div>`;
 }
 
 async function cargarCitas(){
