@@ -102,9 +102,14 @@
       <p class="foot">¿Ya tienes cuenta? <a href="./login.html">Inicia sesión</a></p>
     </div>
 
-    <div id="sinLiga" style="display:none;">
-      <h1>Liga no válida</h1>
-      <p class="sub">Esta página solo funciona con la liga de invitación que te comparte tu psicólogo. Pídele que te la envíe de nuevo.</p>
+    <div id="buscarPorId" style="display:none;">
+      <h1>Regístrate como paciente</h1>
+      <p class="sub">Pídele a tu psicólogo su ID de Praxia y pégalo aquí.</p>
+
+      <label for="idManual">ID de tu psicólogo</label>
+      <input type="text" id="idManual" placeholder="Pégalo aquí">
+      <button type="button" id="btnBuscarId" style="margin-top:14px;">Buscar</button>
+      <p class="msg" id="msgBuscarId"></p>
     </div>
   </div>
 </main>
@@ -116,7 +121,7 @@ const SUPABASE_KEY = 'sb_publishable_xaaA4lYAQZjdcMFRhMGtuQ_fvIeJKv7';
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 const params = new URLSearchParams(location.search);
-const psicologoId = params.get('p');
+let psicologoId = params.get('p');
 
 document.getElementById('btnGoogle').addEventListener('click', async ()=>{
   if(!checkConsentimientoAntes()) return;
@@ -124,6 +129,32 @@ document.getElementById('btnGoogle').addEventListener('click', async ()=>{
     provider: 'google',
     options: { redirectTo: `${location.origin}${location.pathname.replace(/[^/]+$/,'')}completar-registro.html?rol=paciente&p=${psicologoId}` }
   });
+});
+
+document.getElementById('btnBuscarId')?.addEventListener('click', async ()=>{
+  const valor = document.getElementById('idManual').value.trim();
+  const msg = document.getElementById('msgBuscarId');
+  if(!valor){ msg.textContent = 'Pega el ID que te dio tu psicólogo.'; msg.className = 'msg err'; return; }
+
+  msg.textContent = 'Buscando...';
+  msg.className = 'msg';
+
+  const { data, error } = await sb.from('psicologos_publicos').select('id,nombre').eq('id', valor).maybeSingle();
+
+  if(error || !data){
+    msg.textContent = 'No encontramos a ningún psicólogo con ese ID. Verifica que lo hayas copiado completo.';
+    msg.className = 'msg err';
+    return;
+  }
+
+  psicologoId = data.id;
+  const nuevaUrl = new URL(location.href);
+  nuevaUrl.searchParams.set('p', psicologoId);
+  history.replaceState(null, '', nuevaUrl);
+
+  document.getElementById('buscarPorId').style.display = 'none';
+  document.getElementById('contenido').style.display = 'block';
+  await iniciar();
 });
 
 function checkConsentimientoAntes(){
@@ -143,7 +174,7 @@ let textoConsentimientoActual = TEXTO_BASE;
 async function iniciar(){
   if(!psicologoId){
     document.getElementById('contenido').style.display = 'none';
-    document.getElementById('sinLiga').style.display = 'block';
+    document.getElementById('buscarPorId').style.display = 'block';
     return;
   }
   const { data, error } = await sb.from('psicologos_publicos')
