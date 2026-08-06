@@ -137,8 +137,10 @@
   .disp-dia-header{padding:10px 4px;font-size:12px;font-weight:800;text-align:center;color:var(--ink);border-bottom:1.5px solid var(--line);background:#FAFAF8;cursor:pointer;user-select:none;}
   .disp-dia-header:hover{color:var(--primario);}
   .disp-dia-header.con-horas{color:var(--primario);}
-  .disp-hora-label{font-size:10px;color:var(--gray);text-align:right;padding:6px 6px 0 0;border-right:1px solid var(--line);}
-  .disp-celda{border-right:1px solid var(--line);border-bottom:1px solid var(--line);height:26px;cursor:pointer;background:#fff;transition:background .1s;}
+  .disp-hora-label{font-size:9.5px;color:var(--gray);text-align:right;padding:2px 6px 0 0;border-right:1px solid var(--line);}
+  .disp-hora-label.hora-entera{color:var(--ink);font-weight:700;}
+  .disp-celda{border-right:1px solid var(--line);border-bottom:1px solid #f3f3f3;height:11px;cursor:pointer;background:#fff;transition:background .08s;user-select:none;}
+  .disp-celda.borde-hora{border-bottom:1px solid var(--line);}
   .disp-celda:hover{background:#EAF5E8;}
   .disp-celda.activa{background:var(--primario);}
   .disp-celda.activa:hover{background:var(--primario-claro);}
@@ -252,10 +254,6 @@
       <button data-tab="calendario">
         <svg class="icono-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="17" rx="2"></rect><line x1="3" y1="10" x2="21" y2="10"></line><line x1="9" y1="10" x2="9" y2="21"></line><line x1="15" y1="10" x2="15" y2="21"></line></svg>
         Calendario
-      </button>
-      <button data-tab="disponibilidad">
-        <svg class="icono-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"></circle><polyline points="12 7 12 12 15.5 14"></polyline></svg>
-        Disponibilidad
       </button>
       <button data-tab="pacientes">
         <svg class="icono-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="8.5" cy="8" r="3"></circle><path d="M2.5 20c0-3.3 2.7-6 6-6s6 2.7 6 6"></path><circle cx="17" cy="8.5" r="2.5"></circle><path d="M15.5 14.2c2.6.4 4.5 2.6 4.5 5.3"></path></svg>
@@ -376,6 +374,7 @@
       <div class="cal-vista-switch">
         <button class="cal-vista-btn active" data-vista="mes">Mes</button>
         <button class="cal-vista-btn" data-vista="semana">Semana</button>
+        <button class="cal-vista-btn" data-vista="disponibilidad">Disponibilidad</button>
       </div>
     </div>
 
@@ -383,25 +382,24 @@
     <div id="calSemana" class="cal-semana" style="display:none;"></div>
 
     <div id="calDiaSeleccionado" style="margin-top:24px;"></div>
-  </section>
 
-  <section id="tab-disponibilidad">
-    <h2>Tu disponibilidad</h2>
-    <p class="sub">Marca las horas en que atiendes. Tus pacientes solo podrán agendar dentro de lo que marques aquí.</p>
+    <div id="vistaDisponibilidad" style="display:none;">
+      <p class="sub">Marca las horas en que atiendes. Tus pacientes solo podrán agendar dentro de lo que marques aquí. Cada celda representa 15 minutos.</p>
 
-    <div class="disp-atajos">
-      <button class="btn btn-ghost" id="btnDispLunAVie">Copiar lunes a L–V</button>
-      <button class="btn btn-ghost" id="btnDispPreset9a14">Aplicar 9:00–14:00 (L–V)</button>
-      <button class="btn btn-ghost" id="btnDispPreset10a18">Aplicar 10:00–18:00 (L–V)</button>
-      <button class="btn btn-ghost" id="btnDispLimpiar">Limpiar todo</button>
-    </div>
-    <p class="disp-ayuda">Haz clic en las celdas para marcar horas sueltas, o en el nombre de un día para marcarlo/desmarcarlo completo.</p>
+      <div class="disp-atajos">
+        <button class="btn btn-ghost" id="btnDispLunAVie">Copiar lunes a L–V</button>
+        <button class="btn btn-ghost" id="btnDispPreset9a14">Aplicar 9:00–14:00 (L–V)</button>
+        <button class="btn btn-ghost" id="btnDispPreset10a18">Aplicar 10:00–18:00 (L–V)</button>
+        <button class="btn btn-ghost" id="btnDispLimpiar">Limpiar todo</button>
+      </div>
+      <p class="disp-ayuda">Arrastra sobre las celdas para marcar varias a la vez, haz clic para marcar una sola, o haz clic en el nombre del día para marcarlo/desmarcarlo completo.</p>
 
-    <div id="dispGrid" class="disp-grid"></div>
+      <div id="dispGrid" class="disp-grid"></div>
 
-    <div class="barra-guardar" style="margin-top:20px;">
-      <p class="msg" id="msgDisp"></p>
-      <button class="btn btn-primary" id="btnGuardarDisp">Guardar disponibilidad</button>
+      <div class="barra-guardar" style="margin-top:20px;">
+        <p class="msg" id="msgDisp"></p>
+        <button class="btn btn-primary" id="btnGuardarDisp">Guardar disponibilidad</button>
+      </div>
     </div>
   </section>
 
@@ -575,6 +573,14 @@
             <input type="tel" id="whatsappNumero" placeholder="Ej. 55 1234 5678">
           </div>
         </div>
+
+        <div class="integracion-fila">
+          <div class="integracion-info">
+            <div class="integracion-nombre">Google Calendar <span class="badge-proximamente">Próximamente</span></div>
+            <p class="integracion-desc">Sincronización en ambos sentidos: tus citas de Praxia aparecerán en tu Google Calendar, y los horarios que ya tengas ocupados ahí se bloquearán aquí para que nadie agende encima.</p>
+            <button type="button" class="btn btn-ghost" disabled title="Disponible próximamente" style="margin-top:10px;">Conectar con Google Calendar</button>
+          </div>
+        </div>
       </div>
 
       <div class="barra-guardar">
@@ -684,19 +690,34 @@ document.querySelectorAll('.modal-bg').forEach(m=>{
   m.addEventListener('click', e=>{ if(e.target === m) m.classList.remove('show'); });
 });
 
-/* ---------- disponibilidad (cuadrícula clickeable) ---------- */
-const DISP_HORA_INICIO = 7;   // 7:00
-const DISP_HORA_FIN = 21;     // hasta 21:00 (última celda 20:00-21:00)
+/* ---------- disponibilidad (cuadrícula clickeable de 15 min) ---------- */
+const DISP_MIN_INICIO = 7 * 60;   // 7:00 en minutos desde medianoche
+const DISP_MIN_FIN = 21 * 60;     // 21:00
+const DISP_PASO = 15;             // minutos por celda
 const DISP_DIAS = [1,2,3,4,5,6,0]; // Lunes primero, Domingo al final
 const DISP_DIAS_NOMBRE = {0:'Dom',1:'Lun',2:'Mar',3:'Mié',4:'Jue',5:'Vie',6:'Sáb'};
 
-// Estado en memoria: dispEstado[dia][hora] = true/false
+// Estado en memoria: dispEstado[dia][minuto] = true/false
 let dispEstado = {};
+let dispArrastrando = false;
+let dispModoMarcar = true; // al iniciar el arrastre: ¿estamos marcando o desmarcando?
 
 function dispEstadoVacio(){
   const e = {};
   DISP_DIAS.forEach(d=>{ e[d] = {}; });
   return e;
+}
+
+function dispHoraLabel(min){
+  const h = Math.floor(min/60);
+  const m = min % 60;
+  return `${h}:${String(m).padStart(2,'0')}`;
+}
+
+function dispMinutosATiempo(min){
+  const h = Math.floor(min/60);
+  const m = min % 60;
+  return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:00`;
 }
 
 async function cargarDisponibilidad(){
@@ -712,10 +733,12 @@ async function cargarDisponibilidad(){
   }
 
   (data||[]).forEach(bloque=>{
-    const hi = parseInt(bloque.hora_inicio.slice(0,2), 10);
-    const hf = parseInt(bloque.hora_fin.slice(0,2), 10);
-    for(let h=hi; h<hf; h++){
-      if(dispEstado[bloque.dia_semana]) dispEstado[bloque.dia_semana][h] = true;
+    const [hi, mi] = bloque.hora_inicio.split(':').map(Number);
+    const [hf, mf] = bloque.hora_fin.split(':').map(Number);
+    const minIni = hi*60 + mi;
+    const minFin = hf*60 + mf;
+    for(let m=minIni; m<minFin; m+=DISP_PASO){
+      if(dispEstado[bloque.dia_semana]) dispEstado[bloque.dia_semana][m] = true;
     }
   });
 
@@ -727,35 +750,71 @@ function pintarDispGrid(){
 
   let headerDias = '<div></div>' + DISP_DIAS.map(d=>{
     const tieneHoras = Object.values(dispEstado[d]).some(v=>v);
-    return `<div class="disp-dia-header ${tieneHoras?'con-horas':''}" onclick="dispToggleDia(${d})">${DISP_DIAS_NOMBRE[d]}</div>`;
+    return `<div class="disp-dia-header ${tieneHoras?'con-horas':''}" data-accion="dia" data-dia="${d}">${DISP_DIAS_NOMBRE[d]}</div>`;
   }).join('');
 
   let filas = '';
-  for(let h=DISP_HORA_INICIO; h<DISP_HORA_FIN; h++){
-    filas += `<div class="disp-hora-label">${h}:00</div>`;
+  for(let m=DISP_MIN_INICIO; m<DISP_MIN_FIN; m+=DISP_PASO){
+    const esInicioHora = m % 60 === 0;
+    filas += `<div class="disp-hora-label ${esInicioHora?'hora-entera':''}">${esInicioHora ? dispHoraLabel(m) : ''}</div>`;
     DISP_DIAS.forEach(d=>{
-      const activa = !!dispEstado[d][h];
-      filas += `<div class="disp-celda ${activa?'activa':''}" onclick="dispToggleCelda(${d},${h})"></div>`;
+      const activa = !!dispEstado[d][m];
+      filas += `<div class="disp-celda ${activa?'activa':''} ${esInicioHora?'borde-hora':''}" data-accion="celda" data-dia="${d}" data-min="${m}"></div>`;
     });
   }
 
   cont.innerHTML = `<div class="disp-grid-inner">${headerDias}${filas}</div>`;
+  dispEnlazarEventos();
 }
 
-function dispToggleCelda(dia, hora){
-  dispEstado[dia][hora] = !dispEstado[dia][hora];
-  pintarDispGrid();
+// Arrastrar para marcar/desmarcar varias celdas de un jalón.
+function dispEnlazarEventos(){
+  const celdas = document.querySelectorAll('.disp-celda');
+
+  celdas.forEach(cel=>{
+    cel.addEventListener('mousedown', (e)=>{
+      e.preventDefault();
+      const dia = cel.dataset.dia, min = cel.dataset.min;
+      dispModoMarcar = !dispEstado[dia][min];
+      dispArrastrando = true;
+      dispAplicarCelda(cel);
+    });
+    cel.addEventListener('mouseenter', ()=>{
+      if(dispArrastrando) dispAplicarCelda(cel);
+    });
+    cel.addEventListener('touchstart', (e)=>{
+      const dia = cel.dataset.dia, min = cel.dataset.min;
+      dispModoMarcar = !dispEstado[dia][min];
+      dispAplicarCelda(cel);
+    }, {passive:true});
+  });
+
+  document.querySelectorAll('.disp-dia-header').forEach(h=>{
+    h.addEventListener('click', ()=> dispToggleDia(h.dataset.dia));
+  });
 }
-window.dispToggleCelda = dispToggleCelda;
+
+function dispAplicarCelda(cel){
+  const dia = cel.dataset.dia, min = cel.dataset.min;
+  dispEstado[dia][min] = dispModoMarcar;
+  cel.classList.toggle('activa', dispModoMarcar);
+}
+
+document.addEventListener('mouseup', ()=>{
+  if(dispArrastrando){
+    dispArrastrando = false;
+    // Al soltar, refrescamos por si algún encabezado de día cambió de estado.
+    pintarDispGrid();
+  }
+});
 
 function dispToggleDia(dia){
   const tieneHoras = Object.values(dispEstado[dia]).some(v=>v);
-  for(let h=DISP_HORA_INICIO; h<DISP_HORA_FIN; h++){
-    dispEstado[dia][h] = !tieneHoras; // si ya tenía algo, se limpia; si no, se llena todo
+  for(let m=DISP_MIN_INICIO; m<DISP_MIN_FIN; m+=DISP_PASO){
+    dispEstado[dia][m] = !tieneHoras;
   }
   pintarDispGrid();
 }
-window.dispToggleDia = dispToggleDia;
 
 /* ---------- atajos ---------- */
 document.getElementById('btnDispLunAVie').addEventListener('click', ()=>{
@@ -766,14 +825,14 @@ document.getElementById('btnDispLunAVie').addEventListener('click', ()=>{
 
 document.getElementById('btnDispPreset9a14').addEventListener('click', ()=>{
   [1,2,3,4,5].forEach(d=>{
-    for(let h=DISP_HORA_INICIO; h<DISP_HORA_FIN; h++) dispEstado[d][h] = (h>=9 && h<14);
+    for(let m=DISP_MIN_INICIO; m<DISP_MIN_FIN; m+=DISP_PASO) dispEstado[d][m] = (m>=9*60 && m<14*60);
   });
   pintarDispGrid();
 });
 
 document.getElementById('btnDispPreset10a18').addEventListener('click', ()=>{
   [1,2,3,4,5].forEach(d=>{
-    for(let h=DISP_HORA_INICIO; h<DISP_HORA_FIN; h++) dispEstado[d][h] = (h>=10 && h<18);
+    for(let m=DISP_MIN_INICIO; m<DISP_MIN_FIN; m+=DISP_PASO) dispEstado[d][m] = (m>=10*60 && m<18*60);
   });
   pintarDispGrid();
 });
@@ -795,23 +854,21 @@ document.getElementById('btnGuardarDisp').addEventListener('click', async ()=>{
   const bloquesNuevos = [];
   DISP_DIAS.forEach(dia=>{
     let inicio = null;
-    for(let h=DISP_HORA_INICIO; h<=DISP_HORA_FIN; h++){
-      const activa = h < DISP_HORA_FIN && dispEstado[dia][h];
+    for(let m=DISP_MIN_INICIO; m<=DISP_MIN_FIN; m+=DISP_PASO){
+      const activa = m < DISP_MIN_FIN && dispEstado[dia][m];
       if(activa && inicio === null){
-        inicio = h;
+        inicio = m;
       } else if(!activa && inicio !== null){
         bloquesNuevos.push({
-          psicologo_id: yo.id, dia_semana: dia,
-          hora_inicio: `${String(inicio).padStart(2,'0')}:00`,
-          hora_fin: `${String(h).padStart(2,'0')}:00`
+          psicologo_id: yo.id, dia_semana: parseInt(dia,10),
+          hora_inicio: dispMinutosATiempo(inicio),
+          hora_fin: dispMinutosATiempo(m)
         });
         inicio = null;
       }
     }
   });
 
-  // Se desactivan todos los bloques anteriores y se insertan los nuevos:
-  // más simple y confiable que intentar calcular diffs celda por celda.
   const { error: errDesactivar } = await sb.from('disponibilidad')
     .update({activo:false}).eq('psicologo_id', yo.id).eq('activo', true);
 
@@ -1682,10 +1739,20 @@ document.querySelectorAll('.cal-vista-btn').forEach(b=>{
     document.querySelectorAll('.cal-vista-btn').forEach(x=>x.classList.remove('active'));
     b.classList.add('active');
     vistaActual = b.dataset.vista;
-    document.getElementById('calMes').style.display = vistaActual==='mes' ? 'block' : 'none';
-    document.getElementById('calSemana').style.display = vistaActual==='semana' ? 'block' : 'none';
-    document.getElementById('calDiaSeleccionado').innerHTML = '';
-    pintarCalendario();
+
+    const esDisponibilidad = vistaActual === 'disponibilidad';
+    document.getElementById('calMes').style.display = (vistaActual==='mes') ? 'block' : 'none';
+    document.getElementById('calSemana').style.display = (vistaActual==='semana') ? 'block' : 'none';
+    document.getElementById('calDiaSeleccionado').style.display = esDisponibilidad ? 'none' : 'block';
+    document.getElementById('vistaDisponibilidad').style.display = esDisponibilidad ? 'block' : 'none';
+    document.getElementById('calAnterior').style.visibility = esDisponibilidad ? 'hidden' : 'visible';
+    document.getElementById('calSiguiente').style.visibility = esDisponibilidad ? 'hidden' : 'visible';
+    document.getElementById('calTitulo').textContent = esDisponibilidad ? 'Tu disponibilidad' : document.getElementById('calTitulo').textContent;
+
+    if(!esDisponibilidad){
+      document.getElementById('calDiaSeleccionado').innerHTML = '';
+      pintarCalendario();
+    }
   });
 });
 
