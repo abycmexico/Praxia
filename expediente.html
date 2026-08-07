@@ -10,6 +10,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,400;1,600&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <style>
   :root{--primario:#2E7D32;--primario-claro:#7BC043;--primario-suave:#A8C99B;--bg:#F7F9F6;--ink:#1A1A1A;--gray:#7a7a7a;--line:#ececec;--err:#c62828;--ok:#2e7d32;}
   *{box-sizing:border-box;margin:0;padding:0;}
@@ -714,70 +715,225 @@ async function borrarDocumento(id, ruta){
 window.borrarDocumento = borrarDocumento;
 
 /* ---------- exportar expediente ---------- */
+/* ---------- exportar expediente en PDF profesional ---------- */
+async function obtenerLogoBase64(url){
+  try{
+    const res = await fetch(url);
+    const blob = await res.blob();
+    const formato = blob.type.includes('png') ? 'PNG' : 'JPEG';
+    const base64 = await new Promise((resolve, reject)=>{
+      const reader = new FileReader();
+      reader.onloadend = ()=> resolve(reader.result);
+      reader.onerror = reject;
+      reader.readAsDataURL(blob);
+    });
+    return { base64, formato };
+  }catch(e){
+    return null;
+  }
+}
+
 document.getElementById('btnExportar').addEventListener('click', async ()=>{
   const btn = document.getElementById('btnExportar');
   btn.disabled = true;
-  btn.textContent = 'Preparando...';
+  btn.textContent = 'Preparando PDF...';
 
   const { data: citas } = await sb.from('citas')
     .select('id, fecha_hora, duracion_minutos, estado')
     .eq('paciente_id', paciente.id).order('fecha_hora');
   const { data: notas } = await sb.from('notas_sesion')
     .select('*').eq('psicologo_id', yo.id);
+  const { data: docs } = await sb.from('documentos')
+    .select('nombre, tipo, subido_en').eq('paciente_id', paciente.id).order('subido_en');
+  const { data: configConsultorio } = await sb.from('configuracion')
+    .select('nombre_consultorio, logo_url').eq('psicologo_id', yo.id).maybeSingle();
+
   const porCita = {};
   (notas||[]).forEach(n=>{ porCita[n.cita_id] = n; });
 
-  let txt = '';
-  txt += 'EXPEDIENTE CLÍNICO\n';
-  txt += '==================\n\n';
-  txt += `Paciente: ${paciente.nombre}\n`;
-  txt += `Correo: ${paciente.correo || '-'}\n`;
-  txt += `Teléfono: ${paciente.telefono || '-'}\n`;
-  txt += `Fecha de nacimiento: ${paciente.fecha_nacimiento || '-'}\n`;
-  txt += `Contacto de emergencia: ${paciente.contacto_emergencia_nombre || '-'} ${paciente.contacto_emergencia_telefono || ''}\n`;
-  txt += `Fecha de inicio: ${paciente.fecha_inicio || '-'}\n`;
-  txt += `Estado: ${paciente.estado || '-'}\n\n`;
-  txt += `Motivo de consulta:\n${paciente.motivo_consulta || '-'}\n\n`;
-  txt += `Observaciones generales:\n${paciente.observaciones_generales || '-'}\n\n`;
-  txt += `Psicólogo tratante: ${yo.nombre}\n`;
-  txt += `Exportado el ${new Date().toLocaleString('es-MX')}\n\n`;
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ unit: 'mm', format: 'a4' });
+  const pageW = doc.internal.pageSize.getWidth();
+  const pageH = doc.internal.pageSize.getHeight();
+  const margen = 18;
+  const anchoUtil = pageW - margen*2;
+  let y = margen;
 
-  const { data: docs } = await sb.from('documentos')
-    .select('nombre, tipo, subido_en').eq('paciente_id', paciente.id).order('subido_en');
-  txt += 'DOCUMENTOS\n==========\n\n';
+  const VERDE = [46, 125, 50];
+  const GRIS = [120, 120, 120];
+  const NEGRO = [26, 26, 26];
+
+  function saltoDePagina(alturaNecesaria){
+    if(y + alturaNecesaria > pageH - 20){
+      doc.addPage();
+      y = margen;
+    }
+  }
+
+  function tituloSeccion(texto){
+    saltoDePagina(14);
+    doc.setFillColor(...VERDE);
+    doc.rect(margen, y, 3, 6, 'F');
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(12);
+    doc.setTextColor(...NEGRO);
+    doc.text(texto, margen + 6, y + 5);
+    y += 11;
+  }
+
+  function campo(etiqueta, valor){
+    if(!valor) return;
+    saltoDePagina(6);
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(9.5);
+    doc.setTextColor(...GRIS);
+    doc.text(etiqueta + ':', margen, y);
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(...NEGRO);
+    doc.text(String(valor), margen + 42, y);
+    y += 6;
+  }
+
+  function parrafo(etiqueta, texto){
+    if(!texto) return;
+    saltoDePagina(10);
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(9.5);
+    doc.setTextColor(...GRIS);
+    doc.text(etiqueta + ':', margen, y);
+    y += 5;
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(9.5);
+    doc.setTextColor(...NEGRO);
+    const lineas = doc.splitTextToSize(String(texto), anchoUtil);
+    lineas.forEach(linea=>{
+      saltoDePagina(5);
+      doc.text(linea, margen, y);
+      y += 5;
+    });
+    y += 2;
+  }
+
+  // ---------- encabezado con logo del consultorio ----------
+  let xTexto = margen;
+  if(configConsultorio && configConsultorio.logo_url){
+    const logo = await obtenerLogoBase64(configConsultorio.logo_url);
+    if(logo){
+      try{
+        doc.addImage(logo.base64, logo.formato, margen, y, 16, 16);
+        xTexto = margen + 20;
+      }catch(e){ /* si el logo no carga, se sigue sin él */ }
+    }
+  }
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(13);
+  doc.setTextColor(...VERDE);
+  doc.text(configConsultorio?.nombre_consultorio || yo.nombre, xTexto, y + 7);
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(9);
+  doc.setTextColor(...GRIS);
+  doc.text('Expediente clínico', xTexto, y + 13);
+  y += 24;
+  doc.setDrawColor(...VERDE);
+  doc.setLineWidth(0.5);
+  doc.line(margen, y, pageW - margen, y);
+  y += 10;
+
+  // ---------- datos del paciente ----------
+  tituloSeccion('Datos del paciente');
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(11);
+  doc.setTextColor(...NEGRO);
+  doc.text(paciente.nombre, margen, y);
+  y += 8;
+
+  campo('Correo', paciente.correo);
+  campo('Teléfono', paciente.telefono);
+  campo('Fecha de nacimiento', paciente.fecha_nacimiento);
+  campo('Contacto de emergencia', paciente.contacto_emergencia_nombre
+    ? `${paciente.contacto_emergencia_nombre} ${paciente.contacto_emergencia_telefono || ''}`.trim()
+    : null);
+  campo('Fecha de inicio', paciente.fecha_inicio);
+  campo('Estado', paciente.estado);
+  campo('Psicólogo tratante', yo.nombre);
+  y += 4;
+
+  parrafo('Motivo de consulta', paciente.motivo_consulta);
+  parrafo('Observaciones generales', paciente.observaciones_generales);
+
+  // ---------- documentos ----------
+  tituloSeccion('Documentos');
   if(docs && docs.length){
     docs.forEach(d=>{
-      txt += `- ${d.nombre} (${d.tipo || 'otro'}) — subido el ${new Date(d.subido_en).toLocaleDateString('es-MX')}\n`;
+      saltoDePagina(6);
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(9.5);
+      doc.setTextColor(...NEGRO);
+      const linea = `• ${d.nombre}  (${d.tipo || 'otro'}) — ${new Date(d.subido_en).toLocaleDateString('es-MX')}`;
+      doc.text(linea, margen, y);
+      y += 6;
     });
   } else {
-    txt += '(Sin documentos)\n';
+    doc.setFont('helvetica', 'italic');
+    doc.setFontSize(9.5);
+    doc.setTextColor(...GRIS);
+    doc.text('Sin documentos.', margen, y);
+    y += 6;
   }
-  txt += '\n';
+  y += 4;
 
-  txt += 'SESIONES\n========\n\n';
+  // ---------- sesiones ----------
+  tituloSeccion('Sesiones');
+  if(citas && citas.length){
+    citas.forEach(c=>{
+      const f = new Date(c.fecha_hora);
+      saltoDePagina(12);
+      doc.setFillColor(237, 245, 236);
+      doc.rect(margen, y - 4, anchoUtil, 7, 'F');
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(9.5);
+      doc.setTextColor(...VERDE);
+      const encabezadoSesion = `${f.toLocaleDateString('es-MX',{weekday:'long',day:'numeric',month:'long',year:'numeric'})} · ${f.toLocaleTimeString('es-MX',{hour:'2-digit',minute:'2-digit'})} · ${c.duracion_minutos} min · ${c.estado}`;
+      doc.text(encabezadoSesion, margen + 2, y);
+      y += 8;
 
-  (citas||[]).forEach(c=>{
-    const f = new Date(c.fecha_hora);
-    txt += `--- ${f.toLocaleDateString('es-MX',{weekday:'long',day:'numeric',month:'long',year:'numeric'})} · ${f.toLocaleTimeString('es-MX',{hour:'2-digit',minute:'2-digit'})} (${c.duracion_minutos} min, ${c.estado}) ---\n`;
-    const n = porCita[c.id];
-    if(n){
-      if(n.objetivos)     txt += `\nObjetivos:\n${n.objetivos}\n`;
-      if(n.observaciones) txt += `\nObservaciones:\n${n.observaciones}\n`;
-      if(n.tareas)        txt += `\nTareas o acuerdos:\n${n.tareas}\n`;
-      if(n.evolucion)     txt += `\nEvolución:\n${n.evolucion}\n`;
-    } else {
-      txt += '\n(Sin nota registrada)\n';
-    }
-    txt += '\n';
-  });
+      const n = porCita[c.id];
+      if(n){
+        parrafo('Objetivos', n.objetivos);
+        parrafo('Observaciones', n.observaciones);
+        parrafo('Tareas o acuerdos', n.tareas);
+        parrafo('Evolución', n.evolucion);
+      } else {
+        doc.setFont('helvetica', 'italic');
+        doc.setFontSize(9);
+        doc.setTextColor(...GRIS);
+        doc.text('Sin nota registrada.', margen, y);
+        y += 6;
+      }
+      y += 4;
+    });
+  } else {
+    doc.setFont('helvetica', 'italic');
+    doc.setFontSize(9.5);
+    doc.setTextColor(...GRIS);
+    doc.text('Todavía no hay sesiones registradas.', margen, y);
+  }
 
-  const blob = new Blob([txt], {type:'text/plain;charset=utf-8'});
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = `expediente-${paciente.nombre.replace(/\s+/g,'-').toLowerCase()}.txt`;
-  a.click();
-  URL.revokeObjectURL(url);
+  // ---------- pie de página en todas las hojas ----------
+  const totalPaginas = doc.internal.getNumberOfPages();
+  for(let i=1; i<=totalPaginas; i++){
+    doc.setPage(i);
+    doc.setDrawColor(230,230,230);
+    doc.line(margen, pageH - 14, pageW - margen, pageH - 14);
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(8);
+    doc.setTextColor(...GRIS);
+    doc.text(`Exportado el ${new Date().toLocaleString('es-MX')} · Praxia`, margen, pageH - 9);
+    doc.text(`Página ${i} de ${totalPaginas}`, pageW - margen, pageH - 9, { align: 'right' });
+  }
+
+  const nombreArchivo = `expediente-${paciente.nombre.replace(/\s+/g,'-').toLowerCase()}.pdf`;
+  doc.save(nombreArchivo);
 
   btn.disabled = false;
   btn.textContent = 'Exportar expediente';
