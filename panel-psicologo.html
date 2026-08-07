@@ -68,6 +68,7 @@
   .avatar-cita{width:38px;height:38px;border-radius:50%;background:var(--primario-suave);color:#fff;font-weight:800;font-size:14px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
   .tag{display:inline-block;font-size:10.5px;font-weight:800;letter-spacing:.5px;text-transform:uppercase;padding:4px 10px;border-radius:20px;}
   .tag.confirmada{background:#E4F3E1;color:var(--primario);}
+  .tag.pendiente_aprobacion{background:#F3E5F5;color:#7B1FA2;}
   .tag.pendiente_confirmacion{background:#E4EEFB;color:#1a5cb0;}
   .tag.pendiente_pago{background:#FFF1DB;color:#B5680A;}
   .tag.completada{background:#EDEDED;color:#666;}
@@ -170,6 +171,16 @@
   .barra-guardar{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;margin-top:4px;}
   @media(max-width:640px){.rejilla{grid-template-columns:1fr;}}
 
+  .consultorio-cabecera{display:flex;align-items:center;gap:20px;margin-bottom:24px;}
+  .consultorio-logo-box{display:flex;flex-direction:column;align-items:center;gap:10px;}
+  .consultorio-logo-preview{width:72px;height:72px;border-radius:18px;background:var(--primario-suave);color:#fff;font-weight:800;font-size:22px;display:flex;align-items:center;justify-content:center;overflow:hidden;background-size:cover;background-position:center;}
+  .grid-consultorio-atajos{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;}
+  .atajo-consultorio{background:#fff;border:1.5px solid var(--line);border-radius:16px;padding:22px 10px;text-align:center;cursor:pointer;font-family:inherit;box-shadow:0 2px 10px rgba(0,0,0,.04);}
+  .atajo-consultorio:hover{border-color:var(--primario);}
+  .ac-icono{display:block;font-size:24px;margin-bottom:8px;}
+  .ac-texto{font-size:12.5px;font-weight:700;}
+  .aviso-futuro{background:#FAFAF8;}
+  @media(max-width:640px){.grid-consultorio-atajos{grid-template-columns:1fr 1fr;}}
   .integracion-fila{border-top:1px solid var(--line);padding-top:16px;margin-top:16px;}
   .integracion-fila:first-of-type{border-top:none;padding-top:0;margin-top:0;}
   .integracion-toggle{display:flex;align-items:flex-start;gap:12px;}
@@ -308,6 +319,10 @@
       <button data-tab="pacientes">
         <svg class="icono-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="8.5" cy="8" r="3"></circle><path d="M2.5 20c0-3.3 2.7-6 6-6s6 2.7 6 6"></path><circle cx="17" cy="8.5" r="2.5"></circle><path d="M15.5 14.2c2.6.4 4.5 2.6 4.5 5.3"></path></svg>
         Mis pacientes
+      </button>
+      <button data-tab="consultorio">
+        <svg class="icono-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18"></path><path d="M5 21V7l8-4v18"></path><path d="M19 21V11l-6-4"></path><path d="M9 9v.01"></path><path d="M9 13v.01"></path><path d="M9 17v.01"></path></svg>
+        Mi consultorio
       </button>
       <button data-tab="config">
         <svg class="icono-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 13a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V19a2 2 0 0 1-4 0v-.09a1.65 1.65 0 0 0-1.08-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H4a2 2 0 0 1 0-4h.09a1.65 1.65 0 0 0 1.51-1.08 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33h.05A1.65 1.65 0 0 0 11 4.09V4a2 2 0 0 1 4 0v.09c0 .66.4 1.25 1 1.51h.05a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82v.05c.26.6.85 1 1.51 1H20a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
@@ -508,6 +523,55 @@
     <div class="filtros" id="filtrosPacientes"></div>
 
     <div id="listaPacientes" class="grid-pacientes"><p class="empty">Cargando...</p></div>
+  </section>
+
+  <section id="tab-consultorio">
+    <div class="consultorio-cabecera">
+      <div class="consultorio-logo-box">
+        <div class="consultorio-logo-preview" id="logoPreview"></div>
+        <input type="file" id="inputLogo" accept=".jpg,.jpeg,.png" style="display:none;">
+        <button type="button" class="btn btn-ghost" id="btnSubirLogo">Cambiar logo</button>
+      </div>
+      <div>
+        <h2 id="tituloConsultorio">Mi consultorio</h2>
+        <p class="sub" id="subConsultorio" style="margin-bottom:0;">Así te ven tus pacientes.</p>
+      </div>
+    </div>
+    <p class="msg" id="msgLogo"></p>
+
+    <div class="grid-consultorio-atajos">
+      <button class="atajo-consultorio" id="atajoNuevaConsulta">
+        <span class="ac-icono">＋</span>
+        <span class="ac-texto">Crear consulta</span>
+      </button>
+      <button class="atajo-consultorio" id="atajoProximas">
+        <span class="ac-icono">📅</span>
+        <span class="ac-texto">Próximas consultas</span>
+      </button>
+      <button class="atajo-consultorio" id="atajoHistorial">
+        <span class="ac-icono">🕓</span>
+        <span class="ac-texto">Historial</span>
+      </button>
+      <button class="atajo-consultorio" id="atajoPacientes">
+        <span class="ac-icono">👥</span>
+        <span class="ac-texto">Mis pacientes</span>
+      </button>
+    </div>
+
+    <div class="bloque" style="margin-top:24px;">
+      <h3>Nombre del consultorio</h3>
+      <p class="bh">Es lo primero que ve tu paciente al entrar a su panel.</p>
+      <div class="campo">
+        <input type="text" id="nombreConsultorioTab" placeholder="Ej. Consultorio de la Dra. Ana Ruiz">
+      </div>
+      <button class="btn btn-primary" id="btnGuardarNombreConsultorio" style="width:auto;margin-top:14px;">Guardar</button>
+      <p class="msg" id="msgNombreConsultorio"></p>
+    </div>
+
+    <div class="bloque aviso-futuro">
+      <h3>Equipo del consultorio</h3>
+      <p class="bh">Próximamente vas a poder dar de alta a otros psicólogos que trabajen en tu mismo consultorio, con acceso solo a sus propios pacientes. Todavía no está disponible.</p>
+    </div>
   </section>
 
   <section id="tab-config">
@@ -1567,7 +1631,8 @@ function tarjetaCita(c, esProxima){
   const hora  = f.toLocaleTimeString('es-MX', {hour:'2-digit', minute:'2-digit'});
   const nombre = c.pacientes ? escapar(c.pacientes.nombre) : 'Paciente';
   const puedeEntrar = esProxima && c.estado === 'confirmada' && dentroDeVentana(f);
-  const modificable = esProxima && c.estado !== 'cancelada' && f > new Date();
+  const modificable = esProxima && c.estado !== 'cancelada' && c.estado !== 'pendiente_aprobacion' && f > new Date();
+  const esSolicitud = esProxima && c.estado === 'pendiente_aprobacion' && f > new Date();
 
   let detalle = `${fecha} · ${hora} · ${c.duracion_minutos} min`;
   if(c.reprogramada_desde) detalle += ' · reprogramada';
@@ -1587,6 +1652,10 @@ function tarjetaCita(c, esProxima){
         </div>
       </div>
       <div style="display:flex;gap:8px;flex-wrap:wrap;">
+        ${esSolicitud
+          ? `<button class="btn btn-primary" onclick="aprobarSolicitud('${c.id}')">Aprobar</button>
+             <button class="btn btn-danger" onclick="rechazarSolicitud('${c.id}')">Rechazar</button>`
+          : ''}
         ${puedeEntrar
           ? `<button class="btn btn-primary" onclick="entrarVideollamada('${c.id}', this)">Entrar a la sesión</button>`
           : ''}
@@ -1602,7 +1671,7 @@ function tarjetaCita(c, esProxima){
 }
 
 function etiquetaEstado(e){
-  return {pendiente_confirmacion:'Esperando confirmación', pendiente_pago:'Pendiente de pago', confirmada:'Confirmada', completada:'Completada', cancelada:'Cancelada'}[e] || e;
+  return {pendiente_aprobacion:'Solicitud del paciente', pendiente_confirmacion:'Esperando confirmación', pendiente_pago:'Pendiente de pago', confirmada:'Confirmada', completada:'Completada', cancelada:'Cancelada'}[e] || e;
 }
 
 // La sala se habilita 10 min antes y hasta 2 h después del inicio
@@ -1627,6 +1696,98 @@ const CAMPOS_CONFIG = {
   politicasGenerales:   'politicas_generales',
   whatsappNumero:       'whatsapp_numero'
 };
+
+/* ---------- Mi consultorio ---------- */
+async function cargarMiConsultorio(){
+  document.getElementById('tituloConsultorio').textContent = config.nombre_consultorio || 'Mi consultorio';
+  document.getElementById('nombreConsultorioTab').value = config.nombre_consultorio || '';
+
+  const logo = document.getElementById('logoPreview');
+  if(config.logo_url){
+    logo.style.backgroundImage = `url(${config.logo_url})`;
+    logo.textContent = '';
+  } else {
+    logo.textContent = (config.nombre_consultorio || yo.nombre || '?').charAt(0).toUpperCase();
+  }
+}
+
+document.getElementById('btnGuardarNombreConsultorio').addEventListener('click', async ()=>{
+  const btn = document.getElementById('btnGuardarNombreConsultorio');
+  const msg = document.getElementById('msgNombreConsultorio');
+  btn.disabled = true;
+  msg.className = 'msg';
+  msg.textContent = 'Guardando...';
+
+  const nuevoNombre = document.getElementById('nombreConsultorioTab').value.trim() || null;
+  const { error } = await sb.from('configuracion').update({ nombre_consultorio: nuevoNombre }).eq('psicologo_id', yo.id);
+
+  if(error){
+    msg.textContent = 'No se pudo guardar: ' + error.message;
+    msg.className = 'msg err';
+    btn.disabled = false;
+    return;
+  }
+
+  config.nombre_consultorio = nuevoNombre;
+  document.getElementById('tituloConsultorio').textContent = nuevoNombre || 'Mi consultorio';
+  document.getElementById('nombreConsultorio').value = nuevoNombre || ''; // mismo campo en Configuración
+  msg.textContent = 'Guardado.';
+  msg.className = 'msg ok';
+  btn.disabled = false;
+});
+
+document.getElementById('btnSubirLogo').addEventListener('click', ()=>{
+  document.getElementById('inputLogo').click();
+});
+
+document.getElementById('inputLogo').addEventListener('change', async (e)=>{
+  const file = e.target.files[0];
+  const msg = document.getElementById('msgLogo');
+  if(!file) return;
+  if(file.size > 5*1024*1024){ msg.textContent = 'El logo pesa más de 5 MB.'; msg.className='msg err'; return; }
+
+  msg.className = 'msg';
+  msg.textContent = 'Subiendo...';
+
+  const extension = file.name.includes('.') ? file.name.split('.').pop() : 'jpg';
+  const ruta = `${yo.id}/consultorio/logo.${extension}`;
+
+  const { error: errSubida } = await sb.storage.from('documentos')
+    .upload(ruta, file, { upsert: true, contentType: file.type || undefined });
+  if(errSubida){ msg.textContent = 'No se pudo subir: ' + errSubida.message; msg.className='msg err'; return; }
+
+  const { data: firmada, error: errFirma } = await sb.storage.from('documentos')
+    .createSignedUrl(ruta, 60*60*24*365);
+  if(errFirma){ msg.textContent = 'Error al generar el enlace.'; msg.className='msg err'; return; }
+
+  const { error: errGuardar } = await sb.from('configuracion')
+    .update({ logo_url: firmada.signedUrl }).eq('psicologo_id', yo.id);
+  if(errGuardar){ msg.textContent = 'El logo se subió pero no se pudo guardar.'; msg.className='msg err'; return; }
+
+  config.logo_url = firmada.signedUrl;
+  const logo = document.getElementById('logoPreview');
+  logo.style.backgroundImage = `url(${firmada.signedUrl})`;
+  logo.textContent = '';
+  msg.textContent = 'Logo actualizado.';
+  msg.className = 'msg ok';
+  setTimeout(()=>{ if(msg.textContent==='Logo actualizado.') msg.textContent=''; }, 3000);
+});
+
+document.getElementById('atajoNuevaConsulta').addEventListener('click', ()=>{
+  document.getElementById('btnFlotanteMas').click();
+});
+document.getElementById('atajoProximas').addEventListener('click', ()=>{
+  document.querySelector('nav.tabs button[data-tab="citas"]').click();
+});
+document.getElementById('atajoHistorial').addEventListener('click', ()=>{
+  document.querySelector('nav.tabs button[data-tab="citas"]').click();
+  setTimeout(()=>{
+    document.getElementById('listaHistorial')?.scrollIntoView({behavior:'smooth'});
+  }, 100);
+});
+document.getElementById('atajoPacientes').addEventListener('click', ()=>{
+  document.querySelector('nav.tabs button[data-tab="pacientes"]').click();
+});
 
 async function cargarConfig(){
   const { data, error } = await sb.from('configuracion')
@@ -1658,6 +1819,7 @@ async function cargarConfig(){
 
   cargarPerfil();
   cargarEstadoGoogle();
+  cargarMiConsultorio();
 }
 
 /* ---------- Google Calendar ---------- */
@@ -2467,6 +2629,31 @@ async function entrarVideollamada(citaId, boton){
 window.entrarVideollamada = entrarVideollamada;
 
 /* ---------- marcar como pagada (temporal, mientras no hay Stripe) ---------- */
+/* ---------- aprobar/rechazar solicitudes del paciente ---------- */
+async function aprobarSolicitud(citaId){
+  const { data, error } = await sb.rpc('aprobar_solicitud_paciente', { p_cita_id: citaId });
+  if(error){ alert('Error: ' + error.message); return; }
+  const r = Array.isArray(data) ? data[0] : data;
+  if(!r || !r.ok){ alert(r ? r.mensaje : 'No se pudo aprobar.'); return; }
+  cargarCitas();
+  cargarResumen();
+  cargarCalendario();
+}
+window.aprobarSolicitud = aprobarSolicitud;
+
+async function rechazarSolicitud(citaId){
+  const motivo = prompt('¿Por qué no puedes en ese horario? (opcional, tu paciente lo verá)');
+  if(motivo === null) return; // canceló el prompt
+  const { data, error } = await sb.rpc('rechazar_solicitud_paciente', { p_cita_id: citaId, p_motivo: motivo || null });
+  if(error){ alert('Error: ' + error.message); return; }
+  const r = Array.isArray(data) ? data[0] : data;
+  if(!r || !r.ok){ alert(r ? r.mensaje : 'No se pudo rechazar.'); return; }
+  cargarCitas();
+  cargarResumen();
+  cargarCalendario();
+}
+window.rechazarSolicitud = rechazarSolicitud;
+
 async function marcarComoPagada(citaId){
   if(!confirm('Esto es provisional mientras Stripe no está conectado: confirma que ya recibiste el pago fuera de la plataforma. ¿Continuar?')) return;
 

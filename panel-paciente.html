@@ -82,6 +82,11 @@
   .psi-box .et{font-size:10.5px;letter-spacing:1.2px;text-transform:uppercase;color:var(--gray);font-weight:700;margin-bottom:4px;}
   .psi-box .nom{font-size:16px;font-weight:700;}
   .psi-box .datos-sesion{font-size:12.5px;color:var(--gray);margin-top:5px;}
+  .psi-box-meta{font-size:11.5px;color:var(--gray);margin-top:4px;}
+  .franja-consultorio{display:flex;align-items:center;gap:10px;margin-bottom:14px;}
+  .fc-logo{width:26px;height:26px;border-radius:8px;background:var(--primario-suave);flex-shrink:0;overflow:hidden;background-size:cover;background-position:center;}
+  .fc-texto{font-size:12.5px;color:var(--gray);}
+  .fc-texto strong{color:var(--ink);}
 
   .card-proxima-pac{position:relative;overflow:hidden;background:linear-gradient(135deg, var(--primario), var(--primario-claro));border-radius:22px;padding:24px 26px;margin-bottom:24px;color:#fff;}
   .card-proxima-pac .cpp-blob{position:absolute;width:180px;height:180px;background:rgba(255,255,255,.12);border-radius:60% 40% 55% 45% / 50% 55% 45% 50%;top:-70px;right:-50px;}
@@ -127,6 +132,7 @@
   .pago-mock-dos{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
   .tag{display:inline-block;font-size:10.5px;font-weight:800;letter-spacing:.8px;text-transform:uppercase;padding:4px 9px;border-radius:20px;}
   .tag.confirmada{background:#D4EDDA;color:#2e7d32;}
+  .tag.pendiente_aprobacion{background:#F3E5F5;color:#7B1FA2;}
   .tag.pendiente_confirmacion{background:#E4EEFB;color:#1a5cb0;}
   .tag.pendiente_pago{background:#FFF3CD;color:#8a6d1a;}
   .tag.completada{background:#E7E7E7;color:#555;}
@@ -193,12 +199,18 @@
 
   <div class="content-area">
     <main>
+  <div class="franja-consultorio" id="franjaConsultorio" style="display:none;">
+    <div class="fc-logo" id="logoConsultorioPaciente"></div>
+    <div class="fc-texto">Estás en <strong id="nombreConsultorioPaciente"></strong></div>
+  </div>
+
   <div class="psi-box">
     <div class="psi-box-avatar" id="avatarPsicologo"></div>
     <div>
       <div class="et">Tu psicólogo</div>
       <div class="nom" id="nombrePsicologo">Cargando...</div>
       <div class="datos-sesion" id="datosSesion"></div>
+      <div class="psi-box-meta" id="psiBoxMeta"></div>
     </div>
   </div>
 
@@ -207,17 +219,23 @@
   <section id="tab-agendar" class="active">
     <div class="politicas" id="politicasBox" style="display:none;"></div>
 
-    <h2>Agenda tu sesión</h2>
-    <p class="sub">Elige el día y la hora que prefieras dentro de la disponibilidad de tu psicólogo.</p>
+    <h2>Solicita tu sesión</h2>
+    <p class="sub">Elige el día y la hora que te acomoden. Tu psicólogo revisa y aprueba la solicitud.</p>
 
-    <div class="dias" id="dias"></div>
-    <div class="horas" id="horas"><p class="empty" style="grid-column:1/-1;">Selecciona un día.</p></div>
-
-    <div class="barra-confirmar" id="barraConfirmar" style="display:none;">
-      <div class="resumen" id="resumen"></div>
-      <button class="btn btn-primary" id="btnAgendar">Confirmar cita</button>
+    <div class="bloque">
+      <div class="rejilla">
+        <div class="campo">
+          <label for="fechaSolicitud">Fecha</label>
+          <input type="date" id="fechaSolicitud">
+        </div>
+        <div class="campo">
+          <label for="horaSolicitud">Hora</label>
+          <input type="time" id="horaSolicitud">
+        </div>
+      </div>
+      <p class="msg" id="msgAgendar"></p>
+      <button class="btn btn-primary" id="btnAgendar" style="margin-top:6px;">Enviar solicitud</button>
     </div>
-    <p class="msg" id="msgAgendar"></p>
   </section>
 
   <section id="tab-sesiones">
@@ -421,15 +439,26 @@ async function iniciar(){
   pintarAvatarSidebarPaciente();
 
   const { data: psi } = await sb.from('psicologos_publicos')
-    .select('nombre, foto_url, especialidad').eq('id', pac.psicologo_id).maybeSingle();
+    .select('nombre, foto_url, especialidad, cedula_profesional').eq('id', pac.psicologo_id).maybeSingle();
 
   const { data: conf } = await sb.from('configuracion')
     .select('*').eq('psicologo_id', pac.psicologo_id).maybeSingle();
   if(conf) cfg = { ...cfg, ...conf };
 
   const nombrePsi = psi ? psi.nombre : 'No disponible';
-  document.getElementById('nombrePsicologo').textContent =
-    cfg.nombre_consultorio ? cfg.nombre_consultorio : nombrePsi;
+  document.getElementById('nombrePsicologo').textContent = nombrePsi;
+
+  const metaPartes = [];
+  if(psi && psi.especialidad) metaPartes.push(psi.especialidad);
+  if(psi && psi.cedula_profesional) metaPartes.push(`Cédula ${psi.cedula_profesional}`);
+  document.getElementById('psiBoxMeta').textContent = metaPartes.join(' · ');
+
+  if(cfg.nombre_consultorio){
+    document.getElementById('franjaConsultorio').style.display = 'flex';
+    document.getElementById('nombreConsultorioPaciente').textContent = cfg.nombre_consultorio;
+    const logoCont = document.getElementById('logoConsultorioPaciente');
+    if(cfg.logo_url) logoCont.style.backgroundImage = `url(${cfg.logo_url})`;
+  }
 
   const avatarPsi = document.getElementById('avatarPsicologo');
   if(psi && psi.foto_url){
@@ -767,7 +796,7 @@ function tarjeta(c, esProxima){
 }
 
 function etiqueta(e){
-  return {pendiente_confirmacion:'Esperando tu confirmación', pendiente_pago:'Pendiente de pago', confirmada:'Confirmada', completada:'Completada', cancelada:'Cancelada'}[e] || e;
+  return {pendiente_aprobacion:'Esperando que tu psicólogo apruebe', pendiente_confirmacion:'Esperando tu confirmación', pendiente_pago:'Pendiente de pago', confirmada:'Confirmada', completada:'Completada', cancelada:'Cancelada'}[e] || e;
 }
 
 function dentroDeVentana(fecha){
@@ -776,38 +805,6 @@ function dentroDeVentana(fecha){
 }
 
 /* ---------- selector de días ---------- */
-function pintarDias(){
-  const cont = document.getElementById('dias');
-  const hoy = new Date();
-  hoy.setHours(0,0,0,0);
-
-  let html = '';
-  for(let i=0; i<cfg.dias_max_anticipacion; i++){
-    const d = new Date(hoy);
-    d.setDate(hoy.getDate() + i);
-    // solo días en que el psicólogo tiene bloques
-    if(!disponibilidad.some(b=> b.dia_semana === d.getDay())) continue;
-    html += `
-      <div class="dia-chip" data-fecha="${d.toISOString()}" onclick="elegirDia(this)">
-        <div class="dn">${DIAS_CORTO[d.getDay()]}</div>
-        <div class="df">${d.getDate()}</div>
-        <div class="dm">${MESES[d.getMonth()]}</div>
-      </div>`;
-  }
-
-  cont.innerHTML = html || '<p class="empty" style="width:100%;">Tu psicólogo todavía no publica horarios disponibles.</p>';
-}
-
-function elegirDia(el){
-  document.querySelectorAll('.dia-chip').forEach(c=>c.classList.remove('sel'));
-  el.classList.add('sel');
-  diaSel = new Date(el.dataset.fecha);
-  horaSel = null;
-  document.getElementById('barraConfirmar').style.display = 'none';
-  document.getElementById('msgAgendar').textContent = '';
-  pintarHoras();
-}
-window.elegirDia = elegirDia;
 
 /* ---------- generar espacios de 50 min ---------- */
 function espaciosDelDia(fecha){
@@ -834,101 +831,65 @@ function espaciosDelDia(fecha){
   return espacios.sort((a,b)=> a-b);
 }
 
-function pintarHoras(){
-  const cont = document.getElementById('horas');
-  const espacios = espaciosDelDia(diaSel);
-
-  // No se puede agendar con menos de la anticipación mínima configurada
-  const limite = Date.now() + cfg.anticipacion_minima_horas * 3600000;
-
-  if(!espacios.length){
-    cont.innerHTML = '<p class="empty" style="grid-column:1/-1;">No hay horarios ese día.</p>';
-    return;
-  }
-
-  const html = espacios.map(e=>{
-    const t = e.getTime();
-    const ocupado   = citasOcupadas.includes(t);
-    const muyPronto = t < limite;
-    const hhmm = e.toLocaleTimeString('es-MX', {hour:'2-digit', minute:'2-digit'});
-    return `<button class="hora-btn" ${ocupado||muyPronto ? 'disabled' : ''}
-              onclick="elegirHora(this, ${t})">${hhmm}</button>`;
-  }).join('');
-
-  const disponibles = espacios.filter(e=>{
-    const t = e.getTime();
-    return !citasOcupadas.includes(t) && t >= limite;
-  }).length;
-
-  cont.innerHTML = html + (disponibles === 0
-    ? `<p class="empty" style="grid-column:1/-1;margin-top:12px;">Ese día ya no tiene horarios disponibles${cfg.anticipacion_minima_horas > 0 ? ` (se agenda con al menos ${cfg.anticipacion_minima_horas} h de anticipación)` : ''}.</p>`
-    : '');
-}
-
-function elegirHora(btn, timestamp){
-  document.querySelectorAll('.hora-btn').forEach(b=>b.classList.remove('sel'));
-  btn.classList.add('sel');
-  horaSel = new Date(timestamp);
-
-  const fecha = horaSel.toLocaleDateString('es-MX', {weekday:'long', day:'numeric', month:'long'});
-  const hora  = horaSel.toLocaleTimeString('es-MX', {hour:'2-digit', minute:'2-digit'});
-  document.getElementById('resumen').innerHTML = `Tu sesión quedaría el <strong>${fecha} a las ${hora}</strong>`;
-  document.getElementById('barraConfirmar').style.display = 'flex';
-}
-window.elegirHora = elegirHora;
-
-/* ---------- confirmar cita ---------- */
+/* ---------- solicitar cita en fecha/hora libre ---------- */
 document.getElementById('btnAgendar').addEventListener('click', async ()=>{
   const btn = document.getElementById('btnAgendar');
   const msg = document.getElementById('msgAgendar');
-  if(!horaSel) return;
 
-  btn.disabled = true;
+  const fechaStr = document.getElementById('fechaSolicitud').value;
+  const horaStr = document.getElementById('horaSolicitud').value;
+
   msg.className = 'msg';
-  msg.textContent = 'Agendando...';
-
-  // Revalidar ocupación justo antes de insertar, por si alguien más la tomó
-  await cargarCitas();
-  if(citasOcupadas.includes(horaSel.getTime())){
-    msg.textContent = 'Ese horario acaba de ocuparse. Elige otro, por favor.';
+  if(!fechaStr || !horaStr){
+    msg.textContent = 'Elige una fecha y una hora.';
     msg.className = 'msg err';
-    btn.disabled = false;
-    pintarHoras();
     return;
   }
 
-  const { error } = await sb.from('citas').insert({
-    psicologo_id: yo.psicologo_id,
-    paciente_id: yo.id,
-    fecha_hora: horaSel.toISOString(),
-    duracion_minutos: cfg.duracion_sesion,
-    precio: cfg.precio_sesion,
-    estado: 'pendiente_pago'
+  const fechaHora = new Date(`${fechaStr}T${horaStr}:00`);
+  if(fechaHora <= new Date()){
+    msg.textContent = 'Elige una fecha y hora futuras.';
+    msg.className = 'msg err';
+    return;
+  }
+
+  btn.disabled = true;
+  msg.textContent = 'Enviando solicitud...';
+
+  const { data, error } = await sb.rpc('solicitar_cita_paciente', {
+    p_fecha_hora: fechaHora.toISOString()
   });
 
   if(error){
-    msg.textContent = 'No se pudo agendar: ' + error.message;
+    msg.textContent = 'No se pudo enviar: ' + error.message;
     msg.className = 'msg err';
     btn.disabled = false;
     return;
   }
 
-  msg.textContent = 'Cita agendada. Queda pendiente de pago; en breve activaremos el cobro en línea.';
+  const r = Array.isArray(data) ? data[0] : data;
+  if(!r || !r.ok){
+    msg.textContent = r ? r.mensaje : 'No se pudo enviar la solicitud.';
+    msg.className = 'msg err';
+    btn.disabled = false;
+    return;
+  }
+
+  msg.textContent = r.mensaje;
   msg.className = 'msg ok';
-  document.getElementById('barraConfirmar').style.display = 'none';
-  horaSel = null;
+  document.getElementById('fechaSolicitud').value = '';
+  document.getElementById('horaSolicitud').value = '';
   btn.disabled = false;
 
   await cargarCitas();
-  pintarHoras();
 
-  // Llevar al paciente a ver la cita que acaba de crear
   setTimeout(()=>{
     document.querySelector('nav.tabs button[data-tab="sesiones"]').click();
     window.scrollTo({top:0, behavior:'smooth'});
   }, 1200);
 });
 
+/* ---------- pago (simulado, sin conectar todavía) ---------- */
 /* ---------- pago (simulado, sin conectar todavía) ---------- */
 function abrirPago(citaId, precio){
   const monto = precio > 0
