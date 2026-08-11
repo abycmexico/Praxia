@@ -265,7 +265,12 @@
             </div>
             <div class="campo">
               <label for="genero">Género</label>
-              <input type="text" id="genero">
+              <input type="text" id="genero" list="dlGenero">
+              <datalist id="dlGenero">
+                <option value="Femenino"><option value="Masculino">
+                <option value="No binario"><option value="Prefiere no decir">
+                <option value="Sin información">
+              </datalist>
             </div>
             <div class="campo">
               <label for="pronombres">Pronombres</label>
@@ -277,11 +282,23 @@
             </div>
             <div class="campo">
               <label for="estadoCivil">Estado civil</label>
-              <input type="text" id="estadoCivil">
+              <input type="text" id="estadoCivil" list="dlEstadoCivil">
+              <datalist id="dlEstadoCivil">
+                <option value="Soltero/a"><option value="Casado/a">
+                <option value="Unión libre"><option value="Divorciado/a">
+                <option value="Viudo/a"><option value="Separado/a">
+                <option value="Sin información">
+              </datalist>
             </div>
             <div class="campo">
               <label for="escolaridad">Escolaridad</label>
-              <input type="text" id="escolaridad">
+              <input type="text" id="escolaridad" list="dlEscolaridad">
+              <datalist id="dlEscolaridad">
+                <option value="Sin escolaridad"><option value="Primaria">
+                <option value="Secundaria"><option value="Preparatoria / Bachillerato">
+                <option value="Técnico / Carrera técnica"><option value="Licenciatura">
+                <option value="Posgrado"><option value="Sin información">
+              </datalist>
             </div>
             <div class="campo">
               <label for="direccion">Dirección</label>
@@ -327,7 +344,12 @@
           <div class="rejilla">
             <div class="campo">
               <label for="tipoAtencion">Tipo de atención</label>
-              <input type="text" id="tipoAtencion" placeholder="Ej. terapia individual, evaluación">
+              <input type="text" id="tipoAtencion" placeholder="Ej. terapia individual, evaluación" list="dlTipoAtencion">
+              <datalist id="dlTipoAtencion">
+                <option value="Terapia individual"><option value="Terapia de pareja">
+                <option value="Terapia familiar"><option value="Terapia grupal">
+                <option value="Evaluación psicológica"><option value="Orientación psicológica">
+              </datalist>
             </div>
             <div class="campo">
               <label for="modalidadAtencion">Modalidad</label>
@@ -340,7 +362,11 @@
             </div>
             <div class="campo">
               <label for="frecuenciaSesiones">Frecuencia de sesiones</label>
-              <input type="text" id="frecuenciaSesiones" placeholder="Ej. semanal, quincenal">
+              <input type="text" id="frecuenciaSesiones" placeholder="Ej. semanal, quincenal" list="dlFrecuencia">
+              <datalist id="dlFrecuencia">
+                <option value="Semanal"><option value="Quincenal">
+                <option value="Mensual"><option value="Según necesidad">
+              </datalist>
             </div>
             <div class="campo">
               <label for="fechaPrimeraSesion">Fecha de primera sesión</label>

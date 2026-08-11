@@ -111,8 +111,9 @@
   .pac-correo{font-size:11.5px;color:var(--gray);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
   .pac-motivo{font-size:12.5px;color:#555;line-height:1.5;margin-bottom:12px;min-height:19px;overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;}
   .pac-estado-tag{display:inline-block;font-size:10px;font-weight:800;letter-spacing:.5px;text-transform:uppercase;padding:3px 9px;border-radius:20px;}
-  .pac-modalidad-tag{display:inline-block;font-size:10px;font-weight:800;letter-spacing:.5px;text-transform:uppercase;padding:3px 9px;border-radius:20px;background:#EEF0FF;color:#4a4ab8;}
-  .pac-modalidad-mixta{background:#F3E5F5;color:#7B1FA2;}
+  .pac-modalidad-select{font-size:10px;font-weight:800;letter-spacing:.5px;text-transform:uppercase;padding:3px 8px;border-radius:20px;background:#EEF0FF;color:#4a4ab8;border:1.5px solid transparent;cursor:pointer;font-family:inherit;}
+  .pac-modalidad-select.pac-modalidad-mixta{background:#F3E5F5;color:#7B1FA2;}
+  .pac-modalidad-select:hover{border-color:currentColor;}
   .pac-sin-cuenta-tag{display:inline-block;font-size:10px;font-weight:800;letter-spacing:.5px;text-transform:uppercase;padding:3px 9px;border-radius:20px;background:#FFF3CD;color:#8a6d1a;}
   .pac-estado-tag.activo{background:#E4F3E1;color:var(--primario);}
   .pac-estado-tag.pausa{background:#FFF1DB;color:#B5680A;}
@@ -1637,6 +1638,23 @@ function pintarFiltrosModalidad(){
   `;
 }
 
+async function cambiarModalidadPaciente(id, modalidad, select){
+  select.disabled = true;
+  const { error } = await sb.from('pacientes').update({ modalidad_atencion: modalidad }).eq('id', id);
+  select.disabled = false;
+
+  if(error){
+    alert('No se pudo actualizar: ' + error.message);
+    return;
+  }
+
+  select.className = 'pac-modalidad-select pac-modalidad-' + modalidad;
+  const p = pacientesCache.find(x=> x.id === id);
+  if(p) p.modalidad_atencion = modalidad;
+  pintarFiltrosModalidad();
+}
+window.cambiarModalidadPaciente = cambiarModalidadPaciente;
+
 function filtrarModalidad(mod){
   filtroModalidad = mod;
   pintarFiltrosModalidad();
@@ -1722,7 +1740,11 @@ function pintarPacientes(){
         </div>
         <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:6px;">
           <span class="pac-estado-tag ${p.estado}">${etiquetaEstadoPaciente(p.estado)}</span>
-          <span class="pac-modalidad-tag pac-modalidad-${p.modalidad_atencion||'presencial'}">${etiquetaModalidad(p.modalidad_atencion)}</span>
+          <select class="pac-modalidad-select pac-modalidad-${p.modalidad_atencion||'presencial'}" onchange="cambiarModalidadPaciente('${p.id}', this.value, this)">
+            <option value="presencial" ${(!p.modalidad_atencion||p.modalidad_atencion==='presencial')?'selected':''}>Presencial</option>
+            <option value="videollamada" ${p.modalidad_atencion==='videollamada'?'selected':''}>Videollamada</option>
+            <option value="mixta" ${p.modalidad_atencion==='mixta'?'selected':''}>Mixta</option>
+          </select>
           ${!p.auth_user_id ? '<span class="pac-sin-cuenta-tag">Sin cuenta</span>' : ''}
         </div>
         <p class="pac-motivo">${p.motivo_consulta ? escapar(recortar(p.motivo_consulta, 90)) : 'Sin motivo de consulta registrado.'}</p>
