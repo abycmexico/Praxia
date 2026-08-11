@@ -201,7 +201,7 @@
   .consultorio-cabecera{display:flex;align-items:center;gap:20px;margin-bottom:24px;}
   .consultorio-logo-box{display:flex;flex-direction:column;align-items:center;gap:10px;}
   .consultorio-logo-preview{width:72px;height:72px;border-radius:18px;background:var(--primario-suave);color:#fff;font-weight:800;font-size:22px;display:flex;align-items:center;justify-content:center;overflow:hidden;background-size:cover;background-position:center;}
-  .grid-consultorio-atajos{display:grid;grid-template-columns:repeat(5,1fr);gap:14px;}
+  .grid-consultorio-atajos{display:grid;grid-template-columns:repeat(6,1fr);gap:14px;}
   .filtros-historial{display:flex;gap:8px;flex-wrap:wrap;margin:14px 0 8px;}
   .filtro-historial-btn{padding:8px 16px;border-radius:20px;border:1.5px solid var(--line);background:#fff;font-size:12.5px;font-weight:700;cursor:pointer;font-family:inherit;color:var(--gray);}
   .filtro-historial-btn:hover{border-color:var(--primario);}
@@ -649,6 +649,10 @@
       <button class="atajo-consultorio" id="atajoPacientes">
         <span class="ac-icono">👥</span>
         <span class="ac-texto">Mis pacientes</span>
+      </button>
+      <button class="atajo-consultorio" id="atajoArchivo">
+        <span class="ac-icono">🗄️</span>
+        <span class="ac-texto">Archivero</span>
       </button>
     </div>
 
@@ -2521,6 +2525,11 @@ document.getElementById('atajoHistorial').addEventListener('click', ()=>{
 });
 document.getElementById('atajoPacientes').addEventListener('click', ()=>{
   document.querySelector('nav.tabs button[data-tab="pacientes"]').click();
+});
+
+document.getElementById('atajoArchivo').addEventListener('click', ()=>{
+  document.querySelector('nav.tabs button[data-tab="pacientes"]').click();
+  filtrarPacientes('archivado');
 });
 
 async function cargarConfig(){
