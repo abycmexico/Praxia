@@ -42,7 +42,24 @@
 
   .content-area{flex:1;min-width:0;}
 
-  .topbar-stats{display:flex;gap:28px;padding:18px 32px;border-bottom:1.5px solid var(--line);background:#fff;position:sticky;top:0;z-index:10;flex-wrap:wrap;}
+  .topbar-stats{display:flex;align-items:center;gap:28px;padding:18px 32px;border-bottom:1.5px solid var(--line);background:#fff;position:sticky;top:0;z-index:10;flex-wrap:wrap;}
+  .campana-wrap{position:relative;margin-left:auto;}
+  .campana-btn{position:relative;background:none;border:none;cursor:pointer;padding:8px;color:var(--ink);display:flex;}
+  .campana-btn svg{width:22px;height:22px;}
+  .campana-btn:hover{color:var(--primario);}
+  .campana-badge{position:absolute;top:2px;right:2px;background:#E0245E;color:#fff;font-size:10px;font-weight:800;min-width:16px;height:16px;border-radius:9px;display:flex;align-items:center;justify-content:center;padding:0 3px;line-height:1;}
+  .campana-dropdown{display:none;position:absolute;top:calc(100% + 10px);right:0;width:340px;max-height:420px;background:#fff;border:1.5px solid var(--line);border-radius:14px;box-shadow:0 10px 30px rgba(0,0,0,.14);overflow:hidden;z-index:60;}
+  .campana-dropdown.show{display:flex;flex-direction:column;}
+  .campana-dropdown-header{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border-bottom:1.5px solid var(--line);font-size:13.5px;font-weight:800;}
+  .campana-dropdown-header button{background:none;border:none;color:var(--primario);font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;}
+  #listaNotificaciones{overflow-y:auto;max-height:360px;}
+  .notif-item{display:block;width:100%;text-align:left;padding:12px 16px;border:none;background:none;border-bottom:1px solid var(--line);cursor:pointer;font-family:inherit;}
+  .notif-item:last-child{border-bottom:none;}
+  .notif-item:hover{background:#FAFAF8;}
+  .notif-item.no-leida{background:#EAF5E8;}
+  .notif-titulo{font-size:13px;font-weight:800;margin-bottom:3px;}
+  .notif-mensaje{font-size:12px;color:var(--gray);line-height:1.5;}
+  .notif-tiempo{font-size:10.5px;color:var(--gray);margin-top:4px;}
   .stat-mini{display:flex;align-items:baseline;gap:7px;}
   .stat-mini-num{font-size:19px;font-weight:800;color:var(--primario);}
   .stat-mini-label{font-size:12px;color:var(--gray);}
@@ -396,6 +413,21 @@
       <div class="stat-mini">
         <span class="stat-mini-num" id="statPacientesActivos">—</span>
         <span class="stat-mini-label">Pacientes activos</span>
+      </div>
+
+      <div class="campana-wrap">
+        <button class="campana-btn" id="btnCampana">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>
+          <span class="campana-badge" id="campanaBadge" style="display:none;">0</span>
+        </button>
+
+        <div class="campana-dropdown" id="campanaDropdown">
+          <div class="campana-dropdown-header">
+            <span>Notificaciones</span>
+            <button type="button" id="btnMarcarTodasLeidas">Marcar todas como leídas</button>
+          </div>
+          <div id="listaNotificaciones"><p class="empty">Cargando...</p></div>
+        </div>
       </div>
     </div>
 
@@ -1195,6 +1227,8 @@ async function iniciar(){
   cargarConfig();
   cargarResumen();
   cargarCalendario();
+  cargarNotificaciones();
+  setInterval(cargarNotificaciones, 25000);
 }
 
 document.getElementById('btnSalir').addEventListener('click', async ()=>{
@@ -3608,6 +3642,74 @@ function escapar(t){
   d.textContent = t == null ? '' : t;
   return d.innerHTML;
 }
+
+/* ---------- notificaciones ---------- */
+async function cargarNotificaciones(){
+  const { data, error } = await sb.from('notificaciones')
+    .select('*').eq('psicologo_id', yo.id).order('creado_en', {ascending:false}).limit(30);
+
+  if(error) return;
+
+  const noLeidas = (data||[]).filter(n=> !n.leida).length;
+  const badge = document.getElementById('campanaBadge');
+  if(noLeidas > 0){
+    badge.style.display = 'flex';
+    badge.textContent = noLeidas > 99 ? '99+' : noLeidas;
+  } else {
+    badge.style.display = 'none';
+  }
+
+  const cont = document.getElementById('listaNotificaciones');
+  if(!data || !data.length){
+    cont.innerHTML = '<p class="empty" style="border:none;">No tienes notificaciones todavía.</p>';
+    return;
+  }
+
+  cont.innerHTML = data.map(n=>`
+    <button class="notif-item ${n.leida ? '' : 'no-leida'}" onclick="clickNotificacion('${n.id}')">
+      <div class="notif-titulo">${escapar(n.titulo)}</div>
+      ${n.mensaje ? `<div class="notif-mensaje">${escapar(n.mensaje)}</div>` : ''}
+      <div class="notif-tiempo">${tiempoRelativo(n.creado_en)}</div>
+    </button>
+  `).join('');
+}
+
+function tiempoRelativo(fechaISO){
+  const ahora = Date.now();
+  const f = new Date(fechaISO).getTime();
+  const minutos = Math.floor((ahora - f) / 60000);
+  if(minutos < 1) return 'Justo ahora';
+  if(minutos < 60) return `Hace ${minutos} min`;
+  const horas = Math.floor(minutos / 60);
+  if(horas < 24) return `Hace ${horas} h`;
+  const dias = Math.floor(horas / 24);
+  return `Hace ${dias} día${dias===1?'':'s'}`;
+}
+
+async function clickNotificacion(id){
+  await sb.from('notificaciones').update({ leida: true }).eq('id', id);
+  cargarNotificaciones();
+  document.getElementById('campanaDropdown').classList.remove('show');
+  document.querySelector('nav.tabs button[data-tab="citas"]').click();
+}
+window.clickNotificacion = clickNotificacion;
+
+document.getElementById('btnCampana').addEventListener('click', (e)=>{
+  e.stopPropagation();
+  document.getElementById('campanaDropdown').classList.toggle('show');
+});
+
+document.addEventListener('click', (e)=>{
+  if(!e.target.closest('.campana-wrap')){
+    document.getElementById('campanaDropdown').classList.remove('show');
+  }
+});
+
+document.getElementById('btnMarcarTodasLeidas').addEventListener('click', async (e)=>{
+  e.stopPropagation();
+  await sb.from('notificaciones').update({ leida: true }).eq('psicologo_id', yo.id).eq('leida', false);
+  cargarNotificaciones();
+});
 
 iniciar();
 </script>
