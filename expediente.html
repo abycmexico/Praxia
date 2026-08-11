@@ -585,6 +585,125 @@
   </div>
 </div>
 
+<div class="modal-bg" id="modalEvaluacionPrueba">
+  <div class="modal">
+    <h3>Nueva evaluación / prueba</h3>
+    <div class="campo">
+      <label for="epNombre">Nombre de la prueba</label>
+      <input type="text" id="epNombre" placeholder="Ej. Inventario de Depresión de Beck">
+    </div>
+    <div class="rejilla">
+      <div class="campo">
+        <label for="epFecha">Fecha de aplicación</label>
+        <input type="date" id="epFecha">
+      </div>
+      <div class="campo">
+        <label for="epAplicadaPor">Aplicada por</label>
+        <input type="text" id="epAplicadaPor">
+      </div>
+    </div>
+    <div class="campo">
+      <label for="epMotivo">Motivo de aplicación</label>
+      <textarea id="epMotivo"></textarea>
+    </div>
+    <div class="campo">
+      <label for="epResultado">Resultado</label>
+      <textarea id="epResultado"></textarea>
+    </div>
+    <div class="campo">
+      <label for="epInterpretacion">Interpretación</label>
+      <textarea id="epInterpretacion"></textarea>
+    </div>
+    <div class="campo">
+      <label for="epObservaciones">Observaciones</label>
+      <textarea id="epObservaciones"></textarea>
+    </div>
+    <p class="msg" id="msgEvaluacionPrueba"></p>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="cerrarModal('modalEvaluacionPrueba')">Cancelar</button>
+      <button class="btn btn-primary" id="btnGuardarEvaluacionPrueba">Guardar evaluación</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-bg" id="modalObjetivo">
+  <div class="modal">
+    <h3>Nuevo objetivo terapéutico</h3>
+    <div class="campo">
+      <label for="objTexto">Objetivo</label>
+      <input type="text" id="objTexto" placeholder="Ej. Reducir episodios de ansiedad anticipatoria">
+    </div>
+    <div class="campo">
+      <label for="objDescripcion">Descripción</label>
+      <textarea id="objDescripcion"></textarea>
+    </div>
+    <div class="rejilla">
+      <div class="campo">
+        <label for="objPrioridad">Prioridad</label>
+        <select id="objPrioridad">
+          <option value="baja">Baja</option>
+          <option value="media" selected>Media</option>
+          <option value="alta">Alta</option>
+        </select>
+      </div>
+      <div class="campo">
+        <label for="objFecha">Fecha meta</label>
+        <input type="date" id="objFecha">
+      </div>
+    </div>
+    <p class="msg" id="msgObjetivo"></p>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="cerrarModal('modalObjetivo')">Cancelar</button>
+      <button class="btn btn-primary" id="btnGuardarObjetivo">Guardar objetivo</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-bg" id="modalMedicamento">
+  <div class="modal">
+    <h3>Nuevo medicamento</h3>
+    <div class="rejilla">
+      <div class="campo">
+        <label for="medNombre">Nombre</label>
+        <input type="text" id="medNombre">
+      </div>
+      <div class="campo">
+        <label for="medDosis">Dosis</label>
+        <input type="text" id="medDosis" placeholder="Ej. 50 mg">
+      </div>
+      <div class="campo">
+        <label for="medFrecuencia">Frecuencia</label>
+        <input type="text" id="medFrecuencia" placeholder="Ej. cada 24 horas">
+      </div>
+      <div class="campo">
+        <label for="medMedico">Médico que prescribe</label>
+        <input type="text" id="medMedico">
+      </div>
+      <div class="campo">
+        <label for="medFechaInicio">Fecha de inicio</label>
+        <input type="date" id="medFechaInicio">
+      </div>
+      <div class="campo">
+        <label for="medFechaFin">Fecha de finalización</label>
+        <input type="date" id="medFechaFin">
+      </div>
+    </div>
+    <div class="campo">
+      <label for="medMotivo">Motivo</label>
+      <textarea id="medMotivo"></textarea>
+    </div>
+    <div class="campo">
+      <label for="medObservaciones">Observaciones</label>
+      <textarea id="medObservaciones"></textarea>
+    </div>
+    <p class="msg" id="msgMedicamento"></p>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="cerrarModal('modalMedicamento')">Cancelar</button>
+      <button class="btn btn-primary" id="btnGuardarMedicamento">Guardar medicamento</button>
+    </div>
+  </div>
+</div>
+
 <script>
 const SUPABASE_URL = 'https://uxbpfyeahqpertamhdxt.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_xaaA4lYAQZjdcMFRhMGtuQ_fvIeJKv7';
@@ -1026,19 +1145,52 @@ async function cargarEvaluacionesPrueba(){
   `).join('');
 }
 
-document.getElementById('btnNuevaEvaluacionPrueba').addEventListener('click', async ()=>{
-  const nombre = prompt('Nombre de la prueba:');
-  if(!nombre) return;
-  const fecha = prompt('Fecha de aplicación (AAAA-MM-DD), opcional:') || null;
-  const motivo = prompt('Motivo de aplicación, opcional:') || null;
-  const resultado = prompt('Resultado, opcional:') || null;
-  const interpretacion = prompt('Interpretación, opcional:') || null;
+document.getElementById('btnNuevaEvaluacionPrueba').addEventListener('click', ()=>{
+  document.getElementById('epNombre').value = '';
+  document.getElementById('epFecha').value = '';
+  document.getElementById('epAplicadaPor').value = '';
+  document.getElementById('epMotivo').value = '';
+  document.getElementById('epResultado').value = '';
+  document.getElementById('epInterpretacion').value = '';
+  document.getElementById('epObservaciones').value = '';
+  document.getElementById('msgEvaluacionPrueba').textContent = '';
+  abrirModal('modalEvaluacionPrueba');
+});
+
+document.getElementById('btnGuardarEvaluacionPrueba').addEventListener('click', async ()=>{
+  const btn = document.getElementById('btnGuardarEvaluacionPrueba');
+  const msg = document.getElementById('msgEvaluacionPrueba');
+  const nombre = document.getElementById('epNombre').value.trim();
+
+  if(!nombre){
+    msg.textContent = 'Escribe el nombre de la prueba.';
+    msg.className = 'msg err';
+    return;
+  }
+
+  btn.disabled = true;
+  msg.className = 'msg';
+  msg.textContent = 'Guardando...';
 
   const { error } = await sb.from('evaluaciones_psicologicas').insert({
     paciente_id: paciente.id, psicologo_id: yo.id,
-    nombre_prueba: nombre, fecha_aplicacion: fecha, motivo, resultado, interpretacion
+    nombre_prueba: nombre,
+    fecha_aplicacion: vacioNull(document.getElementById('epFecha').value),
+    aplicada_por: vacioNull(document.getElementById('epAplicadaPor').value),
+    motivo: vacioNull(document.getElementById('epMotivo').value),
+    resultado: vacioNull(document.getElementById('epResultado').value),
+    interpretacion: vacioNull(document.getElementById('epInterpretacion').value),
+    observaciones: vacioNull(document.getElementById('epObservaciones').value)
   });
-  if(error){ alert('No se pudo guardar: ' + error.message); return; }
+
+  btn.disabled = false;
+  if(error){
+    msg.textContent = 'No se pudo guardar: ' + error.message;
+    msg.className = 'msg err';
+    return;
+  }
+
+  cerrarModal('modalEvaluacionPrueba');
   cargarEvaluacionesPrueba();
 });
 
@@ -1083,17 +1235,46 @@ async function cargarObjetivos(){
   `).join('');
 }
 
-document.getElementById('btnNuevoObjetivo').addEventListener('click', async ()=>{
-  const objetivo = prompt('Objetivo:');
-  if(!objetivo) return;
-  const descripcion = prompt('Descripción, opcional:') || null;
-  const fecha = prompt('Fecha meta (AAAA-MM-DD), opcional:') || null;
+document.getElementById('btnNuevoObjetivo').addEventListener('click', ()=>{
+  document.getElementById('objTexto').value = '';
+  document.getElementById('objDescripcion').value = '';
+  document.getElementById('objPrioridad').value = 'media';
+  document.getElementById('objFecha').value = '';
+  document.getElementById('msgObjetivo').textContent = '';
+  abrirModal('modalObjetivo');
+});
+
+document.getElementById('btnGuardarObjetivo').addEventListener('click', async ()=>{
+  const btn = document.getElementById('btnGuardarObjetivo');
+  const msg = document.getElementById('msgObjetivo');
+  const objetivo = document.getElementById('objTexto').value.trim();
+
+  if(!objetivo){
+    msg.textContent = 'Escribe el objetivo.';
+    msg.className = 'msg err';
+    return;
+  }
+
+  btn.disabled = true;
+  msg.className = 'msg';
+  msg.textContent = 'Guardando...';
 
   const { error } = await sb.from('objetivos_terapeuticos').insert({
     paciente_id: paciente.id, psicologo_id: yo.id,
-    objetivo, descripcion, fecha_objetivo: fecha
+    objetivo,
+    descripcion: vacioNull(document.getElementById('objDescripcion').value),
+    prioridad: document.getElementById('objPrioridad').value,
+    fecha_objetivo: vacioNull(document.getElementById('objFecha').value)
   });
-  if(error){ alert('No se pudo guardar: ' + error.message); return; }
+
+  btn.disabled = false;
+  if(error){
+    msg.textContent = 'No se pudo guardar: ' + error.message;
+    msg.className = 'msg err';
+    return;
+  }
+
+  cerrarModal('modalObjetivo');
   cargarObjetivos();
 });
 
@@ -1139,18 +1320,54 @@ async function cargarMedicamentos(){
   `).join('');
 }
 
-document.getElementById('btnNuevoMedicamento').addEventListener('click', async ()=>{
-  const nombre = prompt('Nombre del medicamento:');
-  if(!nombre) return;
-  const dosis = prompt('Dosis, opcional:') || null;
-  const frecuencia = prompt('Frecuencia, opcional:') || null;
-  const medico = prompt('Médico que prescribe, opcional:') || null;
+document.getElementById('btnNuevoMedicamento').addEventListener('click', ()=>{
+  document.getElementById('medNombre').value = '';
+  document.getElementById('medDosis').value = '';
+  document.getElementById('medFrecuencia').value = '';
+  document.getElementById('medMedico').value = '';
+  document.getElementById('medFechaInicio').value = '';
+  document.getElementById('medFechaFin').value = '';
+  document.getElementById('medMotivo').value = '';
+  document.getElementById('medObservaciones').value = '';
+  document.getElementById('msgMedicamento').textContent = '';
+  abrirModal('modalMedicamento');
+});
+
+document.getElementById('btnGuardarMedicamento').addEventListener('click', async ()=>{
+  const btn = document.getElementById('btnGuardarMedicamento');
+  const msg = document.getElementById('msgMedicamento');
+  const nombre = document.getElementById('medNombre').value.trim();
+
+  if(!nombre){
+    msg.textContent = 'Escribe el nombre del medicamento.';
+    msg.className = 'msg err';
+    return;
+  }
+
+  btn.disabled = true;
+  msg.className = 'msg';
+  msg.textContent = 'Guardando...';
 
   const { error } = await sb.from('medicamentos').insert({
     paciente_id: paciente.id, psicologo_id: yo.id,
-    nombre, dosis, frecuencia, medico_prescribe: medico
+    nombre,
+    dosis: vacioNull(document.getElementById('medDosis').value),
+    frecuencia: vacioNull(document.getElementById('medFrecuencia').value),
+    medico_prescribe: vacioNull(document.getElementById('medMedico').value),
+    fecha_inicio: vacioNull(document.getElementById('medFechaInicio').value),
+    fecha_fin: vacioNull(document.getElementById('medFechaFin').value),
+    motivo: vacioNull(document.getElementById('medMotivo').value),
+    observaciones: vacioNull(document.getElementById('medObservaciones').value)
   });
-  if(error){ alert('No se pudo guardar: ' + error.message); return; }
+
+  btn.disabled = false;
+  if(error){
+    msg.textContent = 'No se pudo guardar: ' + error.message;
+    msg.className = 'msg err';
+    return;
+  }
+
+  cerrarModal('modalMedicamento');
   cargarMedicamentos();
 });
 
