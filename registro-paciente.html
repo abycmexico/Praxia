@@ -213,32 +213,49 @@ async function iniciar(){
   let encabezadoConsentimiento = TEXTO_BASE;
 
   if(claimId){
-    const { data: infoClaim } = await sb.rpc('info_publica_claim', { p_paciente_id: claimId });
+    const { data: infoClaim, error: errClaim } = await sb.rpc('info_publica_claim', { p_paciente_id: claimId });
     const infoPaciente = Array.isArray(infoClaim) ? infoClaim[0] : infoClaim;
 
-    if(infoPaciente){
-      nombreFijo = infoPaciente.nombre || null;
-      correoFijo = infoPaciente.correo || null;
+    // Si esto falla en silencio, la pantalla se ve "normal" pero con los
+    // campos editables — que es justo el bug que hay que evitar: el paciente
+    // teclea otro nombre/correo y se duplica el expediente.
+    if(errClaim){
+      document.getElementById('btn').disabled = true;
+      document.getElementById('msg').textContent = 'No pudimos leer los datos de tu expediente: ' + errClaim.message + '. Pídele la liga de nuevo a tu psicólogo.';
+      document.getElementById('msg').className = 'msg err';
+      return;
+    }
 
-      if(nombreFijo){
-        document.getElementById('campoNombreEditable').style.display = 'none';
-        document.getElementById('nombre').removeAttribute('required');
-        document.getElementById('datosFijosNombre').textContent = nombreFijo;
-      }
-      if(correoFijo){
-        document.getElementById('campoCorreoEditable').style.display = 'none';
-        document.getElementById('correo').removeAttribute('required');
-        document.getElementById('datosFijosCorreo').textContent = correoFijo;
-      }
-      if(nombreFijo || correoFijo){
-        document.getElementById('datosFijosBox').style.display = 'block';
-      }
+    if(!infoPaciente){
+      // La función solo devuelve fila si el expediente existe y sigue sin
+      // cuenta vinculada. Sin fila = liga ya usada, o id que no existe.
+      document.getElementById('btn').disabled = true;
+      document.getElementById('msg').textContent = 'Esta liga ya se usó o no corresponde a un expediente activo. Si ya creaste tu cuenta, inicia sesión; si no, pídele a tu psicólogo que te la genere de nuevo.';
+      document.getElementById('msg').className = 'msg err';
+      return;
+    }
 
-      if(infoPaciente.es_menor_edad){
-        document.getElementById('checkConsentimientoTexto').textContent =
-          `He leído y acepto lo anterior, en representación de ${infoPaciente.nombre}, como su madre, padre o tutor/a legal.`;
-        encabezadoConsentimiento = `Este expediente pertenece a ${infoPaciente.nombre}, quien es menor de edad. El consentimiento y manejo de su información los otorga su tutor legal.\n\n${TEXTO_BASE}`;
-      }
+    nombreFijo = infoPaciente.nombre || null;
+    correoFijo = infoPaciente.correo || null;
+
+    if(nombreFijo){
+      document.getElementById('campoNombreEditable').style.display = 'none';
+      document.getElementById('nombre').removeAttribute('required');
+      document.getElementById('datosFijosNombre').textContent = nombreFijo;
+    }
+    if(correoFijo){
+      document.getElementById('campoCorreoEditable').style.display = 'none';
+      document.getElementById('correo').removeAttribute('required');
+      document.getElementById('datosFijosCorreo').textContent = correoFijo;
+    }
+    if(nombreFijo || correoFijo){
+      document.getElementById('datosFijosBox').style.display = 'block';
+    }
+
+    if(infoPaciente.es_menor_edad){
+      document.getElementById('checkConsentimientoTexto').textContent =
+        `He leído y acepto lo anterior, en representación de ${infoPaciente.nombre}, como su madre, padre o tutor/a legal.`;
+      encabezadoConsentimiento = `Este expediente pertenece a ${infoPaciente.nombre}, quien es menor de edad. El consentimiento y manejo de su información los otorga su tutor legal.\n\n${TEXTO_BASE}`;
     }
   }
 
@@ -282,6 +299,18 @@ document.getElementById('form').addEventListener('submit', async (e)=>{
   let idExpediente;
 
   if(claimId){
+    // vincular_cuenta_paciente resuelve al usuario con auth.uid(), así que
+    // sin sesión activa no vincularía nada. Si el proyecto llega a exigir
+    // confirmación de correo, signUp no devuelve sesión y hay que parar aquí
+    // en vez de dejar el expediente a medias.
+    const { data: { session } } = await sb.auth.getSession();
+    if(!session){
+      msg.textContent = 'Tu cuenta se creó, pero necesitas confirmar tu correo antes de continuar. Revisa tu bandeja y luego inicia sesión con la misma liga.';
+      msg.className = 'msg err';
+      btn.disabled = false;
+      return;
+    }
+
     // Este expediente ya existía (lo creó el psicólogo directo) — solo
     // conectamos la cuenta nueva a ese registro, sin duplicar nada.
     const { data: vinculo, error: errVinculo } = await sb.rpc('vincular_cuenta_paciente', { p_paciente_id: claimId });
@@ -299,7 +328,8 @@ document.getElementById('form').addEventListener('submit', async (e)=>{
     // No sobreescribimos el nombre: en este flujo, quien llena el
     // formulario puede ser el tutor legal, no el paciente — su nombre
     // no debe reemplazar el del paciente que ya existe en el expediente.
-    await sb.from('pacientes').update({ correo }).eq('id', claimId);
+    const { error: errCorreo } = await sb.from('pacientes').update({ correo }).eq('id', claimId);
+    if(errCorreo) console.warn('No se pudo actualizar el correo del expediente:', errCorreo.message);
   } else {
     const { data: nuevoPaciente, error: errPerfil } = await sb.from('pacientes').insert({
       auth_user_id: data.user.id,
