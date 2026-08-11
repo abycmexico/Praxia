@@ -1077,6 +1077,11 @@ async function iniciar(){
     return;
   }
 
+  if(!psi.terminos_aceptados_en){
+    location.href = './completar-terminos-psicologo.html';
+    return;
+  }
+
   if(!psi.perfil_completo){
     location.href = './completar-perfil-psicologo.html';
     return;

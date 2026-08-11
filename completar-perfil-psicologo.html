@@ -220,6 +220,10 @@ async function iniciar(){
     location.href = './login.html';
     return;
   }
+  if(!psi.terminos_aceptados_en){
+    location.href = './completar-terminos-psicologo.html';
+    return;
+  }
   if(psi.perfil_completo){
     location.href = './panel-psicologo.html';
     return;

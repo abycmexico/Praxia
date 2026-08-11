@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow">
+<title>Términos y responsabilidad | Praxia</title>
+<link rel="icon" type="image/png" href="./assets/praxia-isotipo.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,400;1,600&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  :root{--primario:#2E7D32;--primario-claro:#7BC043;--bg:#F7F9F6;--ink:#1A1A1A;--gray:#7a7a7a;--line:#ececec;--err:#c62828;--ok:#2e7d32;}
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{background:var(--bg);color:var(--ink);font-family:'Montserrat',Arial,sans-serif;font-weight:500;min-height:100vh;}
+  header{display:flex;align-items:center;justify-content:center;padding:26px;}
+  header img{height:30px;}
+  main{max-width:600px;margin:0 auto;padding:10px 24px 90px;}
+  .box{background:#fff;border-radius:20px;padding:28px;box-shadow:0 3px 16px rgba(0,0,0,.05);}
+  .box h1{font-size:21px;margin-bottom:8px;}
+  .box p.sub{color:var(--gray);font-size:13px;margin-bottom:20px;line-height:1.6;}
+  .texto-legal{font-size:12.5px;color:#444;line-height:1.7;max-height:340px;overflow-y:auto;white-space:pre-wrap;border:1.5px solid var(--line);border-radius:12px;padding:16px 18px;margin-bottom:16px;background:#FAFAF8;}
+  .check-fila{display:flex;gap:10px;align-items:flex-start;font-size:13px;font-weight:600;cursor:pointer;margin-bottom:20px;}
+  .check-fila input{width:auto;margin-top:3px;}
+  .msg{font-size:13px;margin-top:8px;min-height:17px;}
+  .msg.err{color:var(--err);}
+  button{width:100%;padding:14px;border:none;border-radius:30px;background:var(--primario);color:#fff;font-weight:700;font-size:14px;cursor:pointer;font-family:inherit;}
+  button:hover{background:var(--primario-claro);}
+  button:disabled{opacity:.55;cursor:default;}
+  .aviso-plantilla{font-size:11px;color:var(--gray);text-align:center;margin-top:16px;line-height:1.6;}
+  .marca-pie{display:flex;justify-content:center;padding:24px 0 8px;opacity:.35;}
+  .marca-pie img{height:16px;width:auto;}
+</style>
+</head>
+<body>
+
+<header><img src="./assets/praxia-logo-completo.png" alt="Praxia"></header>
+
+<main>
+  <div class="box">
+    <h1>Antes de continuar</h1>
+    <p class="sub">Como psicólogo/a en Praxia, vas a capturar datos personales y de salud de tus pacientes. La ley te pide asumir un rol claro frente a esa información — léelo con calma.</p>
+
+    <div class="texto-legal" id="textoTerminos">Cargando...</div>
+
+    <label class="check-fila">
+      <input type="checkbox" id="checkAcepto">
+      <span>He leído y acepto los términos y mi responsabilidad como responsable del tratamiento de los datos de mis pacientes.</span>
+    </label>
+
+    <p class="msg" id="msg"></p>
+    <button id="btnAceptar">Aceptar y continuar</button>
+
+    <p class="aviso-plantilla">Este texto es una plantilla general, no sustituye asesoría legal específica para tu práctica.</p>
+  </div>
+</main>
+<div class="marca-pie"><img src="./assets/praxia-isotipo.png" alt="Praxia"></div>
+
+<script>
+const SUPABASE_URL = 'https://uxbpfyeahqpertamhdxt.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_xaaA4lYAQZjdcMFRhMGtuQ_fvIeJKv7';
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+const VERSION_TERMINOS = '2026-08-v1';
+const TEXTO_TERMINOS = 'TÉRMINOS Y RESPONSABILIDAD PROFESIONAL\n\nTu rol como responsable del tratamiento de datos: al usar Praxia para atender pacientes, tú eres el responsable, ante la Ley Federal de Protección de Datos Personales en Posesión de los Particulares, del tratamiento de los datos personales y datos de salud (datos sensibles) que captures en la plataforma. Praxia actúa como encargado del tratamiento — te da la infraestructura tecnológica, pero eres tú quien decide qué información capturas y cómo la usas clínicamente.\n\nTe comprometes a:\n- Obtener el consentimiento informado de cada paciente antes de capturar sus datos (la plataforma ya te ayuda con esto en el registro de cada paciente).\n- Usar la información capturada únicamente con fines de atención psicológica.\n- Mantener la confidencialidad de la información de tus pacientes conforme al código de ética de tu profesión.\n- No compartir tus credenciales de acceso a la plataforma con terceros.\n- Notificar cualquier uso indebido, acceso no autorizado o filtración de información que detectes.\n- Asegurarte de que la modalidad y el manejo de la información de cada paciente cumplan con las obligaciones profesionales y legales que te apliquen como profesional de la salud mental.\n\nSobre Praxia como plataforma: Praxia está en desarrollo activo. No garantiza disponibilidad ininterrumpida del servicio, y no sustituye asesoría legal profesional. Si tu práctica lo requiere, es tu responsabilidad contar con tu propio aviso de privacidad adicional y cumplir con cualquier obligación normativa aplicable a tu ejercicio profesional, más allá de lo que esta plataforma te facilita.\n\nAl aceptar, confirmas que entiendes y asumes tu rol como responsable del tratamiento de los datos de tus pacientes dentro de esta plataforma.';
+
+document.getElementById('textoTerminos').textContent = TEXTO_TERMINOS;
+
+let yo = null;
+
+async function iniciar(){
+  const { data: { session } } = await sb.auth.getSession();
+  if(!session){ location.href = './login.html'; return; }
+
+  const { data: psi } = await sb.from('psicologos').select('*').eq('id', session.user.id).maybeSingle();
+  if(!psi || psi.estado !== 'aprobado'){
+    location.href = './login.html';
+    return;
+  }
+  if(psi.terminos_aceptados_en){
+    location.href = psi.perfil_completo ? './panel-psicologo.html' : './completar-perfil-psicologo.html';
+    return;
+  }
+  yo = psi;
+}
+
+document.getElementById('btnAceptar').addEventListener('click', async ()=>{
+  const btn = document.getElementById('btnAceptar');
+  const msg = document.getElementById('msg');
+
+  if(!document.getElementById('checkAcepto').checked){
+    msg.textContent = 'Necesitas aceptar para continuar.';
+    msg.className = 'msg err';
+    return;
+  }
+
+  btn.disabled = true;
+  msg.textContent = '';
+
+  const { error: errInsert } = await sb.from('aceptaciones_terminos').insert({
+    psicologo_id: yo.id,
+    texto_aceptado: TEXTO_TERMINOS,
+    version: VERSION_TERMINOS,
+    user_agent: navigator.userAgent
+  });
+
+  if(errInsert){
+    msg.textContent = 'No se pudo registrar tu aceptación: ' + errInsert.message;
+    msg.className = 'msg err';
+    btn.disabled = false;
+    return;
+  }
+
+  const { error: errUpdate } = await sb.from('psicologos').update({
+    terminos_aceptados_en: new Date().toISOString(),
+    terminos_version_aceptada: VERSION_TERMINOS
+  }).eq('id', yo.id);
+
+  if(errUpdate){
+    msg.textContent = 'No se pudo guardar: ' + errUpdate.message;
+    msg.className = 'msg err';
+    btn.disabled = false;
+    return;
+  }
+
+  location.href = yo.perfil_completo ? './panel-psicologo.html' : './completar-perfil-psicologo.html';
+});
+
+iniciar();
+</script>
+
+</body>
+</html>

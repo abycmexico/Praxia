@@ -43,7 +43,7 @@
   .btn-google:hover{border-color:var(--primario);}
   .consentimiento-box{border:1.5px solid var(--line);border-radius:12px;padding:16px;margin-top:22px;background:#FAFAFA;}
   .consentimiento-titulo{font-size:12.5px;font-weight:700;margin-bottom:10px;}
-  .consentimiento-texto{font-size:12px;color:#555;line-height:1.7;max-height:140px;overflow-y:auto;padding-right:6px;margin-bottom:14px;white-space:pre-wrap;}
+  .consentimiento-texto{font-size:12px;color:#555;line-height:1.7;max-height:220px;overflow-y:auto;padding-right:6px;margin-bottom:14px;white-space:pre-wrap;}
   .consentimiento-check{display:flex;align-items:flex-start;gap:9px;cursor:pointer;font-size:12.5px;font-weight:600;}
   .consentimiento-check input{width:auto;margin-top:2px;flex-shrink:0;}
 
@@ -168,7 +168,7 @@ function checkConsentimientoAntes(){
   return true;
 }
 
-const TEXTO_BASE = 'Al registrarte, autorizas a tu psicólogo a recabar y tratar tus datos personales y de salud con el único fin de brindarte atención psicológica, conforme a la Ley Federal de Protección de Datos Personales en Posesión de los Particulares. Tus datos de sesión son confidenciales y solo tu psicólogo tiene acceso a tus notas clínicas.';
+const TEXTO_BASE = 'AVISO DE PRIVACIDAD\n\nResponsable del tratamiento de tus datos: tu psicólogo/a tratante dentro de esta plataforma (identificado en tu perfil) es quien decide cómo se usa tu información clínica y es responsable de la relación de atención psicológica contigo. Praxia es la plataforma tecnológica que le permite administrar su consulta; actúa como encargado del tratamiento, no como responsable de tu atención clínica.\n\nDatos que se tratan: nombre, correo, teléfono, fecha de nacimiento, datos sociodemográficos que tú decidas compartir, y datos relacionados con tu salud (motivo de consulta, antecedentes, evaluaciones, notas de sesión, diagnóstico si lo hay, y medicación). Estos últimos son datos personales sensibles conforme a la Ley Federal de Protección de Datos Personales en Posesión de los Particulares, por tratarse de información de salud.\n\nPara qué se usan: exclusivamente para brindarte atención psicológica — agendar y dar seguimiento a tus sesiones, mantener tu expediente clínico, y facilitar la comunicación con tu psicólogo/a. Praxia no usa tu información con fines de mercadotecnia ni la vende ni la comparte con terceros para publicidad.\n\nCómo limitar el uso de tu información: puedes solicitar directamente a tu psicólogo/a que se restrinja cierta información dentro de tu expediente, dentro de lo que la práctica clínica permita.\n\nTransferencias: tus datos no se transfieren a terceros salvo lo estrictamente necesario para prestarte el servicio (por ejemplo, proveedores de videollamada o de infraestructura tecnológica que alojan la plataforma), o cuando la ley lo requiera.\n\nTus derechos (ARCO): tienes derecho a Acceder, Rectificar, Cancelar tus datos, y a Oponerte a su tratamiento. Puedes ejercerlos directamente con tu psicólogo/a, quien es tu contacto principal para estos temas.\n\nCambios a este aviso: si este aviso cambia de forma relevante, te lo notificaremos la próxima vez que inicies sesión.\n\nConsentimiento: por tratarse de datos de salud (datos sensibles), la ley requiere tu consentimiento expreso. Al aceptar y registrarte, otorgas ese consentimiento de forma expresa para los fines aquí descritos.';
 
 let textoConsentimientoActual = TEXTO_BASE;
 
