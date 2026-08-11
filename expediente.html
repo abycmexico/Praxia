@@ -41,6 +41,8 @@
   .estado-consentimiento.no{background:#F8D7DA;color:#c62828;}
   .tag{display:inline-block;font-size:10.5px;font-weight:800;letter-spacing:.8px;text-transform:uppercase;padding:4px 10px;border-radius:20px;vertical-align:middle;}
   .tag.activo{background:#D4EDDA;color:#2e7d32;}
+  .tag.pausa{background:#FFF3CD;color:#8a6d1a;}
+  .tag.dado_de_alta{background:#E4EEFB;color:#1a5cb0;}
   .tag.inactivo{background:#E7E7E7;color:#666;}
   nav.tabs{display:flex;gap:4px;border-bottom:1.5px solid var(--line);margin-bottom:28px;overflow-x:auto;}
   nav.tabs button{background:none;border:none;padding:13px 18px;font-size:13.5px;font-weight:700;cursor:pointer;font-family:inherit;color:var(--gray);border-bottom:2.5px solid transparent;white-space:nowrap;}
@@ -48,6 +50,22 @@
   section{display:none;}
   section.active{display:block;}
   .bloque{border:1.5px solid var(--line);border-radius:16px;padding:22px 24px;margin-bottom:18px;}
+  .riesgo-bloque{border-color:#f0c9c9;background:#FFFBFB;}
+  .item-lista-clinica{border:1.5px solid var(--line);border-radius:12px;padding:14px 16px;margin-bottom:10px;background:#fff;font-size:13px;line-height:1.6;}
+  .item-lista-clinica p{margin:2px 0;}
+  .item-lista-clinica em{color:var(--gray);font-style:normal;font-weight:700;}
+  .ilc-cabecera{display:flex;align-items:center;gap:10px;margin-bottom:6px;}
+  .ilc-cabecera strong{font-size:14px;flex:1;}
+  .ilc-fecha{font-size:11.5px;color:var(--gray);}
+  .ilc-meta{font-size:11px;color:var(--gray);margin-top:4px;}
+  .btn-eliminar-mini{background:none;border:none;color:var(--gray);cursor:pointer;font-size:14px;padding:2px 6px;border-radius:6px;}
+  .btn-eliminar-mini:hover{background:#FBEAEA;color:var(--err);}
+  .tag-objetivo{font-size:10px;font-weight:800;letter-spacing:.4px;text-transform:uppercase;padding:3px 9px;border-radius:12px;}
+  .tag-objetivo.tag-pendiente{background:#f2f2f2;color:#666;}
+  .tag-objetivo.tag-en_progreso{background:#E4EEFB;color:#1a5cb0;}
+  .tag-objetivo.tag-logrado{background:#D4EDDA;color:#2e7d32;}
+  .tag-objetivo.tag-pausado{background:#FFF3CD;color:#8a6d1a;}
+  .select-estado-objetivo{margin-top:8px;padding:6px 10px;border-radius:8px;border:1.5px solid var(--line);font-family:inherit;font-size:12px;}
   .bloque h3{font-size:14px;margin-bottom:2px;}
   .bloque .bh{font-size:12px;color:var(--gray);margin-bottom:18px;line-height:1.6;}
   .rejilla{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
@@ -126,8 +144,16 @@
 
     <nav class="tabs">
       <button class="active" data-tab="ficha">Ficha</button>
+      <button data-tab="antecedentes">Antecedentes</button>
+      <button data-tab="evaluacion">Evaluación</button>
+      <button data-tab="diagnostico">Diagnóstico</button>
+      <button data-tab="objetivos">Objetivos</button>
+      <button data-tab="plan">Plan de tratamiento</button>
       <button data-tab="notas">Notas por sesión</button>
+      <button data-tab="riesgo">Riesgo</button>
+      <button data-tab="medicacion">Medicación</button>
       <button data-tab="documentos">Documentos</button>
+      <button data-tab="alta">Seguimiento y alta</button>
     </nav>
 
     <section id="tab-ficha" class="active">
@@ -152,6 +178,42 @@
               <label for="fechaNacimiento">Fecha de nacimiento</label>
               <input type="date" id="fechaNacimiento">
             </div>
+            <div class="campo">
+              <label for="genero">Género</label>
+              <input type="text" id="genero">
+            </div>
+            <div class="campo">
+              <label for="pronombres">Pronombres</label>
+              <input type="text" id="pronombres" placeholder="Ej. ella/la, él/lo, elle">
+            </div>
+            <div class="campo">
+              <label for="ocupacion">Ocupación</label>
+              <input type="text" id="ocupacion">
+            </div>
+            <div class="campo">
+              <label for="estadoCivil">Estado civil</label>
+              <input type="text" id="estadoCivil">
+            </div>
+            <div class="campo">
+              <label for="escolaridad">Escolaridad</label>
+              <input type="text" id="escolaridad">
+            </div>
+            <div class="campo">
+              <label for="direccion">Dirección</label>
+              <input type="text" id="direccion">
+            </div>
+            <div class="campo">
+              <label for="ciudad">Ciudad</label>
+              <input type="text" id="ciudad">
+            </div>
+            <div class="campo">
+              <label for="estadoGeografico">Estado</label>
+              <input type="text" id="estadoGeografico">
+            </div>
+            <div class="campo">
+              <label for="pais">País</label>
+              <input type="text" id="pais">
+            </div>
           </div>
         </div>
 
@@ -167,12 +229,44 @@
               <label for="emergenciaTelefono">Teléfono</label>
               <input type="tel" id="emergenciaTelefono">
             </div>
+            <div class="campo">
+              <label for="emergenciaRelacion">Relación con el paciente</label>
+              <input type="text" id="emergenciaRelacion" placeholder="Ej. madre, pareja, hermano">
+            </div>
           </div>
         </div>
 
         <div class="bloque">
-          <h3>Información clínica</h3>
-          <p class="bh">Motivo de consulta, estado del tratamiento y observaciones generales del caso.</p>
+          <h3>Información administrativa</h3>
+          <p class="bh">Modalidad y frecuencia de atención.</p>
+          <div class="rejilla">
+            <div class="campo">
+              <label for="tipoAtencion">Tipo de atención</label>
+              <input type="text" id="tipoAtencion" placeholder="Ej. terapia individual, evaluación">
+            </div>
+            <div class="campo">
+              <label for="modalidadAtencion">Modalidad</label>
+              <select id="modalidadAtencion">
+                <option value="">Selecciona</option>
+                <option value="presencial">Presencial</option>
+                <option value="videollamada">Videollamada</option>
+                <option value="mixta">Mixta</option>
+              </select>
+            </div>
+            <div class="campo">
+              <label for="frecuenciaSesiones">Frecuencia de sesiones</label>
+              <input type="text" id="frecuenciaSesiones" placeholder="Ej. semanal, quincenal">
+            </div>
+            <div class="campo">
+              <label for="fechaPrimeraSesion">Fecha de primera sesión</label>
+              <input type="date" id="fechaPrimeraSesion">
+            </div>
+          </div>
+        </div>
+
+        <div class="bloque">
+          <h3>Motivo de consulta</h3>
+          <p class="bh">Qué trae al paciente a consulta, contado con el mayor detalle posible.</p>
           <div class="rejilla" style="margin-bottom:16px;">
             <div class="campo">
               <label for="fechaInicio">Fecha de inicio</label>
@@ -182,17 +276,46 @@
               <label for="estado">Estado</label>
               <select id="estado">
                 <option value="activo">Activo</option>
-                <option value="inactivo">Inactivo</option>
+                <option value="pausa">En pausa</option>
+                <option value="dado_de_alta">Dado de alta</option>
               </select>
+            </div>
+            <div class="campo">
+              <label for="quienRefiere">Quién refiere al paciente</label>
+              <input type="text" id="quienRefiere">
+            </div>
+            <div class="campo">
+              <label for="tiempoEvolucion">Tiempo de evolución del problema</label>
+              <input type="text" id="tiempoEvolucion" placeholder="Ej. 6 meses">
             </div>
           </div>
           <div class="campo" style="margin-bottom:16px;">
-            <label for="motivoConsulta">Motivo de consulta</label>
-            <textarea id="motivoConsulta" placeholder="Qué trae al paciente a consulta."></textarea>
+            <label for="motivoConsulta">Motivo principal de consulta</label>
+            <textarea id="motivoConsulta"></textarea>
+          </div>
+          <div class="campo" style="margin-bottom:16px;">
+            <label for="problemaActual">Problema actual</label>
+            <textarea id="problemaActual"></textarea>
+          </div>
+          <div class="campo" style="margin-bottom:16px;">
+            <label for="sintomasReportados">Síntomas o dificultades reportadas</label>
+            <textarea id="sintomasReportados"></textarea>
+          </div>
+          <div class="campo" style="margin-bottom:16px;">
+            <label for="expectativasPaciente">Expectativas del paciente</label>
+            <textarea id="expectativasPaciente"></textarea>
+          </div>
+          <div class="campo" style="margin-bottom:16px;">
+            <label for="objetivosIniciales">Objetivos iniciales</label>
+            <textarea id="objetivosIniciales"></textarea>
+          </div>
+          <div class="campo" style="margin-bottom:16px;">
+            <label for="factoresDesencadenantes">Factores que agravaron o desencadenaron la situación</label>
+            <textarea id="factoresDesencadenantes"></textarea>
           </div>
           <div class="campo">
             <label for="observacionesGenerales">Observaciones generales</label>
-            <textarea id="observacionesGenerales" class="alto" placeholder="Antecedentes, contexto, impresión diagnóstica, encuadre acordado."></textarea>
+            <textarea id="observacionesGenerales" class="alto"></textarea>
           </div>
         </div>
 
@@ -205,6 +328,181 @@
 
     <section id="tab-notas">
       <div id="listaNotas"><p class="empty">Cargando sesiones...</p></div>
+    </section>
+
+    <section id="tab-antecedentes">
+      <form id="formAntecedentes">
+        <div class="bloque">
+          <h3>Antecedentes personales</h3>
+          <p class="bh">Historial médico y psicológico relevante para el caso.</p>
+          <div class="campo" style="margin-bottom:16px;"><label for="antecedentesMedicos">Antecedentes médicos</label><textarea id="antecedentesMedicos"></textarea></div>
+          <div class="campo" style="margin-bottom:16px;"><label for="antecedentesPsicologicos">Antecedentes psicológicos</label><textarea id="antecedentesPsicologicos"></textarea></div>
+          <div class="campo" style="margin-bottom:16px;"><label for="antecedentesPsiquiatricos">Antecedentes psiquiátricos</label><textarea id="antecedentesPsiquiatricos"></textarea></div>
+          <div class="campo" style="margin-bottom:16px;"><label for="tratamientosAnteriores">Tratamientos anteriores</label><textarea id="tratamientosAnteriores"></textarea></div>
+          <div class="campo" style="margin-bottom:16px;"><label for="hospitalizaciones">Hospitalizaciones</label><textarea id="hospitalizaciones"></textarea></div>
+          <div class="campo" style="margin-bottom:16px;"><label for="consumoSustancias">Consumo de sustancias</label><textarea id="consumoSustancias"></textarea></div>
+          <div class="rejilla" style="margin-bottom:16px;">
+            <div class="campo"><label for="alergias">Alergias</label><input type="text" id="alergias"></div>
+            <div class="campo"><label for="enfermedadesRelevantes">Enfermedades relevantes</label><input type="text" id="enfermedadesRelevantes"></div>
+          </div>
+          <div class="campo"><label for="antecedentesFamiliares">Antecedentes familiares relevantes</label><textarea id="antecedentesFamiliares"></textarea></div>
+        </div>
+
+        <div class="bloque">
+          <h3>Historia personal y familiar</h3>
+          <p class="bh">Desarrollo, relaciones y eventos significativos en la vida del paciente.</p>
+          <div class="campo" style="margin-bottom:16px;"><label for="historiaPrenatal">Historia prenatal y perinatal</label><textarea id="historiaPrenatal"></textarea></div>
+          <div class="campo" style="margin-bottom:16px;"><label for="historiaInfancia">Infancia</label><textarea id="historiaInfancia"></textarea></div>
+          <div class="campo" style="margin-bottom:16px;"><label for="historiaAdolescencia">Adolescencia</label><textarea id="historiaAdolescencia"></textarea></div>
+          <div class="campo" style="margin-bottom:16px;"><label for="historiaDesarrollo">Desarrollo</label><textarea id="historiaDesarrollo"></textarea></div>
+          <div class="campo" style="margin-bottom:16px;"><label for="relacionesFamiliares">Relaciones familiares</label><textarea id="relacionesFamiliares"></textarea></div>
+          <div class="campo" style="margin-bottom:16px;"><label for="dinamicaFamiliar">Dinámica familiar</label><textarea id="dinamicaFamiliar"></textarea></div>
+          <div class="campo" style="margin-bottom:16px;"><label for="historiaEscolar">Historia escolar</label><textarea id="historiaEscolar"></textarea></div>
+          <div class="campo" style="margin-bottom:16px;"><label for="historiaLaboral">Historia laboral</label><textarea id="historiaLaboral"></textarea></div>
+          <div class="campo" style="margin-bottom:16px;"><label for="relacionesPareja">Relaciones de pareja</label><textarea id="relacionesPareja"></textarea></div>
+          <div class="campo" style="margin-bottom:16px;"><label for="vidaSocial">Vida social</label><textarea id="vidaSocial"></textarea></div>
+          <div class="campo" style="margin-bottom:16px;"><label for="eventosSignificativos">Eventos significativos, pérdidas o experiencias adversas</label><textarea id="eventosSignificativos"></textarea></div>
+          <div class="campo" style="margin-bottom:16px;"><label for="recursosPersonales">Recursos personales</label><textarea id="recursosPersonales"></textarea></div>
+          <div class="campo"><label for="redApoyo">Red de apoyo</label><textarea id="redApoyo"></textarea></div>
+        </div>
+
+        <div class="barra-guardar">
+          <p class="msg" id="msgAntecedentes"></p>
+          <button type="submit" class="btn btn-primary" id="btnGuardarAntecedentes">Guardar</button>
+        </div>
+      </form>
+    </section>
+
+    <section id="tab-evaluacion">
+      <form id="formEvaluacion">
+        <div class="bloque">
+          <h3>Evaluación psicológica</h3>
+          <p class="bh">Observaciones clínicas del profesional — no son un diagnóstico automático, son una herramienta de registro.</p>
+          <div class="rejilla">
+            <div class="campo"><label for="evalAparienciaConducta">Apariencia y conducta</label><textarea id="evalAparienciaConducta"></textarea></div>
+            <div class="campo"><label for="evalEstadoAnimo">Estado de ánimo</label><textarea id="evalEstadoAnimo"></textarea></div>
+            <div class="campo"><label for="evalAfecto">Afecto</label><textarea id="evalAfecto"></textarea></div>
+            <div class="campo"><label for="evalLenguaje">Lenguaje</label><textarea id="evalLenguaje"></textarea></div>
+            <div class="campo"><label for="evalPensamiento">Pensamiento</label><textarea id="evalPensamiento"></textarea></div>
+            <div class="campo"><label for="evalPercepcion">Percepción</label><textarea id="evalPercepcion"></textarea></div>
+            <div class="campo"><label for="evalOrientacion">Orientación</label><textarea id="evalOrientacion"></textarea></div>
+            <div class="campo"><label for="evalAtencion">Atención</label><textarea id="evalAtencion"></textarea></div>
+            <div class="campo"><label for="evalMemoria">Memoria</label><textarea id="evalMemoria"></textarea></div>
+            <div class="campo"><label for="evalInsight">Insight</label><textarea id="evalInsight"></textarea></div>
+            <div class="campo"><label for="evalJuicio">Juicio</label><textarea id="evalJuicio"></textarea></div>
+            <div class="campo"><label for="evalFuncionamientoGeneral">Funcionamiento general</label><textarea id="evalFuncionamientoGeneral"></textarea></div>
+            <div class="campo"><label for="evalFactoresRiesgo">Factores de riesgo</label><textarea id="evalFactoresRiesgo"></textarea></div>
+            <div class="campo"><label for="evalFactoresProtectores">Factores protectores</label><textarea id="evalFactoresProtectores"></textarea></div>
+          </div>
+        </div>
+        <div class="barra-guardar">
+          <p class="msg" id="msgEvaluacion"></p>
+          <button type="submit" class="btn btn-primary" id="btnGuardarEvaluacion">Guardar</button>
+        </div>
+      </form>
+
+      <div class="bloque" style="margin-top:8px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+          <h3 style="margin-bottom:0;">Evaluaciones y pruebas psicológicas</h3>
+          <button type="button" class="btn btn-ghost" id="btnNuevaEvaluacionPrueba">+ Agregar evaluación</button>
+        </div>
+        <p class="bh">Pruebas aplicadas al paciente a lo largo del proceso.</p>
+        <div id="listaEvaluacionesPrueba"><p class="empty">Cargando...</p></div>
+      </div>
+    </section>
+
+    <section id="tab-diagnostico">
+      <form id="formDiagnostico">
+        <div class="bloque">
+          <h3>Impresión clínica / diagnóstico</h3>
+          <p class="bh">El diagnóstico lo introduce y valida el profesional — el sistema no lo sugiere ni lo infiere.</p>
+          <div class="campo" style="margin-bottom:16px;"><label for="impresionClinica">Impresión clínica</label><textarea id="impresionClinica"></textarea></div>
+          <div class="campo" style="margin-bottom:16px;"><label for="hipotesisTrabajo">Hipótesis de trabajo</label><textarea id="hipotesisTrabajo"></textarea></div>
+          <div class="rejilla" style="margin-bottom:16px;">
+            <div class="campo"><label for="diagnostico">Diagnóstico</label><input type="text" id="diagnostico"></div>
+            <div class="campo"><label for="codigoDiagnostico">Código diagnóstico</label><input type="text" id="codigoDiagnostico"></div>
+            <div class="campo"><label for="diagnosticoFecha">Fecha de evaluación</label><input type="date" id="diagnosticoFecha"></div>
+          </div>
+          <div class="campo"><label for="diagnosticosDiferenciales">Diagnósticos diferenciales</label><textarea id="diagnosticosDiferenciales"></textarea></div>
+        </div>
+        <div class="barra-guardar">
+          <p class="msg" id="msgDiagnostico"></p>
+          <button type="submit" class="btn btn-primary" id="btnGuardarDiagnostico">Guardar</button>
+        </div>
+      </form>
+    </section>
+
+    <section id="tab-objetivos">
+      <div class="bloque">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+          <h3 style="margin-bottom:0;">Objetivos terapéuticos</h3>
+          <button type="button" class="btn btn-ghost" id="btnNuevoObjetivo">+ Nuevo objetivo</button>
+        </div>
+        <p class="bh">Metas del proceso terapéutico, con seguimiento de avance.</p>
+        <div id="listaObjetivos"><p class="empty">Cargando...</p></div>
+      </div>
+    </section>
+
+    <section id="tab-plan">
+      <form id="formPlan">
+        <div class="bloque">
+          <h3>Plan de tratamiento</h3>
+          <div class="campo" style="margin-bottom:16px;"><label for="planEnfoque">Enfoque terapéutico</label><textarea id="planEnfoque"></textarea></div>
+          <div class="campo" style="margin-bottom:16px;"><label for="planIntervenciones">Intervenciones planeadas</label><textarea id="planIntervenciones"></textarea></div>
+          <div class="rejilla" style="margin-bottom:16px;">
+            <div class="campo"><label for="planFrecuencia">Frecuencia</label><input type="text" id="planFrecuencia"></div>
+            <div class="campo"><label for="planDuracionEstimada">Duración estimada</label><input type="text" id="planDuracionEstimada"></div>
+          </div>
+          <div class="campo" style="margin-bottom:16px;"><label for="planIndicadores">Indicadores de progreso</label><textarea id="planIndicadores"></textarea></div>
+          <div class="campo"><label for="planRecomendaciones">Recomendaciones</label><textarea id="planRecomendaciones"></textarea></div>
+        </div>
+        <div class="barra-guardar">
+          <p class="msg" id="msgPlan"></p>
+          <button type="submit" class="btn btn-primary" id="btnGuardarPlan">Guardar</button>
+        </div>
+      </form>
+    </section>
+
+    <section id="tab-riesgo">
+      <form id="formRiesgo">
+        <div class="bloque riesgo-bloque">
+          <h3>Evaluación de riesgo</h3>
+          <p class="bh">Documentación de la valoración del profesional. El sistema no determina ni afirma niveles de riesgo por sí mismo.</p>
+          <div class="campo" style="margin-bottom:16px;"><label for="riesgoActual">Riesgo actual</label><textarea id="riesgoActual"></textarea></div>
+          <div class="rejilla" style="margin-bottom:16px;">
+            <div class="campo"><label for="riesgoIdeacionSuicida">Ideación suicida</label><textarea id="riesgoIdeacionSuicida"></textarea></div>
+            <div class="campo"><label for="riesgoAutolesiones">Autolesiones</label><textarea id="riesgoAutolesiones"></textarea></div>
+            <div class="campo"><label for="riesgoTerceros">Riesgo hacia terceros</label><textarea id="riesgoTerceros"></textarea></div>
+            <div class="campo">
+              <label for="riesgoNivel">Nivel de riesgo registrado</label>
+              <select id="riesgoNivel">
+                <option value="">Sin especificar</option>
+                <option value="bajo">Bajo</option>
+                <option value="medio">Medio</option>
+                <option value="alto">Alto</option>
+              </select>
+            </div>
+          </div>
+          <div class="campo" style="margin-bottom:16px;"><label for="riesgoFactoresRiesgo">Factores de riesgo</label><textarea id="riesgoFactoresRiesgo"></textarea></div>
+          <div class="campo" style="margin-bottom:16px;"><label for="riesgoFactoresProtectores">Factores protectores</label><textarea id="riesgoFactoresProtectores"></textarea></div>
+          <div class="campo" style="margin-bottom:16px;"><label for="riesgoPlanIntervencion">Plan / documentación de intervención</label><textarea id="riesgoPlanIntervencion"></textarea></div>
+          <div class="campo"><label for="riesgoFechaEvaluacion">Fecha de evaluación</label><input type="date" id="riesgoFechaEvaluacion"></div>
+        </div>
+        <div class="barra-guardar">
+          <p class="msg" id="msgRiesgo"></p>
+          <button type="submit" class="btn btn-primary" id="btnGuardarRiesgo">Guardar</button>
+        </div>
+      </form>
+    </section>
+
+    <section id="tab-medicacion">
+      <div class="bloque">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+          <h3 style="margin-bottom:0;">Medicación</h3>
+          <button type="button" class="btn btn-ghost" id="btnNuevoMedicamento">+ Agregar medicamento</button>
+        </div>
+        <div id="listaMedicamentos"><p class="empty">Cargando...</p></div>
+      </div>
     </section>
 
     <section id="tab-documentos">
@@ -229,6 +527,28 @@
       </div>
 
       <div id="listaDocumentos" style="margin-top:20px;"><p class="empty">Cargando documentos...</p></div>
+    </section>
+
+    <section id="tab-alta">
+      <form id="formAlta">
+        <div class="bloque">
+          <h3>Seguimiento y alta</h3>
+          <div class="campo" style="margin-bottom:16px;"><label for="seguimientoEvolucionGeneral">Evolución general</label><textarea id="seguimientoEvolucionGeneral"></textarea></div>
+          <div class="campo" style="margin-bottom:16px;"><label for="seguimientoObjetivosAlcanzados">Objetivos alcanzados</label><textarea id="seguimientoObjetivosAlcanzados"></textarea></div>
+          <div class="campo" style="margin-bottom:16px;"><label for="seguimientoObjetivosPendientes">Objetivos pendientes</label><textarea id="seguimientoObjetivosPendientes"></textarea></div>
+          <div class="rejilla" style="margin-bottom:16px;">
+            <div class="campo"><label for="fechaAlta">Fecha de alta</label><input type="date" id="fechaAlta"></div>
+            <div class="campo"><label for="estadoAlta">Estado al alta</label><input type="text" id="estadoAlta"></div>
+          </div>
+          <div class="campo" style="margin-bottom:16px;"><label for="motivoAlta">Motivo de alta</label><textarea id="motivoAlta"></textarea></div>
+          <div class="campo" style="margin-bottom:16px;"><label for="recomendacionesAlta">Recomendaciones</label><textarea id="recomendacionesAlta"></textarea></div>
+          <div class="campo"><label for="seguimientoPosterior">Seguimiento posterior</label><textarea id="seguimientoPosterior"></textarea></div>
+        </div>
+        <div class="barra-guardar">
+          <p class="msg" id="msgAlta"></p>
+          <button type="submit" class="btn btn-primary" id="btnGuardarAlta">Guardar</button>
+        </div>
+      </form>
     </section>
   </div>
 </main>
@@ -313,6 +633,15 @@ async function iniciar(){
   pintarFicha();
   cargarNotas();
   cargarDocumentos();
+  pintarAntecedentes();
+  pintarEvaluacion();
+  pintarDiagnostico();
+  pintarPlan();
+  pintarRiesgo();
+  pintarAlta();
+  cargarEvaluacionesPrueba();
+  cargarObjetivos();
+  cargarMedicamentos();
   cargarConsentimiento();
 }
 
@@ -363,11 +692,35 @@ function pintarFicha(){
   document.getElementById('correo').value = paciente.correo || '';
   document.getElementById('telefono').value = paciente.telefono || '';
   document.getElementById('fechaNacimiento').value = paciente.fecha_nacimiento || '';
+  document.getElementById('genero').value = paciente.genero || '';
+  document.getElementById('pronombres').value = paciente.pronombres || '';
+  document.getElementById('ocupacion').value = paciente.ocupacion || '';
+  document.getElementById('estadoCivil').value = paciente.estado_civil || '';
+  document.getElementById('escolaridad').value = paciente.escolaridad || '';
+  document.getElementById('direccion').value = paciente.direccion || '';
+  document.getElementById('ciudad').value = paciente.ciudad || '';
+  document.getElementById('estadoGeografico').value = paciente.estado_geografico || '';
+  document.getElementById('pais').value = paciente.pais || '';
+
   document.getElementById('emergenciaNombre').value = paciente.contacto_emergencia_nombre || '';
   document.getElementById('emergenciaTelefono').value = paciente.contacto_emergencia_telefono || '';
+  document.getElementById('emergenciaRelacion').value = paciente.contacto_emergencia_relacion || '';
+
+  document.getElementById('tipoAtencion').value = paciente.tipo_atencion || '';
+  document.getElementById('modalidadAtencion').value = paciente.modalidad_atencion || '';
+  document.getElementById('frecuenciaSesiones').value = paciente.frecuencia_sesiones || '';
+  document.getElementById('fechaPrimeraSesion').value = paciente.fecha_primera_sesion || '';
+
   document.getElementById('fechaInicio').value = paciente.fecha_inicio || '';
   document.getElementById('estado').value = paciente.estado || 'activo';
+  document.getElementById('quienRefiere').value = paciente.quien_refiere || '';
+  document.getElementById('tiempoEvolucion').value = paciente.tiempo_evolucion || '';
   document.getElementById('motivoConsulta').value = paciente.motivo_consulta || '';
+  document.getElementById('problemaActual').value = paciente.problema_actual || '';
+  document.getElementById('sintomasReportados').value = paciente.sintomas_reportados || '';
+  document.getElementById('expectativasPaciente').value = paciente.expectativas_paciente || '';
+  document.getElementById('objetivosIniciales').value = paciente.objetivos_iniciales || '';
+  document.getElementById('factoresDesencadenantes').value = paciente.factores_desencadenantes || '';
   document.getElementById('observacionesGenerales').value = paciente.observaciones_generales || '';
 }
 
@@ -421,11 +774,32 @@ document.getElementById('formFicha').addEventListener('submit', async (e)=>{
     nombre: document.getElementById('nombre').value.trim(),
     telefono: vacioNull(document.getElementById('telefono').value),
     fecha_nacimiento: vacioNull(document.getElementById('fechaNacimiento').value),
+    genero: vacioNull(document.getElementById('genero').value),
+    pronombres: vacioNull(document.getElementById('pronombres').value),
+    ocupacion: vacioNull(document.getElementById('ocupacion').value),
+    estado_civil: vacioNull(document.getElementById('estadoCivil').value),
+    escolaridad: vacioNull(document.getElementById('escolaridad').value),
+    direccion: vacioNull(document.getElementById('direccion').value),
+    ciudad: vacioNull(document.getElementById('ciudad').value),
+    estado_geografico: vacioNull(document.getElementById('estadoGeografico').value),
+    pais: vacioNull(document.getElementById('pais').value),
     contacto_emergencia_nombre: vacioNull(document.getElementById('emergenciaNombre').value),
     contacto_emergencia_telefono: vacioNull(document.getElementById('emergenciaTelefono').value),
+    contacto_emergencia_relacion: vacioNull(document.getElementById('emergenciaRelacion').value),
+    tipo_atencion: vacioNull(document.getElementById('tipoAtencion').value),
+    modalidad_atencion: vacioNull(document.getElementById('modalidadAtencion').value),
+    frecuencia_sesiones: vacioNull(document.getElementById('frecuenciaSesiones').value),
+    fecha_primera_sesion: vacioNull(document.getElementById('fechaPrimeraSesion').value),
     fecha_inicio: vacioNull(document.getElementById('fechaInicio').value),
     estado: document.getElementById('estado').value,
+    quien_refiere: vacioNull(document.getElementById('quienRefiere').value),
+    tiempo_evolucion: vacioNull(document.getElementById('tiempoEvolucion').value),
     motivo_consulta: vacioNull(document.getElementById('motivoConsulta').value),
+    problema_actual: vacioNull(document.getElementById('problemaActual').value),
+    sintomas_reportados: vacioNull(document.getElementById('sintomasReportados').value),
+    expectativas_paciente: vacioNull(document.getElementById('expectativasPaciente').value),
+    objetivos_iniciales: vacioNull(document.getElementById('objetivosIniciales').value),
+    factores_desencadenantes: vacioNull(document.getElementById('factoresDesencadenantes').value),
     observaciones_generales: vacioNull(document.getElementById('observacionesGenerales').value)
   };
 
@@ -446,6 +820,347 @@ document.getElementById('formFicha').addEventListener('submit', async (e)=>{
   btn.disabled = false;
   setTimeout(()=>{ if(msg.textContent==='Expediente guardado.') msg.textContent=''; }, 3000);
 });
+
+/* ---------- helper genérico para las secciones de solo-texto ---------- */
+async function guardarBloquePaciente(cambios, msgId, btnId){
+  const btn = document.getElementById(btnId);
+  const msg = document.getElementById(msgId);
+  btn.disabled = true;
+  msg.className = 'msg';
+  msg.textContent = 'Guardando...';
+
+  const { error } = await sb.from('pacientes').update(cambios).eq('id', paciente.id);
+
+  if(error){
+    msg.textContent = 'No se pudo guardar: ' + error.message;
+    msg.className = 'msg err';
+    btn.disabled = false;
+    return;
+  }
+
+  paciente = { ...paciente, ...cambios };
+  msg.textContent = 'Guardado.';
+  msg.className = 'msg ok';
+  btn.disabled = false;
+  setTimeout(()=>{ if(msg.textContent==='Guardado.') msg.textContent=''; }, 3000);
+}
+
+/* ---------- antecedentes e historia ---------- */
+function pintarAntecedentes(){
+  const mapa = {
+    antecedentesMedicos:'antecedentes_medicos', antecedentesPsicologicos:'antecedentes_psicologicos',
+    antecedentesPsiquiatricos:'antecedentes_psiquiatricos', tratamientosAnteriores:'tratamientos_anteriores',
+    hospitalizaciones:'hospitalizaciones', consumoSustancias:'consumo_sustancias', alergias:'alergias',
+    enfermedadesRelevantes:'enfermedades_relevantes', antecedentesFamiliares:'antecedentes_familiares',
+    historiaPrenatal:'historia_prenatal', historiaInfancia:'historia_infancia', historiaAdolescencia:'historia_adolescencia',
+    historiaDesarrollo:'historia_desarrollo', relacionesFamiliares:'relaciones_familiares', dinamicaFamiliar:'dinamica_familiar',
+    historiaEscolar:'historia_escolar', historiaLaboral:'historia_laboral', relacionesPareja:'relaciones_pareja',
+    vidaSocial:'vida_social', eventosSignificativos:'eventos_significativos', recursosPersonales:'recursos_personales',
+    redApoyo:'red_apoyo'
+  };
+  Object.entries(mapa).forEach(([id, col])=>{ document.getElementById(id).value = paciente[col] || ''; });
+}
+document.getElementById('formAntecedentes').addEventListener('submit', async (e)=>{
+  e.preventDefault();
+  const mapa = {
+    antecedentesMedicos:'antecedentes_medicos', antecedentesPsicologicos:'antecedentes_psicologicos',
+    antecedentesPsiquiatricos:'antecedentes_psiquiatricos', tratamientosAnteriores:'tratamientos_anteriores',
+    hospitalizaciones:'hospitalizaciones', consumoSustancias:'consumo_sustancias', alergias:'alergias',
+    enfermedadesRelevantes:'enfermedades_relevantes', antecedentesFamiliares:'antecedentes_familiares',
+    historiaPrenatal:'historia_prenatal', historiaInfancia:'historia_infancia', historiaAdolescencia:'historia_adolescencia',
+    historiaDesarrollo:'historia_desarrollo', relacionesFamiliares:'relaciones_familiares', dinamicaFamiliar:'dinamica_familiar',
+    historiaEscolar:'historia_escolar', historiaLaboral:'historia_laboral', relacionesPareja:'relaciones_pareja',
+    vidaSocial:'vida_social', eventosSignificativos:'eventos_significativos', recursosPersonales:'recursos_personales',
+    redApoyo:'red_apoyo'
+  };
+  const cambios = {};
+  Object.entries(mapa).forEach(([id, col])=>{ cambios[col] = vacioNull(document.getElementById(id).value); });
+  guardarBloquePaciente(cambios, 'msgAntecedentes', 'btnGuardarAntecedentes');
+});
+
+/* ---------- evaluación psicológica (MSE) ---------- */
+function pintarEvaluacion(){
+  const mapa = {
+    evalAparienciaConducta:'eval_apariencia_conducta', evalEstadoAnimo:'eval_estado_animo', evalAfecto:'eval_afecto',
+    evalLenguaje:'eval_lenguaje', evalPensamiento:'eval_pensamiento', evalPercepcion:'eval_percepcion',
+    evalOrientacion:'eval_orientacion', evalAtencion:'eval_atencion', evalMemoria:'eval_memoria',
+    evalInsight:'eval_insight', evalJuicio:'eval_juicio', evalFuncionamientoGeneral:'eval_funcionamiento_general',
+    evalFactoresRiesgo:'eval_factores_riesgo', evalFactoresProtectores:'eval_factores_protectores'
+  };
+  Object.entries(mapa).forEach(([id, col])=>{ document.getElementById(id).value = paciente[col] || ''; });
+}
+document.getElementById('formEvaluacion').addEventListener('submit', async (e)=>{
+  e.preventDefault();
+  const mapa = {
+    evalAparienciaConducta:'eval_apariencia_conducta', evalEstadoAnimo:'eval_estado_animo', evalAfecto:'eval_afecto',
+    evalLenguaje:'eval_lenguaje', evalPensamiento:'eval_pensamiento', evalPercepcion:'eval_percepcion',
+    evalOrientacion:'eval_orientacion', evalAtencion:'eval_atencion', evalMemoria:'eval_memoria',
+    evalInsight:'eval_insight', evalJuicio:'eval_juicio', evalFuncionamientoGeneral:'eval_funcionamiento_general',
+    evalFactoresRiesgo:'eval_factores_riesgo', evalFactoresProtectores:'eval_factores_protectores'
+  };
+  const cambios = {};
+  Object.entries(mapa).forEach(([id, col])=>{ cambios[col] = vacioNull(document.getElementById(id).value); });
+  guardarBloquePaciente(cambios, 'msgEvaluacion', 'btnGuardarEvaluacion');
+});
+
+/* ---------- diagnóstico ---------- */
+function pintarDiagnostico(){
+  document.getElementById('impresionClinica').value = paciente.impresion_clinica || '';
+  document.getElementById('hipotesisTrabajo').value = paciente.hipotesis_trabajo || '';
+  document.getElementById('diagnostico').value = paciente.diagnostico || '';
+  document.getElementById('codigoDiagnostico').value = paciente.codigo_diagnostico || '';
+  document.getElementById('diagnosticoFecha').value = paciente.diagnostico_fecha || '';
+  document.getElementById('diagnosticosDiferenciales').value = paciente.diagnosticos_diferenciales || '';
+}
+document.getElementById('formDiagnostico').addEventListener('submit', async (e)=>{
+  e.preventDefault();
+  const cambios = {
+    impresion_clinica: vacioNull(document.getElementById('impresionClinica').value),
+    hipotesis_trabajo: vacioNull(document.getElementById('hipotesisTrabajo').value),
+    diagnostico: vacioNull(document.getElementById('diagnostico').value),
+    codigo_diagnostico: vacioNull(document.getElementById('codigoDiagnostico').value),
+    diagnostico_fecha: vacioNull(document.getElementById('diagnosticoFecha').value),
+    diagnosticos_diferenciales: vacioNull(document.getElementById('diagnosticosDiferenciales').value)
+  };
+  guardarBloquePaciente(cambios, 'msgDiagnostico', 'btnGuardarDiagnostico');
+});
+
+/* ---------- plan de tratamiento ---------- */
+function pintarPlan(){
+  document.getElementById('planEnfoque').value = paciente.plan_enfoque || '';
+  document.getElementById('planIntervenciones').value = paciente.plan_intervenciones || '';
+  document.getElementById('planFrecuencia').value = paciente.plan_frecuencia || '';
+  document.getElementById('planDuracionEstimada').value = paciente.plan_duracion_estimada || '';
+  document.getElementById('planIndicadores').value = paciente.plan_indicadores || '';
+  document.getElementById('planRecomendaciones').value = paciente.plan_recomendaciones || '';
+}
+document.getElementById('formPlan').addEventListener('submit', async (e)=>{
+  e.preventDefault();
+  const cambios = {
+    plan_enfoque: vacioNull(document.getElementById('planEnfoque').value),
+    plan_intervenciones: vacioNull(document.getElementById('planIntervenciones').value),
+    plan_frecuencia: vacioNull(document.getElementById('planFrecuencia').value),
+    plan_duracion_estimada: vacioNull(document.getElementById('planDuracionEstimada').value),
+    plan_indicadores: vacioNull(document.getElementById('planIndicadores').value),
+    plan_recomendaciones: vacioNull(document.getElementById('planRecomendaciones').value)
+  };
+  guardarBloquePaciente(cambios, 'msgPlan', 'btnGuardarPlan');
+});
+
+/* ---------- riesgo ---------- */
+function pintarRiesgo(){
+  document.getElementById('riesgoActual').value = paciente.riesgo_actual || '';
+  document.getElementById('riesgoIdeacionSuicida').value = paciente.riesgo_ideacion_suicida || '';
+  document.getElementById('riesgoAutolesiones').value = paciente.riesgo_autolesiones || '';
+  document.getElementById('riesgoTerceros').value = paciente.riesgo_terceros || '';
+  document.getElementById('riesgoNivel').value = paciente.riesgo_nivel || '';
+  document.getElementById('riesgoFactoresRiesgo').value = paciente.riesgo_factores_riesgo || '';
+  document.getElementById('riesgoFactoresProtectores').value = paciente.riesgo_factores_protectores || '';
+  document.getElementById('riesgoPlanIntervencion').value = paciente.riesgo_plan_intervencion || '';
+  document.getElementById('riesgoFechaEvaluacion').value = paciente.riesgo_fecha_evaluacion || '';
+}
+document.getElementById('formRiesgo').addEventListener('submit', async (e)=>{
+  e.preventDefault();
+  const cambios = {
+    riesgo_actual: vacioNull(document.getElementById('riesgoActual').value),
+    riesgo_ideacion_suicida: vacioNull(document.getElementById('riesgoIdeacionSuicida').value),
+    riesgo_autolesiones: vacioNull(document.getElementById('riesgoAutolesiones').value),
+    riesgo_terceros: vacioNull(document.getElementById('riesgoTerceros').value),
+    riesgo_nivel: vacioNull(document.getElementById('riesgoNivel').value),
+    riesgo_factores_riesgo: vacioNull(document.getElementById('riesgoFactoresRiesgo').value),
+    riesgo_factores_protectores: vacioNull(document.getElementById('riesgoFactoresProtectores').value),
+    riesgo_plan_intervencion: vacioNull(document.getElementById('riesgoPlanIntervencion').value),
+    riesgo_fecha_evaluacion: vacioNull(document.getElementById('riesgoFechaEvaluacion').value)
+  };
+  guardarBloquePaciente(cambios, 'msgRiesgo', 'btnGuardarRiesgo');
+});
+
+/* ---------- seguimiento y alta ---------- */
+function pintarAlta(){
+  document.getElementById('seguimientoEvolucionGeneral').value = paciente.seguimiento_evolucion_general || '';
+  document.getElementById('seguimientoObjetivosAlcanzados').value = paciente.seguimiento_objetivos_alcanzados || '';
+  document.getElementById('seguimientoObjetivosPendientes').value = paciente.seguimiento_objetivos_pendientes || '';
+  document.getElementById('fechaAlta').value = paciente.fecha_alta || '';
+  document.getElementById('estadoAlta').value = paciente.estado_alta || '';
+  document.getElementById('motivoAlta').value = paciente.motivo_alta || '';
+  document.getElementById('recomendacionesAlta').value = paciente.recomendaciones_alta || '';
+  document.getElementById('seguimientoPosterior').value = paciente.seguimiento_posterior || '';
+}
+document.getElementById('formAlta').addEventListener('submit', async (e)=>{
+  e.preventDefault();
+  const cambios = {
+    seguimiento_evolucion_general: vacioNull(document.getElementById('seguimientoEvolucionGeneral').value),
+    seguimiento_objetivos_alcanzados: vacioNull(document.getElementById('seguimientoObjetivosAlcanzados').value),
+    seguimiento_objetivos_pendientes: vacioNull(document.getElementById('seguimientoObjetivosPendientes').value),
+    fecha_alta: vacioNull(document.getElementById('fechaAlta').value),
+    estado_alta: vacioNull(document.getElementById('estadoAlta').value),
+    motivo_alta: vacioNull(document.getElementById('motivoAlta').value),
+    recomendaciones_alta: vacioNull(document.getElementById('recomendacionesAlta').value),
+    seguimiento_posterior: vacioNull(document.getElementById('seguimientoPosterior').value)
+  };
+  guardarBloquePaciente(cambios, 'msgAlta', 'btnGuardarAlta');
+});
+
+/* ---------- evaluaciones y pruebas psicológicas (lista dinámica) ---------- */
+async function cargarEvaluacionesPrueba(){
+  const cont = document.getElementById('listaEvaluacionesPrueba');
+  const { data, error } = await sb.from('evaluaciones_psicologicas')
+    .select('*').eq('paciente_id', paciente.id).order('fecha_aplicacion', {ascending:false});
+
+  if(error){ cont.innerHTML = `<p class="empty">Error: ${escapar(error.message)}</p>`; return; }
+  if(!data || !data.length){ cont.innerHTML = '<p class="empty">Sin evaluaciones registradas.</p>'; return; }
+
+  cont.innerHTML = data.map(ev=>`
+    <div class="item-lista-clinica">
+      <div class="ilc-cabecera">
+        <strong>${escapar(ev.nombre_prueba)}</strong>
+        <span class="ilc-fecha">${ev.fecha_aplicacion ? new Date(ev.fecha_aplicacion+'T12:00:00').toLocaleDateString('es-MX') : 'Sin fecha'}</span>
+        <button type="button" class="btn-eliminar-mini" onclick="eliminarEvaluacionPrueba('${ev.id}')" title="Eliminar">✕</button>
+      </div>
+      ${ev.motivo ? `<p><em>Motivo:</em> ${escapar(ev.motivo)}</p>` : ''}
+      ${ev.resultado ? `<p><em>Resultado:</em> ${escapar(ev.resultado)}</p>` : ''}
+      ${ev.interpretacion ? `<p><em>Interpretación:</em> ${escapar(ev.interpretacion)}</p>` : ''}
+      ${ev.observaciones ? `<p><em>Observaciones:</em> ${escapar(ev.observaciones)}</p>` : ''}
+      ${ev.aplicada_por ? `<p class="ilc-meta">Aplicada por: ${escapar(ev.aplicada_por)}</p>` : ''}
+    </div>
+  `).join('');
+}
+
+document.getElementById('btnNuevaEvaluacionPrueba').addEventListener('click', async ()=>{
+  const nombre = prompt('Nombre de la prueba:');
+  if(!nombre) return;
+  const fecha = prompt('Fecha de aplicación (AAAA-MM-DD), opcional:') || null;
+  const motivo = prompt('Motivo de aplicación, opcional:') || null;
+  const resultado = prompt('Resultado, opcional:') || null;
+  const interpretacion = prompt('Interpretación, opcional:') || null;
+
+  const { error } = await sb.from('evaluaciones_psicologicas').insert({
+    paciente_id: paciente.id, psicologo_id: yo.id,
+    nombre_prueba: nombre, fecha_aplicacion: fecha, motivo, resultado, interpretacion
+  });
+  if(error){ alert('No se pudo guardar: ' + error.message); return; }
+  cargarEvaluacionesPrueba();
+});
+
+async function eliminarEvaluacionPrueba(id){
+  if(!confirm('¿Eliminar esta evaluación?')) return;
+  const { error } = await sb.from('evaluaciones_psicologicas').delete().eq('id', id);
+  if(error){ alert('No se pudo eliminar: ' + error.message); return; }
+  cargarEvaluacionesPrueba();
+}
+window.eliminarEvaluacionPrueba = eliminarEvaluacionPrueba;
+
+/* ---------- objetivos terapéuticos (lista dinámica con progreso) ---------- */
+async function cargarObjetivos(){
+  const cont = document.getElementById('listaObjetivos');
+  const { data, error } = await sb.from('objetivos_terapeuticos')
+    .select('*').eq('paciente_id', paciente.id).order('creado_en', {ascending:false});
+
+  if(error){ cont.innerHTML = `<p class="empty">Error: ${escapar(error.message)}</p>`; return; }
+  if(!data || !data.length){ cont.innerHTML = '<p class="empty">Sin objetivos registrados.</p>'; return; }
+
+  const etiquetasEstado = { pendiente:'Pendiente', en_progreso:'En progreso', logrado:'Logrado', pausado:'Pausado' };
+
+  cont.innerHTML = data.map(o=>`
+    <div class="item-lista-clinica">
+      <div class="ilc-cabecera">
+        <strong>${escapar(o.objetivo)}</strong>
+        <span class="tag-objetivo tag-${o.estado}">${etiquetasEstado[o.estado] || o.estado}</span>
+        <button type="button" class="btn-eliminar-mini" onclick="eliminarObjetivo('${o.id}')" title="Eliminar">✕</button>
+      </div>
+      ${o.descripcion ? `<p>${escapar(o.descripcion)}</p>` : ''}
+      <div class="ilc-meta">
+        Prioridad: ${escapar(o.prioridad || 'media')}
+        ${o.fecha_objetivo ? ' · Meta: ' + new Date(o.fecha_objetivo+'T12:00:00').toLocaleDateString('es-MX') : ''}
+      </div>
+      <select class="select-estado-objetivo" onchange="cambiarEstadoObjetivo('${o.id}', this.value)">
+        <option value="pendiente" ${o.estado==='pendiente'?'selected':''}>Pendiente</option>
+        <option value="en_progreso" ${o.estado==='en_progreso'?'selected':''}>En progreso</option>
+        <option value="logrado" ${o.estado==='logrado'?'selected':''}>Logrado</option>
+        <option value="pausado" ${o.estado==='pausado'?'selected':''}>Pausado</option>
+      </select>
+    </div>
+  `).join('');
+}
+
+document.getElementById('btnNuevoObjetivo').addEventListener('click', async ()=>{
+  const objetivo = prompt('Objetivo:');
+  if(!objetivo) return;
+  const descripcion = prompt('Descripción, opcional:') || null;
+  const fecha = prompt('Fecha meta (AAAA-MM-DD), opcional:') || null;
+
+  const { error } = await sb.from('objetivos_terapeuticos').insert({
+    paciente_id: paciente.id, psicologo_id: yo.id,
+    objetivo, descripcion, fecha_objetivo: fecha
+  });
+  if(error){ alert('No se pudo guardar: ' + error.message); return; }
+  cargarObjetivos();
+});
+
+async function cambiarEstadoObjetivo(id, estado){
+  const { error } = await sb.from('objetivos_terapeuticos').update({ estado }).eq('id', id);
+  if(error){ alert('No se pudo actualizar: ' + error.message); }
+  cargarObjetivos();
+}
+window.cambiarEstadoObjetivo = cambiarEstadoObjetivo;
+
+async function eliminarObjetivo(id){
+  if(!confirm('¿Eliminar este objetivo?')) return;
+  const { error } = await sb.from('objetivos_terapeuticos').delete().eq('id', id);
+  if(error){ alert('No se pudo eliminar: ' + error.message); return; }
+  cargarObjetivos();
+}
+window.eliminarObjetivo = eliminarObjetivo;
+
+/* ---------- medicación (lista dinámica) ---------- */
+async function cargarMedicamentos(){
+  const cont = document.getElementById('listaMedicamentos');
+  const { data, error } = await sb.from('medicamentos')
+    .select('*').eq('paciente_id', paciente.id).order('fecha_inicio', {ascending:false});
+
+  if(error){ cont.innerHTML = `<p class="empty">Error: ${escapar(error.message)}</p>`; return; }
+  if(!data || !data.length){ cont.innerHTML = '<p class="empty">Sin medicamentos registrados.</p>'; return; }
+
+  cont.innerHTML = data.map(m=>`
+    <div class="item-lista-clinica">
+      <div class="ilc-cabecera">
+        <strong>${escapar(m.nombre)}</strong>
+        <span class="ilc-fecha">${m.dosis ? escapar(m.dosis) : ''}</span>
+        <button type="button" class="btn-eliminar-mini" onclick="eliminarMedicamento('${m.id}')" title="Eliminar">✕</button>
+      </div>
+      ${m.frecuencia ? `<p><em>Frecuencia:</em> ${escapar(m.frecuencia)}</p>` : ''}
+      ${m.medico_prescribe ? `<p><em>Prescrito por:</em> ${escapar(m.medico_prescribe)}</p>` : ''}
+      <div class="ilc-meta">
+        ${m.fecha_inicio ? 'Desde ' + new Date(m.fecha_inicio+'T12:00:00').toLocaleDateString('es-MX') : ''}
+        ${m.fecha_fin ? ' hasta ' + new Date(m.fecha_fin+'T12:00:00').toLocaleDateString('es-MX') : ''}
+      </div>
+      ${m.observaciones ? `<p>${escapar(m.observaciones)}</p>` : ''}
+    </div>
+  `).join('');
+}
+
+document.getElementById('btnNuevoMedicamento').addEventListener('click', async ()=>{
+  const nombre = prompt('Nombre del medicamento:');
+  if(!nombre) return;
+  const dosis = prompt('Dosis, opcional:') || null;
+  const frecuencia = prompt('Frecuencia, opcional:') || null;
+  const medico = prompt('Médico que prescribe, opcional:') || null;
+
+  const { error } = await sb.from('medicamentos').insert({
+    paciente_id: paciente.id, psicologo_id: yo.id,
+    nombre, dosis, frecuencia, medico_prescribe: medico
+  });
+  if(error){ alert('No se pudo guardar: ' + error.message); return; }
+  cargarMedicamentos();
+});
+
+async function eliminarMedicamento(id){
+  if(!confirm('¿Eliminar este medicamento?')) return;
+  const { error } = await sb.from('medicamentos').delete().eq('id', id);
+  if(error){ alert('No se pudo eliminar: ' + error.message); return; }
+  cargarMedicamentos();
+}
+window.eliminarMedicamento = eliminarMedicamento;
 
 /* ---------- notas por sesión ---------- */
 async function cargarNotas(){
@@ -747,6 +1462,12 @@ document.getElementById('btnExportar').addEventListener('click', async ()=>{
     .select('nombre, tipo, subido_en').eq('paciente_id', paciente.id).order('subido_en');
   const { data: configConsultorio } = await sb.from('configuracion')
     .select('nombre_consultorio, logo_url').eq('psicologo_id', yo.id).maybeSingle();
+  const { data: pruebas } = await sb.from('evaluaciones_psicologicas')
+    .select('*').eq('paciente_id', paciente.id).order('fecha_aplicacion');
+  const { data: objetivosPdf } = await sb.from('objetivos_terapeuticos')
+    .select('*').eq('paciente_id', paciente.id).order('creado_en');
+  const { data: medicamentosPdf } = await sb.from('medicamentos')
+    .select('*').eq('paciente_id', paciente.id).order('fecha_inicio');
 
   const porCita = {};
   (notas||[]).forEach(n=>{ porCita[n.cita_id] = n; });
@@ -859,7 +1580,79 @@ document.getElementById('btnExportar').addEventListener('click', async ()=>{
   y += 4;
 
   parrafo('Motivo de consulta', paciente.motivo_consulta);
+  parrafo('Problema actual', paciente.problema_actual);
   parrafo('Observaciones generales', paciente.observaciones_generales);
+
+  tituloSeccion('Antecedentes personales');
+  parrafo('Antecedentes médicos', paciente.antecedentes_medicos);
+  parrafo('Antecedentes psicológicos', paciente.antecedentes_psicologicos);
+  parrafo('Antecedentes psiquiátricos', paciente.antecedentes_psiquiatricos);
+  parrafo('Tratamientos anteriores', paciente.tratamientos_anteriores);
+  campo('Alergias', paciente.alergias);
+  campo('Enfermedades relevantes', paciente.enfermedades_relevantes);
+  parrafo('Antecedentes familiares', paciente.antecedentes_familiares);
+
+  tituloSeccion('Historia personal y familiar');
+  parrafo('Infancia', paciente.historia_infancia);
+  parrafo('Adolescencia', paciente.historia_adolescencia);
+  parrafo('Relaciones familiares', paciente.relaciones_familiares);
+  parrafo('Historia escolar', paciente.historia_escolar);
+  parrafo('Historia laboral', paciente.historia_laboral);
+  parrafo('Eventos significativos', paciente.eventos_significativos);
+  parrafo('Red de apoyo', paciente.red_apoyo);
+
+  tituloSeccion('Evaluación psicológica');
+  parrafo('Apariencia y conducta', paciente.eval_apariencia_conducta);
+  parrafo('Estado de ánimo', paciente.eval_estado_animo);
+  parrafo('Pensamiento', paciente.eval_pensamiento);
+  parrafo('Funcionamiento general', paciente.eval_funcionamiento_general);
+
+  if(pruebas && pruebas.length){
+    tituloSeccion('Evaluaciones y pruebas psicológicas');
+    pruebas.forEach(p=>{
+      campo(p.nombre_prueba, p.fecha_aplicacion ? new Date(p.fecha_aplicacion+'T12:00:00').toLocaleDateString('es-MX') : '-');
+      if(p.resultado) parrafo('Resultado', p.resultado);
+      if(p.interpretacion) parrafo('Interpretación', p.interpretacion);
+    });
+  }
+
+  tituloSeccion('Impresión clínica / diagnóstico');
+  parrafo('Impresión clínica', paciente.impresion_clinica);
+  campo('Diagnóstico', paciente.diagnostico);
+  campo('Código diagnóstico', paciente.codigo_diagnostico);
+  parrafo('Diagnósticos diferenciales', paciente.diagnosticos_diferenciales);
+
+  if(objetivosPdf && objetivosPdf.length){
+    tituloSeccion('Objetivos terapéuticos');
+    const etiquetasEstado = { pendiente:'Pendiente', en_progreso:'En progreso', logrado:'Logrado', pausado:'Pausado' };
+    objetivosPdf.forEach(o=>{
+      campo(o.objetivo, etiquetasEstado[o.estado] || o.estado);
+      if(o.descripcion) parrafo('Descripción', o.descripcion);
+    });
+  }
+
+  tituloSeccion('Plan de tratamiento');
+  parrafo('Enfoque terapéutico', paciente.plan_enfoque);
+  parrafo('Intervenciones planeadas', paciente.plan_intervenciones);
+  campo('Frecuencia', paciente.plan_frecuencia);
+  campo('Duración estimada', paciente.plan_duracion_estimada);
+
+  if(paciente.riesgo_actual || paciente.riesgo_nivel){
+    tituloSeccion('Evaluación de riesgo');
+    campo('Nivel de riesgo registrado', paciente.riesgo_nivel);
+    parrafo('Riesgo actual', paciente.riesgo_actual);
+    parrafo('Factores de riesgo', paciente.riesgo_factores_riesgo);
+    parrafo('Factores protectores', paciente.riesgo_factores_protectores);
+    parrafo('Plan de intervención', paciente.riesgo_plan_intervencion);
+  }
+
+  if(medicamentosPdf && medicamentosPdf.length){
+    tituloSeccion('Medicación');
+    medicamentosPdf.forEach(m=>{
+      campo(m.nombre, m.dosis || '-');
+      if(m.frecuencia) campo('Frecuencia', m.frecuencia);
+    });
+  }
 
   // ---------- documentos ----------
   tituloSeccion('Documentos');
@@ -917,6 +1710,15 @@ document.getElementById('btnExportar').addEventListener('click', async ()=>{
     doc.setFontSize(9.5);
     doc.setTextColor(...GRIS);
     doc.text('Todavía no hay sesiones registradas.', margen, y);
+  }
+
+  if(paciente.fecha_alta || paciente.motivo_alta || paciente.seguimiento_evolucion_general){
+    tituloSeccion('Seguimiento y alta');
+    campo('Fecha de alta', paciente.fecha_alta);
+    campo('Estado al alta', paciente.estado_alta);
+    parrafo('Evolución general', paciente.seguimiento_evolucion_general);
+    parrafo('Motivo de alta', paciente.motivo_alta);
+    parrafo('Recomendaciones', paciente.recomendaciones_alta);
   }
 
   // ---------- pie de página en todas las hojas ----------
