@@ -10,6 +10,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,400;1,600&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
   :root{--primario:#2E7D32;--primario-claro:#7BC043;--primario-suave:#A8C99B;--bg:#F7F9F6;--ink:#1A1A1A;--gray:#7a7a7a;--line:#ececec;--err:#c62828;--ok:#2e7d32;}
   *{box-sizing:border-box;margin:0;padding:0;}
@@ -78,6 +79,20 @@
   a.card:hover{border-color:var(--primario);}
   .filtros{display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;}
 
+  .nombre-elegido{font-size:12.5px;color:var(--ink);margin-top:12px;font-weight:700;}
+  .imp-mapeo{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:10px;}
+  .imp-mapeo-fila{display:flex;flex-direction:column;gap:5px;}
+  .imp-mapeo-fila label{font-size:12px;font-weight:700;}
+  .imp-mapeo-fila select{padding:9px 11px;border:1.5px solid var(--line);border-radius:9px;font-family:inherit;font-size:13px;}
+  .imp-preview-box{max-height:220px;overflow:auto;border:1.5px solid var(--line);border-radius:12px;}
+  .imp-preview-box table{width:100%;border-collapse:collapse;font-size:12px;}
+  .imp-preview-box th{background:#FAFAF8;text-align:left;padding:8px 10px;position:sticky;top:0;border-bottom:1.5px solid var(--line);}
+  .imp-preview-box td{padding:8px 10px;border-bottom:1px solid var(--line);white-space:nowrap;}
+  .imp-progreso-box{padding:20px 0;}
+  .imp-progreso-barra{width:100%;height:10px;border-radius:6px;background:var(--line);overflow:hidden;margin-bottom:10px;}
+  .imp-progreso-relleno{height:100%;background:var(--primario);width:0%;transition:width .2s;}
+  .imp-errores{max-height:180px;overflow:auto;font-size:12px;color:var(--err);margin-top:8px;}
+  .imp-errores p{margin-bottom:4px;}
   .tarjeta-mi-id{display:flex;align-items:center;justify-content:space-between;gap:16px;background:#fff;border:1.5px solid var(--line);border-radius:16px;padding:18px 20px;margin-bottom:18px;box-shadow:0 2px 10px rgba(0,0,0,.04);}
   .mid-label{font-size:10.5px;letter-spacing:1px;text-transform:uppercase;color:var(--gray);font-weight:800;margin-bottom:4px;}
   .mid-valor{font-family:monospace;font-size:13px;font-weight:700;word-break:break-all;}
@@ -526,6 +541,7 @@
 
     <div class="pac-toolbar">
       <button class="btn btn-primary" id="btnNuevoPaciente">Invitar paciente</button>
+      <button class="btn btn-ghost" id="btnImportarPacientes">Importar desde Excel/CSV</button>
       <select id="ordenPacientes" class="select-orden">
         <option value="manual">Orden manual (arrastrar)</option>
         <option value="ingresos">Por ingresos generados</option>
@@ -864,6 +880,55 @@
 
 <button id="btnFlotanteMas" class="btn-flotante-mas" title="Nueva consulta rápida">+</button>
 
+<div class="modal-bg" id="modalImportar">
+  <div class="modal" style="max-width:760px;">
+    <div id="impPaso1">
+      <h3>Importar pacientes desde Excel o CSV</h3>
+      <p class="modal-sub">Sube tu archivo con la lista de pacientes que ya tienes. En el siguiente paso eliges qué columna corresponde a qué dato — no importa cómo se llamen tus columnas.</p>
+
+      <input type="file" id="impInputArchivo" accept=".xlsx,.xls,.csv" style="display:none;">
+      <button type="button" class="btn btn-primary" id="impBtnElegirArchivo">Elegir archivo</button>
+      <p id="impNombreArchivo" class="nombre-elegido"></p>
+      <p class="msg" id="impMsg1"></p>
+
+      <div class="modal-actions">
+        <button class="btn btn-ghost" onclick="cerrarModal('modalImportar')">Cancelar</button>
+      </div>
+    </div>
+
+    <div id="impPaso2" style="display:none;">
+      <h3>Empareja tus columnas</h3>
+      <p class="modal-sub">Elige qué columna de tu archivo corresponde a cada dato. Nombre es obligatorio, el resto es opcional.</p>
+
+      <div id="impMapeo" class="imp-mapeo"></div>
+
+      <p class="modal-sub" style="margin-top:16px;">Vista previa (primeras filas):</p>
+      <div class="imp-preview-box"><table id="impPreviewTabla"></table></div>
+
+      <p class="msg" id="impMsg2"></p>
+      <div class="modal-actions">
+        <button class="btn btn-ghost" id="impBtnAtras">Atrás</button>
+        <button class="btn btn-primary" id="impBtnConfirmar">Importar pacientes</button>
+      </div>
+    </div>
+
+    <div id="impPaso3" style="display:none;">
+      <h3>Importando...</h3>
+      <div class="imp-progreso-box">
+        <div class="imp-progreso-barra"><div class="imp-progreso-relleno" id="impProgresoRelleno"></div></div>
+        <p id="impProgresoTexto" class="modal-sub">Preparando...</p>
+      </div>
+      <div id="impResultado" style="display:none;">
+        <p class="msg ok" id="impResumenExito"></p>
+        <div id="impListaErrores" class="imp-errores"></div>
+        <div class="modal-actions">
+          <button class="btn btn-primary" onclick="cerrarModal('modalImportar'); cargarPacientes();">Listo</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
 <div class="modal-bg" id="modalDarAcceso">
   <div class="modal">
     <h3>Dar acceso a <span id="daNombrePaciente"></span></h3>
@@ -1075,6 +1140,201 @@ function darAccesoPaciente(id){
   abrirModal('modalDarAcceso');
 }
 window.darAccesoPaciente = darAccesoPaciente;
+
+/* ---------- importar pacientes desde Excel/CSV ---------- */
+const CAMPOS_IMPORTAR = [
+  { id:'nombre', etiqueta:'Nombre completo', requerido:true },
+  { id:'correo', etiqueta:'Correo', requerido:false },
+  { id:'telefono', etiqueta:'Teléfono', requerido:false },
+  { id:'modalidad_atencion', etiqueta:'Modalidad (presencial/videollamada/mixta)', requerido:false },
+  { id:'motivo_consulta', etiqueta:'Motivo de consulta', requerido:false }
+];
+
+let filasImportar = [];
+let encabezadosImportar = [];
+
+document.getElementById('btnImportarPacientes').addEventListener('click', ()=>{
+  document.getElementById('impPaso1').style.display = 'block';
+  document.getElementById('impPaso2').style.display = 'none';
+  document.getElementById('impPaso3').style.display = 'none';
+  document.getElementById('impNombreArchivo').textContent = '';
+  document.getElementById('impMsg1').textContent = '';
+  abrirModal('modalImportar');
+});
+
+document.getElementById('impBtnElegirArchivo').addEventListener('click', ()=>{
+  document.getElementById('impInputArchivo').click();
+});
+
+document.getElementById('impInputArchivo').addEventListener('change', (e)=>{
+  const file = e.target.files[0];
+  const msg = document.getElementById('impMsg1');
+  if(!file) return;
+
+  document.getElementById('impNombreArchivo').textContent = file.name;
+  msg.textContent = 'Leyendo archivo...';
+  msg.className = 'msg';
+
+  const reader = new FileReader();
+  reader.onload = (ev)=>{
+    try{
+      const datos = new Uint8Array(ev.target.result);
+      const libro = XLSX.read(datos, { type: 'array' });
+      const hoja = libro.Sheets[libro.SheetNames[0]];
+      const filas = XLSX.utils.sheet_to_json(hoja, { header: 1, defval: '' });
+
+      if(!filas.length || filas.length < 2){
+        msg.textContent = 'El archivo está vacío o no tiene filas de datos.';
+        msg.className = 'msg err';
+        return;
+      }
+
+      encabezadosImportar = filas[0].map(h=> String(h).trim());
+      filasImportar = filas.slice(1).filter(f=> f.some(c=> String(c).trim() !== ''));
+
+      if(!filasImportar.length){
+        msg.textContent = 'No se encontraron filas con datos.';
+        msg.className = 'msg err';
+        return;
+      }
+
+      prepararMapeoImportar();
+      document.getElementById('impPaso1').style.display = 'none';
+      document.getElementById('impPaso2').style.display = 'block';
+    }catch(err){
+      msg.textContent = 'No se pudo leer el archivo: ' + err.message;
+      msg.className = 'msg err';
+    }
+  };
+  reader.readAsArrayBuffer(file);
+});
+
+function adivinarColumna(campoId){
+  const pistas = {
+    nombre: ['nombre', 'paciente', 'name'],
+    correo: ['correo', 'email', 'mail'],
+    telefono: ['telefono', 'teléfono', 'tel', 'celular', 'whatsapp', 'phone'],
+    modalidad_atencion: ['modalidad', 'tipo de atencion', 'tipo de atención'],
+    motivo_consulta: ['motivo', 'consulta', 'razon', 'razón']
+  };
+  const claves = pistas[campoId] || [];
+  const idx = encabezadosImportar.findIndex(h=> claves.some(p=> h.toLowerCase().includes(p)));
+  return idx;
+}
+
+function prepararMapeoImportar(){
+  const cont = document.getElementById('impMapeo');
+  cont.innerHTML = CAMPOS_IMPORTAR.map(campo=>{
+    const idxSugerido = adivinarColumna(campo.id);
+    const opciones = encabezadosImportar.map((h, i)=>
+      `<option value="${i}" ${i===idxSugerido?'selected':''}>${escapar(h) || '(columna sin nombre)'}</option>`
+    ).join('');
+    return `
+      <div class="imp-mapeo-fila">
+        <label>${campo.etiqueta}${campo.requerido ? ' *' : ''}</label>
+        <select id="impCol_${campo.id}">
+          <option value="-1">— No importar —</option>
+          ${opciones}
+        </select>
+      </div>`;
+  }).join('');
+
+  document.querySelectorAll('.imp-mapeo-fila select').forEach(s=>{
+    s.addEventListener('change', pintarPreviewImportar);
+  });
+
+  pintarPreviewImportar();
+}
+
+function pintarPreviewImportar(){
+  const tabla = document.getElementById('impPreviewTabla');
+  const columnasElegidas = CAMPOS_IMPORTAR.map(c=>({
+    campo: c,
+    idx: parseInt(document.getElementById(`impCol_${c.id}`).value, 10)
+  })).filter(c=> c.idx >= 0);
+
+  const encabezado = '<tr>' + columnasElegidas.map(c=> `<th>${escapar(c.campo.etiqueta)}</th>`).join('') + '</tr>';
+  const filas = filasImportar.slice(0, 5).map(fila=>
+    '<tr>' + columnasElegidas.map(c=> `<td>${escapar(String(fila[c.idx] ?? ''))}</td>`).join('') + '</tr>'
+  ).join('');
+
+  tabla.innerHTML = encabezado + filas;
+}
+
+document.getElementById('impBtnAtras').addEventListener('click', ()=>{
+  document.getElementById('impPaso2').style.display = 'none';
+  document.getElementById('impPaso1').style.display = 'block';
+});
+
+document.getElementById('impBtnConfirmar').addEventListener('click', async ()=>{
+  const idxNombre = parseInt(document.getElementById('impCol_nombre').value, 10);
+  const msg = document.getElementById('impMsg2');
+
+  if(idxNombre < 0){
+    msg.textContent = 'Tienes que elegir cuál columna es el nombre.';
+    msg.className = 'msg err';
+    return;
+  }
+
+  const idxCorreo = parseInt(document.getElementById('impCol_correo').value, 10);
+  const idxTelefono = parseInt(document.getElementById('impCol_telefono').value, 10);
+  const idxModalidad = parseInt(document.getElementById('impCol_modalidad_atencion').value, 10);
+  const idxMotivo = parseInt(document.getElementById('impCol_motivo_consulta').value, 10);
+
+  document.getElementById('impPaso2').style.display = 'none';
+  document.getElementById('impPaso3').style.display = 'block';
+  document.getElementById('impResultado').style.display = 'none';
+
+  const total = filasImportar.length;
+  let exitosos = 0;
+  const errores = [];
+
+  for(let i = 0; i < total; i++){
+    const fila = filasImportar[i];
+    const nombre = String(fila[idxNombre] ?? '').trim();
+
+    document.getElementById('impProgresoTexto').textContent = `Importando ${i+1} de ${total}...`;
+    document.getElementById('impProgresoRelleno').style.width = `${Math.round(((i+1)/total)*100)}%`;
+
+    if(!nombre){
+      errores.push(`Fila ${i+2}: sin nombre, se omitió.`);
+      continue;
+    }
+
+    const correo = idxCorreo >= 0 ? String(fila[idxCorreo] ?? '').trim() || null : null;
+    const telefono = idxTelefono >= 0 ? String(fila[idxTelefono] ?? '').trim() || null : null;
+    let modalidad = idxModalidad >= 0 ? String(fila[idxModalidad] ?? '').trim().toLowerCase() : 'presencial';
+    if(!['presencial','videollamada','mixta'].includes(modalidad)) modalidad = 'presencial';
+    const motivo = idxMotivo >= 0 ? String(fila[idxMotivo] ?? '').trim() || null : null;
+
+    const { data, error } = await sb.rpc('crear_paciente_directo', {
+      p_nombre: nombre, p_correo: correo, p_telefono: telefono, p_modalidad_atencion: modalidad
+    });
+
+    if(error){
+      errores.push(`Fila ${i+2} (${nombre}): ${error.message}`);
+      continue;
+    }
+
+    const r = Array.isArray(data) ? data[0] : data;
+    if(!r || !r.ok){
+      errores.push(`Fila ${i+2} (${nombre}): ${r ? r.mensaje : 'error desconocido'}`);
+      continue;
+    }
+
+    if(motivo){
+      await sb.from('pacientes').update({ motivo_consulta: motivo }).eq('id', r.paciente_id);
+    }
+
+    exitosos++;
+  }
+
+  document.getElementById('impResumenExito').textContent =
+    `${exitosos} de ${total} pacientes importados correctamente.`;
+  document.getElementById('impListaErrores').innerHTML =
+    errores.length ? errores.map(e=>`<p>${escapar(e)}</p>`).join('') : '';
+  document.getElementById('impResultado').style.display = 'block';
+});
 
 document.getElementById('daBtnCopiar').addEventListener('click', async ()=>{
   const btn = document.getElementById('daBtnCopiar');
