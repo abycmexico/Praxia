@@ -50,6 +50,18 @@
   section{display:none;}
   section.active{display:block;}
   .bloque{border:1.5px solid var(--line);border-radius:16px;padding:22px 24px;margin-bottom:18px;}
+  .buscador-expediente{position:relative;margin:16px 0 20px;}
+  .buscador-expediente input{width:100%;padding:12px 16px;border:1.5px solid var(--line);border-radius:12px;font-family:inherit;font-size:14px;}
+  .buscador-expediente input:focus{outline:none;border-color:var(--primario);}
+  .resultados-busqueda{display:none;position:absolute;top:calc(100% + 6px);left:0;right:0;background:#fff;border:1.5px solid var(--line);border-radius:14px;box-shadow:0 8px 24px rgba(0,0,0,.1);max-height:420px;overflow-y:auto;z-index:20;}
+  .resultados-busqueda.show{display:block;}
+  .resultado-item{padding:12px 16px;border-bottom:1px solid var(--line);cursor:pointer;}
+  .resultado-item:last-child{border-bottom:none;}
+  .resultado-item:hover{background:#FAFAF8;}
+  .resultado-badge{display:inline-block;font-size:9.5px;font-weight:800;letter-spacing:.5px;text-transform:uppercase;padding:2px 8px;border-radius:10px;background:#EAF5E8;color:var(--primario);margin-bottom:5px;}
+  .resultado-titulo{font-size:13px;font-weight:700;margin-bottom:2px;}
+  .resultado-snippet{font-size:12px;color:var(--gray);line-height:1.5;}
+  .resultado-vacio{padding:16px;text-align:center;font-size:12.5px;color:var(--gray);}
   .grid-resumen{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
   .tarjeta-resumen{border:1.5px solid var(--line);border-radius:16px;padding:18px 20px;background:#fff;}
   .tarjeta-resumen h4{font-size:12px;letter-spacing:.5px;text-transform:uppercase;color:var(--gray);font-weight:800;margin-bottom:12px;}
@@ -157,6 +169,11 @@
     </div>
     <p class="datos-rapidos" id="datosRapidos"></p>
     <div id="estadoConsentimiento" class="estado-consentimiento"></div>
+
+    <div class="buscador-expediente">
+      <input type="text" id="inputBuscarExpediente" placeholder="Buscar por fecha, palabra clave, nota, evaluación, documento...">
+      <div id="resultadosBusqueda" class="resultados-busqueda"></div>
+    </div>
 
     <nav class="tabs">
       <button class="active" data-tab="resumen">Resumen</button>
@@ -2151,6 +2168,135 @@ async function cargarResumenPaciente(){
   } else {
     contDocs.innerHTML = '<p class="res-vacio">Sin documentos.</p>';
   }
+}
+
+/* ---------- buscador interno del expediente ---------- */
+let temporizadorBusqueda = null;
+
+document.getElementById('inputBuscarExpediente').addEventListener('input', (e)=>{
+  clearTimeout(temporizadorBusqueda);
+  const q = e.target.value.trim();
+  const cont = document.getElementById('resultadosBusqueda');
+  if(!q){ cont.classList.remove('show'); return; }
+  temporizadorBusqueda = setTimeout(()=> ejecutarBusquedaExpediente(q), 300);
+});
+
+document.addEventListener('click', (e)=>{
+  if(!e.target.closest('.buscador-expediente')){
+    document.getElementById('resultadosBusqueda').classList.remove('show');
+  }
+});
+
+function extraerSnippet(texto, query){
+  if(!texto) return '';
+  const idx = texto.toLowerCase().indexOf(query.toLowerCase());
+  if(idx === -1) return texto.slice(0, 100) + (texto.length > 100 ? '…' : '');
+  const inicio = Math.max(0, idx - 40);
+  const fin = Math.min(texto.length, idx + query.length + 60);
+  return (inicio > 0 ? '…' : '') + texto.slice(inicio, fin) + (fin < texto.length ? '…' : '');
+}
+
+function resultadoHTML(seccion, tab, titulo, snippet, query){
+  return `
+    <div class="resultado-item" onclick="irAPestana('${tab}'); document.getElementById('resultadosBusqueda').classList.remove('show'); document.getElementById('inputBuscarExpediente').value='';">
+      <span class="resultado-badge">${escapar(seccion)}</span>
+      <div class="resultado-titulo">${escapar(titulo)}</div>
+      ${snippet ? `<div class="resultado-snippet">${escapar(extraerSnippet(snippet, query))}</div>` : ''}
+    </div>`;
+}
+
+async function ejecutarBusquedaExpediente(q){
+  const cont = document.getElementById('resultadosBusqueda');
+  cont.innerHTML = '<div class="resultado-vacio">Buscando...</div>';
+  cont.classList.add('show');
+
+  // Las comas rompen la sintaxis del filtro .or() de Supabase, las quitamos solo para armar el filtro.
+  const qSafe = q.replace(/,/g, ' ').trim();
+  if(!qSafe){ cont.innerHTML = '<div class="resultado-vacio">Escribe algo para buscar.</div>'; return; }
+
+  let resultados = '';
+
+  // Campos largos del paciente (ficha, antecedentes, evaluación, diagnóstico, plan, riesgo, alta)
+  const camposPaciente = [
+    ['Motivo de consulta','ficha','motivo_consulta'], ['Problema actual','ficha','problema_actual'],
+    ['Observaciones generales','ficha','observaciones_generales'],
+    ['Antecedentes médicos','antecedentes','antecedentes_medicos'], ['Antecedentes psicológicos','antecedentes','antecedentes_psicologicos'],
+    ['Historia infancia','antecedentes','historia_infancia'], ['Relaciones familiares','antecedentes','relaciones_familiares'],
+    ['Evaluación: estado de ánimo','evaluacion','eval_estado_animo'], ['Evaluación: pensamiento','evaluacion','eval_pensamiento'],
+    ['Impresión clínica','diagnostico','impresion_clinica'], ['Diagnóstico','diagnostico','diagnostico'],
+    ['Plan: enfoque','plan','plan_enfoque'], ['Plan: intervenciones','plan','plan_intervenciones'],
+    ['Riesgo actual','riesgo','riesgo_actual'],
+    ['Seguimiento: evolución general','alta','seguimiento_evolucion_general']
+  ];
+  camposPaciente.forEach(([titulo, tab, campo])=>{
+    const valor = paciente[campo];
+    if(valor && valor.toLowerCase().includes(q.toLowerCase())){
+      resultados += resultadoHTML('Ficha clínica', tab, titulo, valor, q);
+    }
+  });
+
+  // Notas de sesión
+  const { data: citasPropias } = await sb.from('citas').select('id, fecha_hora').eq('paciente_id', paciente.id);
+  const idsCitas = (citasPropias || []).map(c=>c.id);
+  const fechaPorCita = {};
+  (citasPropias||[]).forEach(c=>{ fechaPorCita[c.id] = c.fecha_hora; });
+
+  if(idsCitas.length){
+    const { data: notasEnc } = await sb.from('notas_sesion')
+      .select('cita_id, observaciones, objetivos, tareas, evolucion')
+      .in('cita_id', idsCitas)
+      .or(`observaciones.ilike.%${qSafe}%,objetivos.ilike.%${qSafe}%,tareas.ilike.%${qSafe}%,evolucion.ilike.%${qSafe}%`);
+
+    (notasEnc||[]).forEach(n=>{
+      const fecha = fechaPorCita[n.cita_id] ? new Date(fechaPorCita[n.cita_id]).toLocaleDateString('es-MX') : '';
+      const textoMatch = [n.observaciones, n.objetivos, n.tareas, n.evolucion].find(t=> t && t.toLowerCase().includes(q.toLowerCase()));
+      resultados += resultadoHTML('Nota de sesión', 'notas', `Sesión del ${fecha}`, textoMatch, q);
+    });
+
+    // Buscar también por fecha directamente
+    (citasPropias||[]).forEach(c=>{
+      const fechaTexto = new Date(c.fecha_hora).toLocaleDateString('es-MX',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+      if(fechaTexto.toLowerCase().includes(q.toLowerCase())){
+        resultados += resultadoHTML('Sesión', 'notas', capitalizar(fechaTexto), '', q);
+      }
+    });
+  }
+
+  // Evaluaciones y pruebas
+  const { data: evalMatch } = await sb.from('evaluaciones_psicologicas')
+    .select('nombre_prueba, motivo, resultado, interpretacion, observaciones')
+    .eq('paciente_id', paciente.id)
+    .or(`nombre_prueba.ilike.%${qSafe}%,motivo.ilike.%${qSafe}%,resultado.ilike.%${qSafe}%,interpretacion.ilike.%${qSafe}%,observaciones.ilike.%${qSafe}%`);
+  (evalMatch||[]).forEach(ev=>{
+    const textoMatch = [ev.nombre_prueba, ev.motivo, ev.resultado, ev.interpretacion, ev.observaciones].find(t=> t && t.toLowerCase().includes(q.toLowerCase()));
+    resultados += resultadoHTML('Evaluación', 'evaluacion', ev.nombre_prueba, textoMatch, q);
+  });
+
+  // Objetivos terapéuticos
+  const { data: objMatch } = await sb.from('objetivos_terapeuticos')
+    .select('objetivo, descripcion').eq('paciente_id', paciente.id)
+    .or(`objetivo.ilike.%${qSafe}%,descripcion.ilike.%${qSafe}%`);
+  (objMatch||[]).forEach(o=>{
+    resultados += resultadoHTML('Objetivo', 'objetivos', o.objetivo, o.descripcion, q);
+  });
+
+  // Medicamentos
+  const { data: medMatch } = await sb.from('medicamentos')
+    .select('nombre, observaciones').eq('paciente_id', paciente.id)
+    .or(`nombre.ilike.%${qSafe}%,observaciones.ilike.%${qSafe}%`);
+  (medMatch||[]).forEach(m=>{
+    resultados += resultadoHTML('Medicamento', 'medicacion', m.nombre, m.observaciones, q);
+  });
+
+  // Documentos
+  const { data: docMatch } = await sb.from('documentos')
+    .select('nombre').eq('paciente_id', paciente.id)
+    .ilike('nombre', `%${q}%`);
+  (docMatch||[]).forEach(d=>{
+    resultados += resultadoHTML('Documento', 'documentos', d.nombre, '', q);
+  });
+
+  cont.innerHTML = resultados || '<div class="resultado-vacio">Sin resultados para esa búsqueda.</div>';
 }
 
 iniciar();
