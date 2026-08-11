@@ -48,6 +48,15 @@
     .sidebar-user,.btn-salir{display:none;}
   }
   .bloque{border:1.5px solid var(--line);border-radius:16px;padding:22px 24px;margin-bottom:18px;background:#fff;}
+  .bloque h4{font-size:12px;letter-spacing:.5px;text-transform:uppercase;color:var(--gray);font-weight:800;margin-bottom:10px;}
+  .psi-perfil-card{display:flex;align-items:center;gap:16px;background:#fff;border:1.5px solid var(--line);border-radius:16px;padding:20px;margin-bottom:18px;}
+  .psi-perfil-avatar{width:64px;height:64px;border-radius:50%;background:var(--primario-suave);color:#fff;font-weight:800;font-size:22px;display:flex;align-items:center;justify-content:center;flex-shrink:0;overflow:hidden;background-size:cover;background-position:center;}
+  .psi-perfil-nombre{font-size:17px;font-weight:800;}
+  .psi-perfil-meta{font-size:12.5px;color:var(--gray);margin-top:3px;}
+  .psi-consultorio-fila{display:flex;align-items:center;gap:12px;}
+  .psi-consultorio-logo{width:36px;height:36px;border-radius:10px;background:var(--primario-suave);flex-shrink:0;overflow:hidden;background-size:cover;background-position:center;}
+  .bloque-reporte{border-color:#f0c9c9;background:#FFFBFB;}
+  .res-vacio{font-size:13px;color:var(--gray);}
   .perfil-foto-fila{display:flex;align-items:center;gap:20px;}
   .perfil-foto-preview{width:64px;height:64px;border-radius:50%;background:var(--primario-suave);color:#fff;font-weight:800;font-size:20px;display:flex;align-items:center;justify-content:center;flex-shrink:0;overflow:hidden;background-size:cover;background-position:center;}
   .perfil-foto-nota{font-size:11.5px;color:var(--gray);margin-top:6px;}
@@ -181,6 +190,10 @@
         <svg class="icono-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline></svg>
         Documentos
       </button>
+      <button data-tab="psicologo">
+        <svg class="icono-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+        Mi psicólogo
+      </button>
       <button data-tab="perfil">
         <svg class="icono-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"></circle><path d="M4 20c0-4.4 3.6-8 8-8s8 3.6 8 8"></path></svg>
         Mis datos
@@ -267,6 +280,44 @@
     <div id="listaDocumentosPaciente" style="margin-top:20px;"><p class="empty">Cargando documentos...</p></div>
   </section>
 
+  <section id="tab-psicologo">
+    <h2>Mi psicólogo</h2>
+    <p class="sub">Los datos de tu psicólogo y tu consultorio.</p>
+
+    <div class="psi-perfil-card">
+      <div class="psi-perfil-avatar" id="psiPerfilAvatar"></div>
+      <div>
+        <div class="psi-perfil-nombre" id="psiPerfilNombre">Cargando...</div>
+        <div class="psi-perfil-meta" id="psiPerfilMeta"></div>
+      </div>
+    </div>
+
+    <div class="bloque" id="psiPerfilBio" style="display:none;">
+      <h4>Sobre mí</h4>
+      <p id="psiPerfilBioTexto"></p>
+    </div>
+
+    <div class="bloque">
+      <h4>Consultorio</h4>
+      <div class="psi-consultorio-fila">
+        <div class="psi-consultorio-logo" id="psiConsultorioLogo"></div>
+        <div id="psiConsultorioNombre">—</div>
+      </div>
+    </div>
+
+    <div class="bloque">
+      <h4>Contacto</h4>
+      <p id="psiPerfilTelefono" class="res-vacio">Sin teléfono registrado.</p>
+      <p id="psiPerfilCorreo" class="res-vacio">Sin correo registrado.</p>
+    </div>
+
+    <div class="bloque bloque-reporte">
+      <h4>¿Algo no está bien?</h4>
+      <p class="bh">Si tienes una preocupación sobre tu psicólogo o tu atención, puedes reportarlo aquí. Este reporte solo lo ve el equipo de Praxia, tu psicólogo no lo ve.</p>
+      <button type="button" class="btn btn-ghost" id="btnAbrirReporte">Reportar algo inusual</button>
+    </div>
+  </section>
+
   <section id="tab-perfil">
     <h2>Mis datos</h2>
     <p class="sub">Mantén tu información al día. Tu psicólogo la ve en tu expediente.</p>
@@ -335,6 +386,20 @@
   </div>
 </div>
 
+
+<div class="modal-bg" id="modalReporte">
+  <div class="modal">
+    <h3>Reportar algo inusual</h3>
+    <p class="modal-sub">Cuéntanos qué pasó. Esto solo lo revisa el equipo de Praxia, es confidencial.</p>
+    <label for="descripcionReporte">Descripción</label>
+    <textarea id="descripcionReporte" placeholder="Describe lo que quieres reportar..."></textarea>
+    <p class="msg" id="msgReporte"></p>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="cerrarModal('modalReporte')">Cancelar</button>
+      <button class="btn btn-danger-solid" id="btnEnviarReporte">Enviar reporte</button>
+    </div>
+  </div>
+</div>
 
 <div class="modal-bg" id="modalCancelar">
   <div class="modal">
@@ -439,7 +504,7 @@ async function iniciar(){
   pintarAvatarSidebarPaciente();
 
   const { data: psi } = await sb.from('psicologos_publicos')
-    .select('nombre, foto_url, especialidad, cedula_profesional').eq('id', pac.psicologo_id).maybeSingle();
+    .select('nombre, foto_url, especialidad, cedula_profesional, bio, telefono, correo').eq('id', pac.psicologo_id).maybeSingle();
 
   const { data: conf } = await sb.from('configuracion')
     .select('*').eq('psicologo_id', pac.psicologo_id).maybeSingle();
@@ -466,6 +531,8 @@ async function iniciar(){
   } else {
     avatarPsi.textContent = nombrePsi.charAt(0).toUpperCase();
   }
+
+  pintarSeccionMiPsicologo(psi);
 
   pintarDatosSesion();
   pintarPerfil();
@@ -1274,6 +1341,81 @@ function escapar(t){
   d.textContent = t == null ? '' : t;
   return d.innerHTML;
 }
+
+/* ---------- Mi psicólogo ---------- */
+function pintarSeccionMiPsicologo(psi){
+  const nombre = psi ? psi.nombre : 'No disponible';
+
+  const avatar = document.getElementById('psiPerfilAvatar');
+  if(psi && psi.foto_url){
+    avatar.style.backgroundImage = `url(${psi.foto_url})`;
+  } else {
+    avatar.textContent = nombre.charAt(0).toUpperCase();
+  }
+
+  document.getElementById('psiPerfilNombre').textContent = nombre;
+  const metaPartes = [];
+  if(psi && psi.especialidad) metaPartes.push(psi.especialidad);
+  if(psi && psi.cedula_profesional) metaPartes.push(`Cédula ${psi.cedula_profesional}`);
+  document.getElementById('psiPerfilMeta').textContent = metaPartes.join(' · ');
+
+  if(psi && psi.bio){
+    document.getElementById('psiPerfilBio').style.display = 'block';
+    document.getElementById('psiPerfilBioTexto').textContent = psi.bio;
+  }
+
+  const logoCons = document.getElementById('psiConsultorioLogo');
+  if(cfg.logo_url) logoCons.style.backgroundImage = `url(${cfg.logo_url})`;
+  document.getElementById('psiConsultorioNombre').textContent = cfg.nombre_consultorio || nombre;
+
+  if(psi && psi.telefono){
+    document.getElementById('psiPerfilTelefono').textContent = 'Teléfono: ' + psi.telefono;
+    document.getElementById('psiPerfilTelefono').className = '';
+  }
+  if(psi && psi.correo){
+    document.getElementById('psiPerfilCorreo').textContent = 'Correo: ' + psi.correo;
+    document.getElementById('psiPerfilCorreo').className = '';
+  }
+}
+
+document.getElementById('btnAbrirReporte').addEventListener('click', ()=>{
+  document.getElementById('descripcionReporte').value = '';
+  document.getElementById('msgReporte').textContent = '';
+  abrirModal('modalReporte');
+});
+
+document.getElementById('btnEnviarReporte').addEventListener('click', async ()=>{
+  const btn = document.getElementById('btnEnviarReporte');
+  const msg = document.getElementById('msgReporte');
+  const texto = document.getElementById('descripcionReporte').value.trim();
+
+  if(!texto){
+    msg.textContent = 'Describe qué quieres reportar.';
+    msg.className = 'msg err';
+    return;
+  }
+
+  btn.disabled = true;
+  msg.className = 'msg';
+  msg.textContent = 'Enviando...';
+
+  const { error } = await sb.from('reportes_pacientes').insert({
+    paciente_id: yo.id,
+    psicologo_id: yo.psicologo_id,
+    descripcion: texto
+  });
+
+  btn.disabled = false;
+  if(error){
+    msg.textContent = 'No se pudo enviar: ' + error.message;
+    msg.className = 'msg err';
+    return;
+  }
+
+  msg.textContent = 'Reporte enviado. Gracias por avisarnos.';
+  msg.className = 'msg ok';
+  setTimeout(()=> cerrarModal('modalReporte'), 1800);
+});
 
 iniciar();
 </script>
