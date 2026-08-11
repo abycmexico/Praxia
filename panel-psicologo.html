@@ -122,6 +122,7 @@
   .check-fila-menor{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:700;cursor:pointer;margin:16px 0 4px;}
   .check-fila-menor input{width:auto;}
   .aviso-menor{font-size:12px;color:#b23b3b;background:#FDE8E8;border-radius:10px;padding:10px 12px;margin-bottom:14px;line-height:1.5;}
+  #msgEdadMenor{font-size:11.5px;color:#b23b3b;margin-bottom:4px;}
   .pac-estado-tag.activo{background:#E4F3E1;color:var(--primario);}
   .pac-estado-tag.pausa{background:#FFF1DB;color:#B5680A;}
   .pac-estado-tag.dado_de_alta{background:#E4EEFB;color:#1a5cb0;}
@@ -1022,14 +1023,22 @@
         <input type="tel" id="pdTelefono">
       </div>
     </div>
-    <div class="campo">
-      <label for="pdModalidad">Modalidad de atención</label>
-      <select id="pdModalidad">
-        <option value="presencial" selected>Presencial</option>
-        <option value="videollamada">Videollamada</option>
-        <option value="mixta">Mixta</option>
-      </select>
+    <div class="rejilla">
+      <div class="campo">
+        <label for="pdEdad">Edad (opcional)</label>
+        <input type="number" id="pdEdad" min="0" max="120">
+      </div>
+      <div class="campo">
+        <label for="pdModalidad">Modalidad de atención</label>
+        <select id="pdModalidad">
+          <option value="presencial" selected>Presencial</option>
+          <option value="videollamada">Videollamada</option>
+          <option value="mixta">Mixta</option>
+        </select>
+      </div>
     </div>
+
+    <p class="msg" id="msgEdadMenor" style="display:none;">Con esa edad, marcamos "Es menor de edad" por ti — puedes desmarcarlo si no aplica.</p>
 
     <label class="check-fila-menor">
       <input type="checkbox" id="pdEsMenor">
@@ -2417,8 +2426,10 @@ document.getElementById('atajoAgregarPaciente').addEventListener('click', ()=>{
   document.getElementById('pdNombre').value = '';
   document.getElementById('pdCorreo').value = '';
   document.getElementById('pdTelefono').value = '';
+  document.getElementById('pdEdad').value = '';
   document.getElementById('pdModalidad').value = 'presencial';
   document.getElementById('pdEsMenor').checked = false;
+  document.getElementById('msgEdadMenor').style.display = 'none';
   document.getElementById('pdBloqueTutor').style.display = 'none';
   document.getElementById('pdTutorNombre').value = '';
   document.getElementById('pdTutorRelacion').value = '';
@@ -2426,6 +2437,20 @@ document.getElementById('atajoAgregarPaciente').addEventListener('click', ()=>{
   document.getElementById('pdTutorCorreo').value = '';
   document.getElementById('msgPacienteDirecto').textContent = '';
   abrirModal('modalPacienteDirecto');
+});
+
+document.getElementById('pdEdad').addEventListener('input', (e)=>{
+  const edad = parseInt(e.target.value, 10);
+  const avisoEdad = document.getElementById('msgEdadMenor');
+  if(!isNaN(edad) && edad >= 0 && edad < 18){
+    if(!document.getElementById('pdEsMenor').checked){
+      document.getElementById('pdEsMenor').checked = true;
+      document.getElementById('pdBloqueTutor').style.display = 'block';
+    }
+    avisoEdad.style.display = 'block';
+  } else {
+    avisoEdad.style.display = 'none';
+  }
 });
 
 document.getElementById('pdEsMenor').addEventListener('change', (e)=>{
