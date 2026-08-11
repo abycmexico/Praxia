@@ -27,6 +27,9 @@
   .msg.err{color:var(--err);}
   .consentimiento-box{border:1.5px solid var(--line);border-radius:12px;padding:14px;margin-top:18px;background:#FAFAFA;}
   .consentimiento-texto{font-size:11.5px;color:#555;line-height:1.6;max-height:180px;overflow-y:auto;margin-bottom:12px;white-space:pre-wrap;}
+  .datos-fijos-box{border:1.5px solid #A8C99B;border-radius:12px;padding:14px 16px;margin-bottom:16px;background:#EAF5E8;}
+  .datos-fijos-aviso{font-size:12px;color:var(--primario);font-weight:700;margin-bottom:8px;}
+  .datos-fijos-fila{font-size:13px;}
   .consentimiento-check{display:flex;gap:8px;align-items:flex-start;font-size:12px;font-weight:600;cursor:pointer;}
   .consentimiento-check input{width:auto;margin-top:2px;}
 </style>
@@ -132,13 +135,24 @@ async function pintarFormPaciente(nombreSugerido, psicologoId){
     return;
   }
 
+  let nombreFijo = null;
+  if(claimIdParam){
+    const { data: infoClaim } = await sb.rpc('info_publica_claim', { p_paciente_id: claimIdParam });
+    const infoPaciente = Array.isArray(infoClaim) ? infoClaim[0] : infoClaim;
+    if(infoPaciente && infoPaciente.nombre) nombreFijo = infoPaciente.nombre;
+  }
+
   const TEXTO_BASE = 'AVISO DE PRIVACIDAD\n\nResponsable del tratamiento de tus datos: tu psicólogo/a tratante dentro de esta plataforma (identificado en tu perfil) es quien decide cómo se usa tu información clínica y es responsable de la relación de atención psicológica contigo. Praxia es la plataforma tecnológica que le permite administrar su consulta; actúa como encargado del tratamiento, no como responsable de tu atención clínica.\n\nDatos que se tratan: nombre, correo, teléfono, fecha de nacimiento, datos sociodemográficos que tú decidas compartir, y datos relacionados con tu salud (motivo de consulta, antecedentes, evaluaciones, notas de sesión, diagnóstico si lo hay, y medicación). Estos últimos son datos personales sensibles conforme a la Ley Federal de Protección de Datos Personales en Posesión de los Particulares, por tratarse de información de salud.\n\nPara qué se usan: exclusivamente para brindarte atención psicológica — agendar y dar seguimiento a tus sesiones, mantener tu expediente clínico, y facilitar la comunicación con tu psicólogo/a. Praxia no usa tu información con fines de mercadotecnia ni la vende ni la comparte con terceros para publicidad.\n\nCómo limitar el uso de tu información: puedes solicitar directamente a tu psicólogo/a que se restrinja cierta información dentro de tu expediente, dentro de lo que la práctica clínica permita.\n\nTransferencias: tus datos no se transfieren a terceros salvo lo estrictamente necesario para prestarte el servicio (por ejemplo, proveedores de videollamada o de infraestructura tecnológica que alojan la plataforma), o cuando la ley lo requiera.\n\nTus derechos (ARCO): tienes derecho a Acceder, Rectificar, Cancelar tus datos, y a Oponerte a su tratamiento. Puedes ejercerlos directamente con tu psicólogo/a, quien es tu contacto principal para estos temas.\n\nCambios a este aviso: si este aviso cambia de forma relevante, te lo notificaremos la próxima vez que inicies sesión.\n\nConsentimiento: por tratarse de datos de salud (datos sensibles), la ley requiere tu consentimiento expreso. Al aceptar y registrarte, otorgas ese consentimiento de forma expresa para los fines aquí descritos.';
 
   caja.innerHTML = `
-    <h1>Ya casi, ${escapar(nombreSugerido.split(' ')[0])}</h1>
+    <h1>Ya casi, ${escapar((nombreFijo || nombreSugerido).split(' ')[0])}</h1>
     <p class="sub">Tu psicólogo: <strong>${escapar(psi.nombre)}</strong></p>
-    <label for="nombre">Nombre completo</label>
-    <input type="text" id="nombre" value="${escapar(nombreSugerido)}">
+    ${nombreFijo
+      ? `<div class="datos-fijos-box"><p class="datos-fijos-aviso">Tu psicólogo ya registró tu nombre.</p><div class="datos-fijos-fila"><strong>Nombre:</strong> ${escapar(nombreFijo)}</div></div>
+         <input type="hidden" id="nombre" value="${escapar(nombreFijo)}">`
+      : `<label for="nombre">Nombre completo</label>
+         <input type="text" id="nombre" value="${escapar(nombreSugerido)}">`
+    }
 
     <div class="consentimiento-box">
       <div class="consentimiento-texto">${escapar(TEXTO_BASE)}</div>
@@ -170,6 +184,17 @@ async function pintarFormPaciente(nombreSugerido, psicologoId){
     let idExpediente;
 
     if(claimIdParam){
+      const { data: infoClaim } = await sb.rpc('info_publica_claim', { p_paciente_id: claimIdParam });
+      const infoPaciente = Array.isArray(infoClaim) ? infoClaim[0] : infoClaim;
+
+      if(infoPaciente && infoPaciente.correo && infoPaciente.correo.toLowerCase() !== session.user.email.toLowerCase()){
+        msg.textContent = `Tu psicólogo ya registró el correo ${infoPaciente.correo} para este expediente. Vuelve a intentarlo iniciando sesión con esa cuenta de Google, o pídele que actualice el correo.`;
+        msg.className = 'msg err';
+        btn.disabled = false;
+        await sb.auth.signOut();
+        return;
+      }
+
       const { data: vinculo, error: errVinculo } = await sb.rpc('vincular_cuenta_paciente', { p_paciente_id: claimIdParam });
       const r = Array.isArray(vinculo) ? vinculo[0] : vinculo;
 
@@ -180,7 +205,9 @@ async function pintarFormPaciente(nombreSugerido, psicologoId){
         return;
       }
       idExpediente = claimIdParam;
-      await sb.from('pacientes').update({ correo: session.user.email }).eq('id', claimIdParam);
+      if(!infoPaciente || !infoPaciente.correo){
+        await sb.from('pacientes').update({ correo: session.user.email }).eq('id', claimIdParam);
+      }
     } else {
       const { data: nuevoPaciente, error: errPerfil } = await sb.from('pacientes').insert({
         auth_user_id: session.user.id,

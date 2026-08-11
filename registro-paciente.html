@@ -23,6 +23,9 @@
   .box h1{font-size:26px;margin-bottom:8px;}
   .box p.sub{color:var(--gray);font-size:14px;margin-bottom:30px;line-height:1.6;}
   .psi-box{border:1.5px solid var(--line);border-radius:12px;padding:14px 16px;margin-bottom:22px;background:#FAFAFA;}
+  .datos-fijos-box{border:1.5px solid #A8C99B;border-radius:12px;padding:14px 16px;margin-bottom:22px;background:#EAF5E8;}
+  .datos-fijos-aviso{font-size:12px;color:var(--primario);font-weight:700;margin-bottom:8px;}
+  .datos-fijos-fila{font-size:13px;margin-bottom:3px;}
   .psi-box .et{font-size:11px;letter-spacing:1.2px;text-transform:uppercase;color:var(--gray);font-weight:700;margin-bottom:4px;}
   .psi-box .nom{font-size:15px;font-weight:700;}
   label{display:block;font-size:13px;font-weight:700;margin-bottom:6px;margin-top:18px;}
@@ -70,12 +73,22 @@
         <div class="nom" id="nombrePsicologo">Cargando...</div>
       </div>
 
-      <form id="form">
-        <label for="nombre">Tu nombre completo</label>
-        <input type="text" id="nombre" required>
+      <div class="datos-fijos-box" id="datosFijosBox" style="display:none;">
+        <p class="datos-fijos-aviso">Tu psicólogo ya registró tus datos. Solo necesitas crear tu contraseña.</p>
+        <div class="datos-fijos-fila"><strong>Nombre:</strong> <span id="datosFijosNombre"></span></div>
+        <div class="datos-fijos-fila"><strong>Correo:</strong> <span id="datosFijosCorreo"></span></div>
+      </div>
 
-        <label for="correo">Correo</label>
-        <input type="email" id="correo" required>
+      <form id="form">
+        <div id="campoNombreEditable">
+          <label for="nombre">Tu nombre completo</label>
+          <input type="text" id="nombre">
+        </div>
+
+        <div id="campoCorreoEditable">
+          <label for="correo">Correo</label>
+          <input type="email" id="correo">
+        </div>
 
         <label for="password">Contraseña</label>
         <input type="password" id="password" minlength="8" required>
@@ -171,6 +184,8 @@ function checkConsentimientoAntes(){
 const TEXTO_BASE = 'AVISO DE PRIVACIDAD\n\nResponsable del tratamiento de tus datos: tu psicólogo/a tratante dentro de esta plataforma (identificado en tu perfil) es quien decide cómo se usa tu información clínica y es responsable de la relación de atención psicológica contigo. Praxia es la plataforma tecnológica que le permite administrar su consulta; actúa como encargado del tratamiento, no como responsable de tu atención clínica.\n\nDatos que se tratan: nombre, correo, teléfono, fecha de nacimiento, datos sociodemográficos que tú decidas compartir, y datos relacionados con tu salud (motivo de consulta, antecedentes, evaluaciones, notas de sesión, diagnóstico si lo hay, y medicación). Estos últimos son datos personales sensibles conforme a la Ley Federal de Protección de Datos Personales en Posesión de los Particulares, por tratarse de información de salud.\n\nPara qué se usan: exclusivamente para brindarte atención psicológica — agendar y dar seguimiento a tus sesiones, mantener tu expediente clínico, y facilitar la comunicación con tu psicólogo/a. Praxia no usa tu información con fines de mercadotecnia ni la vende ni la comparte con terceros para publicidad.\n\nCómo limitar el uso de tu información: puedes solicitar directamente a tu psicólogo/a que se restrinja cierta información dentro de tu expediente, dentro de lo que la práctica clínica permita.\n\nTransferencias: tus datos no se transfieren a terceros salvo lo estrictamente necesario para prestarte el servicio (por ejemplo, proveedores de videollamada o de infraestructura tecnológica que alojan la plataforma), o cuando la ley lo requiera.\n\nTus derechos (ARCO): tienes derecho a Acceder, Rectificar, Cancelar tus datos, y a Oponerte a su tratamiento. Puedes ejercerlos directamente con tu psicólogo/a, quien es tu contacto principal para estos temas.\n\nCambios a este aviso: si este aviso cambia de forma relevante, te lo notificaremos la próxima vez que inicies sesión.\n\nConsentimiento: por tratarse de datos de salud (datos sensibles), la ley requiere tu consentimiento expreso. Al aceptar y registrarte, otorgas ese consentimiento de forma expresa para los fines aquí descritos.';
 
 let textoConsentimientoActual = TEXTO_BASE;
+let nombreFijo = null;
+let correoFijo = null;
 
 async function iniciar(){
   if(!psicologoId){
@@ -200,10 +215,30 @@ async function iniciar(){
   if(claimId){
     const { data: infoClaim } = await sb.rpc('info_publica_claim', { p_paciente_id: claimId });
     const infoPaciente = Array.isArray(infoClaim) ? infoClaim[0] : infoClaim;
-    if(infoPaciente && infoPaciente.es_menor_edad){
-      document.getElementById('checkConsentimientoTexto').textContent =
-        `He leído y acepto lo anterior, en representación de ${infoPaciente.nombre}, como su madre, padre o tutor/a legal.`;
-      encabezadoConsentimiento = `Este expediente pertenece a ${infoPaciente.nombre}, quien es menor de edad. El consentimiento y manejo de su información los otorga su tutor legal.\n\n${TEXTO_BASE}`;
+
+    if(infoPaciente){
+      nombreFijo = infoPaciente.nombre || null;
+      correoFijo = infoPaciente.correo || null;
+
+      if(nombreFijo){
+        document.getElementById('campoNombreEditable').style.display = 'none';
+        document.getElementById('nombre').removeAttribute('required');
+        document.getElementById('datosFijosNombre').textContent = nombreFijo;
+      }
+      if(correoFijo){
+        document.getElementById('campoCorreoEditable').style.display = 'none';
+        document.getElementById('correo').removeAttribute('required');
+        document.getElementById('datosFijosCorreo').textContent = correoFijo;
+      }
+      if(nombreFijo || correoFijo){
+        document.getElementById('datosFijosBox').style.display = 'block';
+      }
+
+      if(infoPaciente.es_menor_edad){
+        document.getElementById('checkConsentimientoTexto').textContent =
+          `He leído y acepto lo anterior, en representación de ${infoPaciente.nombre}, como su madre, padre o tutor/a legal.`;
+        encabezadoConsentimiento = `Este expediente pertenece a ${infoPaciente.nombre}, quien es menor de edad. El consentimiento y manejo de su información los otorga su tutor legal.\n\n${TEXTO_BASE}`;
+      }
     }
   }
 
@@ -229,8 +264,8 @@ document.getElementById('form').addEventListener('submit', async (e)=>{
   msg.className = 'msg';
   msg.textContent = 'Creando tu cuenta...';
 
-  const nombre = document.getElementById('nombre').value.trim();
-  const correo = document.getElementById('correo').value.trim();
+  const nombre = nombreFijo || document.getElementById('nombre').value.trim();
+  const correo = correoFijo || document.getElementById('correo').value.trim();
   const password = document.getElementById('password').value;
 
   const { data, error } = await sb.auth.signUp({ email: correo, password });
