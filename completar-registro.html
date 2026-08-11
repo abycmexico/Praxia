@@ -47,6 +47,7 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 const params = new URLSearchParams(location.search);
 const rolParam = params.get('rol');
 const psicologoIdParam = params.get('p');
+const claimIdParam = params.get('claim');
 const caja = document.getElementById('caja');
 
 async function iniciar(){
@@ -64,7 +65,7 @@ async function iniciar(){
     location.href = './panel-psicologo.html';
     return;
   }
-  const { data: pacExistente } = await sb.from('pacientes').select('id').eq('id', uid).maybeSingle();
+  const { data: pacExistente } = await sb.from('pacientes').select('id').eq('auth_user_id', uid).maybeSingle();
   if(pacExistente){
     location.href = './panel-paciente.html';
     return;
@@ -166,23 +167,39 @@ async function pintarFormPaciente(nombreSugerido, psicologoId){
 
     const { data: { session } } = await sb.auth.getSession();
     const nombre = document.getElementById('nombre').value.trim();
+    let idExpediente;
 
-    const { error: errPerfil } = await sb.from('pacientes').insert({
-      id: session.user.id,
-      nombre,
-      correo: session.user.email,
-      psicologo_id: psicologoId
-    });
+    if(claimIdParam){
+      const { data: vinculo, error: errVinculo } = await sb.rpc('vincular_cuenta_paciente', { p_paciente_id: claimIdParam });
+      const r = Array.isArray(vinculo) ? vinculo[0] : vinculo;
 
-    if(errPerfil){
-      msg.textContent = 'Error: ' + errPerfil.message;
-      msg.className = 'msg err';
-      btn.disabled = false;
-      return;
+      if(errVinculo || !r || !r.ok){
+        msg.textContent = 'Error al conectar con tu expediente: ' + (errVinculo?.message || r?.mensaje || 'error desconocido');
+        msg.className = 'msg err';
+        btn.disabled = false;
+        return;
+      }
+      idExpediente = claimIdParam;
+      await sb.from('pacientes').update({ nombre, correo: session.user.email }).eq('id', claimIdParam);
+    } else {
+      const { data: nuevoPaciente, error: errPerfil } = await sb.from('pacientes').insert({
+        auth_user_id: session.user.id,
+        nombre,
+        correo: session.user.email,
+        psicologo_id: psicologoId
+      }).select('id').single();
+
+      if(errPerfil){
+        msg.textContent = 'Error: ' + errPerfil.message;
+        msg.className = 'msg err';
+        btn.disabled = false;
+        return;
+      }
+      idExpediente = nuevoPaciente.id;
     }
 
     await sb.from('consentimientos').insert({
-      paciente_id: session.user.id,
+      paciente_id: idExpediente,
       psicologo_id: psicologoId,
       texto_aceptado: TEXTO_BASE,
       user_agent: navigator.userAgent

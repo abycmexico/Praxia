@@ -426,7 +426,7 @@ async function iniciar(){
   if(!session){ location.href = './login.html'; return; }
 
   const { data: pac } = await sb.from('pacientes')
-    .select('*').eq('id', session.user.id).maybeSingle();
+    .select('*').eq('auth_user_id', session.user.id).maybeSingle();
 
   if(!pac){
     await sb.auth.signOut();

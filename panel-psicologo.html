@@ -95,7 +95,10 @@
   .pac-nombre{font-size:14.5px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
   .pac-correo{font-size:11.5px;color:var(--gray);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
   .pac-motivo{font-size:12.5px;color:#555;line-height:1.5;margin-bottom:12px;min-height:19px;overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;}
-  .pac-estado-tag{display:inline-block;font-size:10px;font-weight:800;letter-spacing:.5px;text-transform:uppercase;padding:3px 9px;border-radius:20px;margin-bottom:12px;}
+  .pac-estado-tag{display:inline-block;font-size:10px;font-weight:800;letter-spacing:.5px;text-transform:uppercase;padding:3px 9px;border-radius:20px;}
+  .pac-modalidad-tag{display:inline-block;font-size:10px;font-weight:800;letter-spacing:.5px;text-transform:uppercase;padding:3px 9px;border-radius:20px;background:#EEF0FF;color:#4a4ab8;}
+  .pac-modalidad-mixta{background:#F3E5F5;color:#7B1FA2;}
+  .pac-sin-cuenta-tag{display:inline-block;font-size:10px;font-weight:800;letter-spacing:.5px;text-transform:uppercase;padding:3px 9px;border-radius:20px;background:#FFF3CD;color:#8a6d1a;}
   .pac-estado-tag.activo{background:#E4F3E1;color:var(--primario);}
   .pac-estado-tag.pausa{background:#FFF1DB;color:#B5680A;}
   .pac-estado-tag.dado_de_alta{background:#E4EEFB;color:#1a5cb0;}
@@ -533,6 +536,7 @@
     </div>
 
     <div class="filtros" id="filtrosPacientes"></div>
+    <div class="filtros" id="filtrosModalidad" style="margin-top:6px;"></div>
 
     <div id="listaPacientes" class="grid-pacientes"><p class="empty">Cargando...</p></div>
   </section>
@@ -860,6 +864,59 @@
 
 <button id="btnFlotanteMas" class="btn-flotante-mas" title="Nueva consulta rápida">+</button>
 
+<div class="modal-bg" id="modalDarAcceso">
+  <div class="modal">
+    <h3>Dar acceso a <span id="daNombrePaciente"></span></h3>
+    <p class="modal-sub">Esta liga conecta su cuenta nueva directo con el expediente que ya tiene — no crea uno duplicado.</p>
+
+    <div class="invite-box" id="daLiga"></div>
+    <div class="modal-actions" style="justify-content:flex-start;flex-wrap:wrap;">
+      <button class="btn btn-primary" id="daBtnCopiar">Copiar liga</button>
+      <a class="btn btn-ghost" id="daBtnWhatsapp" href="#" target="_blank">Enviar por WhatsApp</a>
+      <a class="btn btn-ghost" id="daBtnCorreo" href="#">Enviar por correo</a>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="cerrarModal('modalDarAcceso')">Listo</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-bg" id="modalPacienteDirecto">
+  <div class="modal">
+    <h3>Agregar paciente</h3>
+    <p class="modal-sub">Crea su expediente ya mismo, sin que necesite cuenta ni registrarse. Si más adelante necesita entrar (por ejemplo, para videollamadas), le das acceso desde su expediente.</p>
+
+    <div class="campo">
+      <label for="pdNombre">Nombre completo</label>
+      <input type="text" id="pdNombre" placeholder="Nombre del paciente">
+    </div>
+    <div class="rejilla">
+      <div class="campo">
+        <label for="pdCorreo">Correo (opcional)</label>
+        <input type="email" id="pdCorreo">
+      </div>
+      <div class="campo">
+        <label for="pdTelefono">Teléfono (opcional)</label>
+        <input type="tel" id="pdTelefono">
+      </div>
+    </div>
+    <div class="campo">
+      <label for="pdModalidad">Modalidad de atención</label>
+      <select id="pdModalidad">
+        <option value="presencial" selected>Presencial</option>
+        <option value="videollamada">Videollamada</option>
+        <option value="mixta">Mixta</option>
+      </select>
+    </div>
+
+    <p class="msg" id="msgPacienteDirecto"></p>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="cerrarModal('modalPacienteDirecto')">Cancelar</button>
+      <button class="btn btn-primary" id="btnGuardarPacienteDirecto">Crear expediente</button>
+    </div>
+  </div>
+</div>
+
 <div class="modal-bg" id="modalConsultaRapida">
   <div class="modal">
     <div id="crPasoTipo">
@@ -989,6 +1046,46 @@ document.querySelectorAll('nav.tabs button').forEach(b=>{
 /* ---------- modales ---------- */
 function abrirModal(id){ document.getElementById(id).classList.add('show'); }
 function cerrarModal(id){ document.getElementById(id).classList.remove('show'); }
+
+/* ---------- dar acceso a un paciente sin cuenta ---------- */
+function darAccesoPaciente(id){
+  const p = pacientesCache.find(x=> x.id === id);
+  if(!p) return;
+
+  document.getElementById('daNombrePaciente').textContent = p.nombre;
+
+  const liga = `${location.origin}${location.pathname.replace(/[^/]+$/,'')}registro-paciente.html?p=${yo.id}&claim=${id}`;
+  document.getElementById('daLiga').textContent = liga;
+
+  const mensaje = encodeURIComponent(`Hola ${p.nombre.split(' ')[0]}, te comparto tu acceso a Praxia para que puedas ver tus sesiones: ${liga}`);
+  const telWa = p.telefono ? `https://wa.me/52${p.telefono.replace(/\D/g,'')}?text=${mensaje}` : '#';
+  document.getElementById('daBtnWhatsapp').href = telWa;
+  if(!p.telefono){
+    document.getElementById('daBtnWhatsapp').style.pointerEvents = 'none';
+    document.getElementById('daBtnWhatsapp').style.opacity = '.5';
+  } else {
+    document.getElementById('daBtnWhatsapp').style.pointerEvents = '';
+    document.getElementById('daBtnWhatsapp').style.opacity = '';
+  }
+
+  document.getElementById('daBtnCorreo').href = p.correo
+    ? `mailto:${p.correo}?subject=${encodeURIComponent('Tu acceso a Praxia')}&body=${mensaje}`
+    : '#';
+
+  abrirModal('modalDarAcceso');
+}
+window.darAccesoPaciente = darAccesoPaciente;
+
+document.getElementById('daBtnCopiar').addEventListener('click', async ()=>{
+  const btn = document.getElementById('daBtnCopiar');
+  try{
+    await navigator.clipboard.writeText(document.getElementById('daLiga').textContent);
+    btn.textContent = 'Copiado';
+    setTimeout(()=>btn.textContent='Copiar liga', 1800);
+  }catch(e){
+    btn.textContent = 'Copia manual';
+  }
+});
 window.cerrarModal = cerrarModal;
 document.querySelectorAll('.modal-bg').forEach(m=>{
   m.addEventListener('click', e=>{ if(e.target === m) m.classList.remove('show'); });
@@ -1237,6 +1334,7 @@ document.getElementById('btnGuardarDisp').addEventListener('click', async ()=>{
 let pacientesCache = [];
 let citasPorPaciente = {}; // { paciente_id: { sesiones, ingresos } }
 let filtroPacientes = 'activo';
+let filtroModalidad = 'todos';
 let ordenActual = 'manual';
 let idArrastrado = null;
 
@@ -1262,8 +1360,29 @@ async function cargarPacientes(){
   });
 
   pintarFiltrosPacientes();
+  pintarFiltrosModalidad();
   pintarPacientes();
 }
+
+function pintarFiltrosModalidad(){
+  const presencial = pacientesCache.filter(p=> (p.modalidad_atencion||'presencial') === 'presencial').length;
+  const video = pacientesCache.filter(p=> p.modalidad_atencion === 'videollamada').length;
+  const mixta = pacientesCache.filter(p=> p.modalidad_atencion === 'mixta').length;
+
+  document.getElementById('filtrosModalidad').innerHTML = `
+    <button class="chip ${filtroModalidad==='todos'?'sel':''}" onclick="filtrarModalidad('todos')">Todas las modalidades</button>
+    <button class="chip ${filtroModalidad==='presencial'?'sel':''}" onclick="filtrarModalidad('presencial')">Presencial (${presencial})</button>
+    <button class="chip ${filtroModalidad==='videollamada'?'sel':''}" onclick="filtrarModalidad('videollamada')">Videollamada (${video})</button>
+    <button class="chip ${filtroModalidad==='mixta'?'sel':''}" onclick="filtrarModalidad('mixta')">Mixta (${mixta})</button>
+  `;
+}
+
+function filtrarModalidad(mod){
+  filtroModalidad = mod;
+  pintarFiltrosModalidad();
+  pintarPacientes();
+}
+window.filtrarModalidad = filtrarModalidad;
 
 function pintarFiltrosPacientes(){
   const activos      = pacientesCache.filter(p=> p.estado === 'activo').length;
@@ -1314,7 +1433,9 @@ function pintarPacientes(){
     return;
   }
 
-  const lista = listaOrdenada(pacientesCache.filter(p=> p.estado === filtroPacientes));
+  const lista = listaOrdenada(pacientesCache
+    .filter(p=> p.estado === filtroPacientes)
+    .filter(p=> filtroModalidad === 'todos' || (p.modalidad_atencion || 'presencial') === filtroModalidad));
 
   if(!lista.length){
     cont.innerHTML = '<p class="empty">No tienes pacientes en esta categoría.</p>';
@@ -1336,20 +1457,29 @@ function pintarPacientes(){
           <div class="pac-avatar" ${avatarEstilo}>${p.foto_url ? '' : inicial}</div>
           <div style="min-width:0;">
             <div class="pac-nombre">${escapar(p.nombre)}</div>
-            <div class="pac-correo">${escapar(p.correo)}</div>
+            <div class="pac-correo">${p.correo ? escapar(p.correo) : 'Sin correo registrado'}</div>
           </div>
         </div>
-        <span class="pac-estado-tag ${p.estado}">${etiquetaEstadoPaciente(p.estado)}</span>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:6px;">
+          <span class="pac-estado-tag ${p.estado}">${etiquetaEstadoPaciente(p.estado)}</span>
+          <span class="pac-modalidad-tag pac-modalidad-${p.modalidad_atencion||'presencial'}">${etiquetaModalidad(p.modalidad_atencion)}</span>
+          ${!p.auth_user_id ? '<span class="pac-sin-cuenta-tag">Sin cuenta</span>' : ''}
+        </div>
         <p class="pac-motivo">${p.motivo_consulta ? escapar(recortar(p.motivo_consulta, 90)) : 'Sin motivo de consulta registrado.'}</p>
         <p style="font-size:11px;color:var(--gray);margin-bottom:12px;">${agg.sesiones} sesión(es) · $${agg.ingresos.toLocaleString('es-MX')} generados</p>
         <div class="pac-acciones">
           <a class="pac-btn" href="./expediente.html?id=${p.id}">Expediente</a>
+          ${!p.auth_user_id ? `<button class="pac-btn" onclick="darAccesoPaciente('${p.id}')">Dar acceso</button>` : ''}
           ${botonesEstado(p)}
         </div>
       </div>`;
   }).join('');
 
   if(arrastrable) activarArrastre();
+}
+
+function etiquetaModalidad(mod){
+  return {presencial:'Presencial', videollamada:'Videollamada', mixta:'Mixta'}[mod] || 'Presencial';
 }
 
 function etiquetaEstadoPaciente(estado){
@@ -1828,7 +1958,51 @@ document.getElementById('inputLogo').addEventListener('change', async (e)=>{
 });
 
 document.getElementById('atajoAgregarPaciente').addEventListener('click', ()=>{
-  document.getElementById('btnNuevoPaciente').click();
+  document.getElementById('pdNombre').value = '';
+  document.getElementById('pdCorreo').value = '';
+  document.getElementById('pdTelefono').value = '';
+  document.getElementById('pdModalidad').value = 'presencial';
+  document.getElementById('msgPacienteDirecto').textContent = '';
+  abrirModal('modalPacienteDirecto');
+});
+
+document.getElementById('btnGuardarPacienteDirecto').addEventListener('click', async ()=>{
+  const btn = document.getElementById('btnGuardarPacienteDirecto');
+  const msg = document.getElementById('msgPacienteDirecto');
+  const nombre = document.getElementById('pdNombre').value.trim();
+
+  if(!nombre){
+    msg.textContent = 'Escribe el nombre del paciente.';
+    msg.className = 'msg err';
+    return;
+  }
+
+  btn.disabled = true;
+  msg.className = 'msg';
+  msg.textContent = 'Creando expediente...';
+
+  const { data, error } = await sb.rpc('crear_paciente_directo', {
+    p_nombre: nombre,
+    p_correo: document.getElementById('pdCorreo').value.trim() || null,
+    p_telefono: document.getElementById('pdTelefono').value.trim() || null,
+    p_modalidad_atencion: document.getElementById('pdModalidad').value
+  });
+
+  btn.disabled = false;
+  if(error){
+    msg.textContent = 'No se pudo crear: ' + error.message;
+    msg.className = 'msg err';
+    return;
+  }
+
+  const r = Array.isArray(data) ? data[0] : data;
+  if(!r || !r.ok){
+    msg.textContent = r ? r.mensaje : 'No se pudo crear el expediente.';
+    msg.className = 'msg err';
+    return;
+  }
+
+  location.href = `./expediente.html?id=${r.paciente_id}`;
 });
 
 document.getElementById('atajoNuevaConsulta').addEventListener('click', ()=>{

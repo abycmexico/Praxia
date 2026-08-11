@@ -122,12 +122,13 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 const params = new URLSearchParams(location.search);
 let psicologoId = params.get('p');
+const claimId = params.get('claim');
 
 document.getElementById('btnGoogle').addEventListener('click', async ()=>{
   if(!checkConsentimientoAntes()) return;
   await sb.auth.signInWithOAuth({
     provider: 'google',
-    options: { redirectTo: `${location.origin}${location.pathname.replace(/[^/]+$/,'')}completar-registro.html?rol=paciente&p=${psicologoId}` }
+    options: { redirectTo: `${location.origin}${location.pathname.replace(/[^/]+$/,'')}completar-registro.html?rol=paciente&p=${psicologoId}${claimId ? '&claim='+claimId : ''}` }
   });
 });
 
@@ -231,24 +232,45 @@ document.getElementById('form').addEventListener('submit', async (e)=>{
     return;
   }
 
-  const { error: errPerfil } = await sb.from('pacientes').insert({
-    id: data.user.id,
-    nombre,
-    correo,
-    psicologo_id: psicologoId
-  });
+  let idExpediente;
 
-  if(errPerfil){
-    msg.textContent = 'Tu cuenta se creó pero hubo un error al guardar tu perfil: ' + errPerfil.message;
-    msg.className = 'msg err';
-    btn.disabled = false;
-    return;
+  if(claimId){
+    // Este expediente ya existía (lo creó el psicólogo directo) — solo
+    // conectamos la cuenta nueva a ese registro, sin duplicar nada.
+    const { data: vinculo, error: errVinculo } = await sb.rpc('vincular_cuenta_paciente', { p_paciente_id: claimId });
+    const r = Array.isArray(vinculo) ? vinculo[0] : vinculo;
+
+    if(errVinculo || !r || !r.ok){
+      msg.textContent = 'Tu cuenta se creó pero no se pudo conectar con tu expediente: ' + (errVinculo?.message || r?.mensaje || 'error desconocido');
+      msg.className = 'msg err';
+      btn.disabled = false;
+      return;
+    }
+    idExpediente = claimId;
+
+    // Actualizamos nombre/correo por si cambiaron desde que se creó el expediente.
+    await sb.from('pacientes').update({ nombre, correo }).eq('id', claimId);
+  } else {
+    const { data: nuevoPaciente, error: errPerfil } = await sb.from('pacientes').insert({
+      auth_user_id: data.user.id,
+      nombre,
+      correo,
+      psicologo_id: psicologoId
+    }).select('id').single();
+
+    if(errPerfil){
+      msg.textContent = 'Tu cuenta se creó pero hubo un error al guardar tu perfil: ' + errPerfil.message;
+      msg.className = 'msg err';
+      btn.disabled = false;
+      return;
+    }
+    idExpediente = nuevoPaciente.id;
   }
 
   // Se guarda el texto exacto que la persona vio y aceptó, no una
   // referencia a "las políticas actuales" (que podrían cambiar después).
   const { error: errConsentimiento } = await sb.from('consentimientos').insert({
-    paciente_id: data.user.id,
+    paciente_id: idExpediente,
     psicologo_id: psicologoId,
     texto_aceptado: textoConsentimientoActual,
     user_agent: navigator.userAgent
