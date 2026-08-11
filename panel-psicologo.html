@@ -118,6 +118,10 @@
   .pac-modalidad-select.pac-modalidad-mixta{background:#F3E5F5;color:#7B1FA2;}
   .pac-modalidad-select:hover{border-color:currentColor;}
   .pac-sin-cuenta-tag{display:inline-block;font-size:10px;font-weight:800;letter-spacing:.5px;text-transform:uppercase;padding:3px 9px;border-radius:20px;background:#FFF3CD;color:#8a6d1a;}
+  .pac-menor-tag{display:inline-block;font-size:10px;font-weight:800;letter-spacing:.5px;text-transform:uppercase;padding:3px 9px;border-radius:20px;background:#FDE8E8;color:#b23b3b;}
+  .check-fila-menor{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:700;cursor:pointer;margin:16px 0 4px;}
+  .check-fila-menor input{width:auto;}
+  .aviso-menor{font-size:12px;color:#b23b3b;background:#FDE8E8;border-radius:10px;padding:10px 12px;margin-bottom:14px;line-height:1.5;}
   .pac-estado-tag.activo{background:#E4F3E1;color:var(--primario);}
   .pac-estado-tag.pausa{background:#FFF1DB;color:#B5680A;}
   .pac-estado-tag.dado_de_alta{background:#E4EEFB;color:#1a5cb0;}
@@ -1027,6 +1031,33 @@
       </select>
     </div>
 
+    <label class="check-fila-menor">
+      <input type="checkbox" id="pdEsMenor">
+      <span>Es menor de edad</span>
+    </label>
+
+    <div id="pdBloqueTutor" style="display:none;">
+      <div class="aviso-menor">Al ser menor de edad, el consentimiento y el manejo de su información los da su tutor legal, no el paciente.</div>
+      <div class="campo">
+        <label for="pdTutorNombre">Nombre del tutor legal</label>
+        <input type="text" id="pdTutorNombre">
+      </div>
+      <div class="rejilla">
+        <div class="campo">
+          <label for="pdTutorRelacion">Relación con el paciente</label>
+          <input type="text" id="pdTutorRelacion" placeholder="Ej. madre, padre, tutor legal">
+        </div>
+        <div class="campo">
+          <label for="pdTutorTelefono">Teléfono del tutor</label>
+          <input type="tel" id="pdTutorTelefono">
+        </div>
+      </div>
+      <div class="campo">
+        <label for="pdTutorCorreo">Correo del tutor</label>
+        <input type="email" id="pdTutorCorreo">
+      </div>
+    </div>
+
     <p class="msg" id="msgPacienteDirecto"></p>
     <div class="modal-actions">
       <button class="btn btn-ghost" onclick="cerrarModal('modalPacienteDirecto')">Cancelar</button>
@@ -1806,6 +1837,7 @@ function pintarPacientes(){
             <option value="mixta" ${p.modalidad_atencion==='mixta'?'selected':''}>Mixta</option>
           </select>
           ${!p.auth_user_id ? '<span class="pac-sin-cuenta-tag">Sin cuenta</span>' : ''}
+          ${p.es_menor_edad ? '<span class="pac-menor-tag">Menor de edad</span>' : ''}
         </div>
         <p class="pac-motivo">${p.motivo_consulta ? escapar(recortar(p.motivo_consulta, 90)) : 'Sin motivo de consulta registrado.'}</p>
         <p style="font-size:11px;color:var(--gray);margin-bottom:12px;">${agg.sesiones} sesión(es) · $${agg.ingresos.toLocaleString('es-MX')} generados</p>
@@ -2386,17 +2418,33 @@ document.getElementById('atajoAgregarPaciente').addEventListener('click', ()=>{
   document.getElementById('pdCorreo').value = '';
   document.getElementById('pdTelefono').value = '';
   document.getElementById('pdModalidad').value = 'presencial';
+  document.getElementById('pdEsMenor').checked = false;
+  document.getElementById('pdBloqueTutor').style.display = 'none';
+  document.getElementById('pdTutorNombre').value = '';
+  document.getElementById('pdTutorRelacion').value = '';
+  document.getElementById('pdTutorTelefono').value = '';
+  document.getElementById('pdTutorCorreo').value = '';
   document.getElementById('msgPacienteDirecto').textContent = '';
   abrirModal('modalPacienteDirecto');
+});
+
+document.getElementById('pdEsMenor').addEventListener('change', (e)=>{
+  document.getElementById('pdBloqueTutor').style.display = e.target.checked ? 'block' : 'none';
 });
 
 document.getElementById('btnGuardarPacienteDirecto').addEventListener('click', async ()=>{
   const btn = document.getElementById('btnGuardarPacienteDirecto');
   const msg = document.getElementById('msgPacienteDirecto');
   const nombre = document.getElementById('pdNombre').value.trim();
+  const esMenor = document.getElementById('pdEsMenor').checked;
 
   if(!nombre){
     msg.textContent = 'Escribe el nombre del paciente.';
+    msg.className = 'msg err';
+    return;
+  }
+  if(esMenor && !document.getElementById('pdTutorNombre').value.trim()){
+    msg.textContent = 'Al marcar "Es menor de edad", necesitas el nombre del tutor legal.';
     msg.className = 'msg err';
     return;
   }
@@ -2409,7 +2457,12 @@ document.getElementById('btnGuardarPacienteDirecto').addEventListener('click', a
     p_nombre: nombre,
     p_correo: document.getElementById('pdCorreo').value.trim() || null,
     p_telefono: document.getElementById('pdTelefono').value.trim() || null,
-    p_modalidad_atencion: document.getElementById('pdModalidad').value
+    p_modalidad_atencion: document.getElementById('pdModalidad').value,
+    p_es_menor_edad: esMenor,
+    p_tutor_nombre: esMenor ? document.getElementById('pdTutorNombre').value.trim() || null : null,
+    p_tutor_relacion: esMenor ? document.getElementById('pdTutorRelacion').value.trim() || null : null,
+    p_tutor_telefono: esMenor ? document.getElementById('pdTutorTelefono').value.trim() || null : null,
+    p_tutor_correo: esMenor ? document.getElementById('pdTutorCorreo').value.trim() || null : null
   });
 
   btn.disabled = false;

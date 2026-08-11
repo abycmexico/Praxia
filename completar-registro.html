@@ -180,7 +180,7 @@ async function pintarFormPaciente(nombreSugerido, psicologoId){
         return;
       }
       idExpediente = claimIdParam;
-      await sb.from('pacientes').update({ nombre, correo: session.user.email }).eq('id', claimIdParam);
+      await sb.from('pacientes').update({ correo: session.user.email }).eq('id', claimIdParam);
     } else {
       const { data: nuevoPaciente, error: errPerfil } = await sb.from('pacientes').insert({
         auth_user_id: session.user.id,

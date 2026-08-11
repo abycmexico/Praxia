@@ -85,7 +85,7 @@
           <div class="consentimiento-texto" id="textoConsentimiento">Cargando...</div>
           <label class="consentimiento-check">
             <input type="checkbox" id="checkConsentimiento" required>
-            <span>He leído y acepto lo anterior.</span>
+            <span id="checkConsentimientoTexto">He leído y acepto lo anterior.</span>
           </label>
         </div>
 
@@ -195,9 +195,21 @@ async function iniciar(){
   const { data: config } = await sb.from('config_publica')
     .select('politicas_generales').eq('psicologo_id', psicologoId).maybeSingle();
 
+  let encabezadoConsentimiento = TEXTO_BASE;
+
+  if(claimId){
+    const { data: infoClaim } = await sb.rpc('info_publica_claim', { p_paciente_id: claimId });
+    const infoPaciente = Array.isArray(infoClaim) ? infoClaim[0] : infoClaim;
+    if(infoPaciente && infoPaciente.es_menor_edad){
+      document.getElementById('checkConsentimientoTexto').textContent =
+        `He leído y acepto lo anterior, en representación de ${infoPaciente.nombre}, como su madre, padre o tutor/a legal.`;
+      encabezadoConsentimiento = `Este expediente pertenece a ${infoPaciente.nombre}, quien es menor de edad. El consentimiento y manejo de su información los otorga su tutor legal.\n\n${TEXTO_BASE}`;
+    }
+  }
+
   textoConsentimientoActual = config && config.politicas_generales
-    ? `${TEXTO_BASE}\n\nAdemás, ${data.nombre} comparte lo siguiente:\n${config.politicas_generales}`
-    : TEXTO_BASE;
+    ? `${encabezadoConsentimiento}\n\nAdemás, ${data.nombre} comparte lo siguiente:\n${config.politicas_generales}`
+    : encabezadoConsentimiento;
 
   document.getElementById('textoConsentimiento').textContent = textoConsentimientoActual;
 }
@@ -249,7 +261,10 @@ document.getElementById('form').addEventListener('submit', async (e)=>{
     idExpediente = claimId;
 
     // Actualizamos nombre/correo por si cambiaron desde que se creó el expediente.
-    await sb.from('pacientes').update({ nombre, correo }).eq('id', claimId);
+    // No sobreescribimos el nombre: en este flujo, quien llena el
+    // formulario puede ser el tutor legal, no el paciente — su nombre
+    // no debe reemplazar el del paciente que ya existe en el expediente.
+    await sb.from('pacientes').update({ correo }).eq('id', claimId);
   } else {
     const { data: nuevoPaciente, error: errPerfil } = await sb.from('pacientes').insert({
       auth_user_id: data.user.id,

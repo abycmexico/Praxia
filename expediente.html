@@ -33,6 +33,10 @@
   .volver:hover{color:var(--ink);}
   .encabezado{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:8px;}
   .encabezado-titulo{display:flex;align-items:center;gap:14px;}
+  .pac-menor-tag{display:inline-block;font-size:10px;font-weight:800;letter-spacing:.5px;text-transform:uppercase;padding:4px 10px;border-radius:20px;background:#FDE8E8;color:#b23b3b;}
+  .bloque-menor{border-color:#f0c9c9;background:#FFFBFB;}
+  .check-fila-menor{display:flex;align-items:center;gap:8px;font-size:14px;font-weight:700;cursor:pointer;}
+  .check-fila-menor input{width:auto;}
   .avatar-expediente{width:46px;height:46px;border-radius:50%;background:var(--primario-suave);color:#fff;font-weight:800;font-size:16px;display:flex;align-items:center;justify-content:center;flex-shrink:0;overflow:hidden;background-size:cover;background-position:center;}
   h1{font-size:27px;line-height:1.2;}
   .datos-rapidos{color:var(--gray);font-size:13.5px;margin-bottom:16px;line-height:1.7;}
@@ -165,6 +169,7 @@
       <div class="encabezado-titulo">
         <div class="avatar-expediente" id="avatarExpediente"></div>
         <h1 id="nombrePaciente"></h1>
+        <span class="pac-menor-tag" id="tagMenorExpediente" style="display:none;">Menor de edad</span>
       </div>
     </div>
     <p class="datos-rapidos" id="datosRapidos"></p>
@@ -315,6 +320,34 @@
             <div class="campo">
               <label for="pais">País</label>
               <input type="text" id="pais">
+            </div>
+          </div>
+        </div>
+
+        <div class="bloque bloque-menor" id="bloqueMenor">
+          <label class="check-fila-menor">
+            <input type="checkbox" id="esMenorEdad">
+            <span>Es menor de edad</span>
+          </label>
+          <div id="bloqueTutorFicha" style="display:none;margin-top:14px;">
+            <p class="bh">Al ser menor de edad, el consentimiento y el manejo de su información los da el tutor legal.</p>
+            <div class="rejilla">
+              <div class="campo">
+                <label for="tutorNombre">Nombre del tutor legal</label>
+                <input type="text" id="tutorNombre">
+              </div>
+              <div class="campo">
+                <label for="tutorRelacion">Relación con el paciente</label>
+                <input type="text" id="tutorRelacion" placeholder="Ej. madre, padre, tutor legal">
+              </div>
+              <div class="campo">
+                <label for="tutorTelefono">Teléfono del tutor</label>
+                <input type="tel" id="tutorTelefono">
+              </div>
+              <div class="campo">
+                <label for="tutorCorreo">Correo del tutor</label>
+                <input type="email" id="tutorCorreo">
+              </div>
             </div>
           </div>
         </div>
@@ -919,6 +952,14 @@ function pintarFicha(){
   pintarAvatarExpediente();
   actualizarDatosRapidos();
 
+  document.getElementById('tagMenorExpediente').style.display = paciente.es_menor_edad ? 'inline-block' : 'none';
+  document.getElementById('esMenorEdad').checked = !!paciente.es_menor_edad;
+  document.getElementById('bloqueTutorFicha').style.display = paciente.es_menor_edad ? 'block' : 'none';
+  document.getElementById('tutorNombre').value = paciente.tutor_nombre || '';
+  document.getElementById('tutorRelacion').value = paciente.tutor_relacion || '';
+  document.getElementById('tutorTelefono').value = paciente.tutor_telefono || '';
+  document.getElementById('tutorCorreo').value = paciente.tutor_correo || '';
+
   document.getElementById('nombre').value = paciente.nombre || '';
   document.getElementById('correo').value = paciente.correo || '';
   document.getElementById('telefono').value = paciente.telefono || '';
@@ -993,10 +1034,22 @@ function calcularEdad(fechaIso){
   return edad >= 0 && edad < 130 ? edad : null;
 }
 
+document.getElementById('esMenorEdad').addEventListener('change', (e)=>{
+  document.getElementById('bloqueTutorFicha').style.display = e.target.checked ? 'block' : 'none';
+  document.getElementById('tagMenorExpediente').style.display = e.target.checked ? 'inline-block' : 'none';
+});
+
 document.getElementById('formFicha').addEventListener('submit', async (e)=>{
   e.preventDefault();
   const btn = document.getElementById('btnGuardarFicha');
   const msg = document.getElementById('msgFicha');
+
+  if(document.getElementById('esMenorEdad').checked && !document.getElementById('tutorNombre').value.trim()){
+    msg.textContent = 'Al marcar "Es menor de edad", necesitas el nombre del tutor legal.';
+    msg.className = 'msg err';
+    return;
+  }
+
   btn.disabled = true;
   msg.className = 'msg';
   msg.textContent = 'Guardando...';
@@ -1005,6 +1058,11 @@ document.getElementById('formFicha').addEventListener('submit', async (e)=>{
     nombre: document.getElementById('nombre').value.trim(),
     telefono: vacioNull(document.getElementById('telefono').value),
     fecha_nacimiento: vacioNull(document.getElementById('fechaNacimiento').value),
+    es_menor_edad: document.getElementById('esMenorEdad').checked,
+    tutor_nombre: vacioNull(document.getElementById('tutorNombre').value),
+    tutor_relacion: vacioNull(document.getElementById('tutorRelacion').value),
+    tutor_telefono: vacioNull(document.getElementById('tutorTelefono').value),
+    tutor_correo: vacioNull(document.getElementById('tutorCorreo').value),
     genero: vacioNull(document.getElementById('genero').value),
     pronombres: vacioNull(document.getElementById('pronombres').value),
     ocupacion: vacioNull(document.getElementById('ocupacion').value),
