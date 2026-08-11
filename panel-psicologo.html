@@ -174,13 +174,18 @@
   .consultorio-cabecera{display:flex;align-items:center;gap:20px;margin-bottom:24px;}
   .consultorio-logo-box{display:flex;flex-direction:column;align-items:center;gap:10px;}
   .consultorio-logo-preview{width:72px;height:72px;border-radius:18px;background:var(--primario-suave);color:#fff;font-weight:800;font-size:22px;display:flex;align-items:center;justify-content:center;overflow:hidden;background-size:cover;background-position:center;}
-  .grid-consultorio-atajos{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;}
+  .grid-consultorio-atajos{display:grid;grid-template-columns:repeat(5,1fr);gap:14px;}
+  .filtros-historial{display:flex;gap:8px;flex-wrap:wrap;margin:14px 0 8px;}
+  .filtro-historial-btn{padding:8px 16px;border-radius:20px;border:1.5px solid var(--line);background:#fff;font-size:12.5px;font-weight:700;cursor:pointer;font-family:inherit;color:var(--gray);}
+  .filtro-historial-btn:hover{border-color:var(--primario);}
+  .filtro-historial-btn.active{background:var(--primario);border-color:var(--primario);color:#fff;}
+  .contador-historial{font-size:13px;font-weight:700;color:var(--ink);margin-bottom:16px;}
   .atajo-consultorio{background:#fff;border:1.5px solid var(--line);border-radius:16px;padding:22px 10px;text-align:center;cursor:pointer;font-family:inherit;box-shadow:0 2px 10px rgba(0,0,0,.04);}
   .atajo-consultorio:hover{border-color:var(--primario);}
   .ac-icono{display:block;font-size:24px;margin-bottom:8px;}
   .ac-texto{font-size:12.5px;font-weight:700;}
   .aviso-futuro{background:#FAFAF8;}
-  @media(max-width:640px){.grid-consultorio-atajos{grid-template-columns:1fr 1fr;}}
+  @media(max-width:640px){.grid-consultorio-atajos{grid-template-columns:1fr 1fr 1fr;}}
   .integracion-fila{border-top:1px solid var(--line);padding-top:16px;margin-top:16px;}
   .integracion-fila:first-of-type{border-top:none;padding-top:0;margin-top:0;}
   .integracion-toggle{display:flex;align-items:flex-start;gap:12px;}
@@ -304,7 +309,11 @@
     </a>
 
     <nav class="tabs sidebar-nav">
-      <button class="active" data-tab="resumen">
+      <button class="active" data-tab="consultorio">
+        <svg class="icono-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18"></path><path d="M5 21V7l8-4v18"></path><path d="M19 21V11l-6-4"></path><path d="M9 9v.01"></path><path d="M9 13v.01"></path><path d="M9 17v.01"></path></svg>
+        Mi consultorio
+      </button>
+      <button data-tab="resumen">
         <svg class="icono-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="12" width="4" height="8"></rect><rect x="10" y="7" width="4" height="13"></rect><rect x="17" y="3" width="4" height="17"></rect></svg>
         Resumen
       </button>
@@ -319,10 +328,6 @@
       <button data-tab="pacientes">
         <svg class="icono-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="8.5" cy="8" r="3"></circle><path d="M2.5 20c0-3.3 2.7-6 6-6s6 2.7 6 6"></path><circle cx="17" cy="8.5" r="2.5"></circle><path d="M15.5 14.2c2.6.4 4.5 2.6 4.5 5.3"></path></svg>
         Mis pacientes
-      </button>
-      <button data-tab="consultorio">
-        <svg class="icono-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18"></path><path d="M5 21V7l8-4v18"></path><path d="M19 21V11l-6-4"></path><path d="M9 9v.01"></path><path d="M9 13v.01"></path><path d="M9 17v.01"></path></svg>
-        Mi consultorio
       </button>
       <button data-tab="config">
         <svg class="icono-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 13a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V19a2 2 0 0 1-4 0v-.09a1.65 1.65 0 0 0-1.08-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H4a2 2 0 0 1 0-4h.09a1.65 1.65 0 0 0 1.51-1.08 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33h.05A1.65 1.65 0 0 0 11 4.09V4a2 2 0 0 1 4 0v.09c0 .66.4 1.25 1 1.51h.05a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82v.05c.26.6.85 1 1.51 1H20a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
@@ -359,7 +364,7 @@
 
     <main>
 
-  <section id="tab-resumen" class="active">
+  <section id="tab-resumen">
     <div class="saludo-card">
       <div class="saludo-blob"></div>
       <div class="saludo-texto">
@@ -436,6 +441,13 @@
 
     <h2 style="margin-top:40px;">Historial</h2>
     <p class="sub">Sesiones que ya ocurrieron.</p>
+    <div class="filtros-historial">
+      <button class="filtro-historial-btn active" data-rango="semana">Esta semana</button>
+      <button class="filtro-historial-btn" data-rango="15dias">Últimos 15 días</button>
+      <button class="filtro-historial-btn" data-rango="mes">Este mes</button>
+      <button class="filtro-historial-btn" data-rango="todo">Todo</button>
+    </div>
+    <p class="contador-historial" id="contadorHistorial"></p>
     <div id="listaHistorial"><p class="empty">Cargando...</p></div>
   </section>
 
@@ -525,7 +537,7 @@
     <div id="listaPacientes" class="grid-pacientes"><p class="empty">Cargando...</p></div>
   </section>
 
-  <section id="tab-consultorio">
+  <section id="tab-consultorio" class="active">
     <div class="consultorio-cabecera">
       <div class="consultorio-logo-box">
         <div class="consultorio-logo-preview" id="logoPreview"></div>
@@ -540,6 +552,10 @@
     <p class="msg" id="msgLogo"></p>
 
     <div class="grid-consultorio-atajos">
+      <button class="atajo-consultorio" id="atajoAgregarPaciente">
+        <span class="ac-icono">🧑‍🤝‍🧑</span>
+        <span class="ac-texto">Agregar paciente</span>
+      </button>
       <button class="atajo-consultorio" id="atajoNuevaConsulta">
         <span class="ac-icono">＋</span>
         <span class="ac-texto">Crear consulta</span>
@@ -921,6 +937,8 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 const DIAS = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
 let yo = null;
+let pasadasCache = [];
+let rangoHistorialActual = 'semana';
 
 /* ---------- arranque: exigir sesión válida y aprobada ---------- */
 async function iniciar(){
@@ -1620,10 +1638,46 @@ async function cargarCitas(){
     ? proximas.map(c=>tarjetaCita(c, true)).join('')
     : '<p class="empty">No tienes citas próximas.</p>';
 
-  contHist.innerHTML = pasadas.length
-    ? pasadas.map(c=>tarjetaCita(c, false)).join('')
-    : '<p class="empty">Todavía no hay sesiones pasadas.</p>';
+  pasadasCache = pasadas;
+  pintarHistorialFiltrado(rangoHistorialActual);
 }
+
+function pintarHistorialFiltrado(rango){
+  rangoHistorialActual = rango;
+  document.querySelectorAll('.filtro-historial-btn').forEach(b=>{
+    b.classList.toggle('active', b.dataset.rango === rango);
+  });
+
+  const ahora = new Date();
+  let desde = null;
+  if(rango === 'semana'){
+    desde = new Date(ahora); desde.setDate(ahora.getDate() - 7);
+  } else if(rango === '15dias'){
+    desde = new Date(ahora); desde.setDate(ahora.getDate() - 15);
+  } else if(rango === 'mes'){
+    desde = new Date(ahora); desde.setDate(ahora.getDate() - 30);
+  }
+
+  const filtradas = desde
+    ? pasadasCache.filter(c=> new Date(c.fecha_hora) >= desde)
+    : pasadasCache;
+
+  const realizadas = filtradas.filter(c=> c.estado !== 'cancelada').length;
+
+  const contHist = document.getElementById('listaHistorial');
+  const contador = document.getElementById('contadorHistorial');
+
+  const etiquetaRango = {semana:'esta semana', '15dias':'en los últimos 15 días', mes:'este mes', todo:'en total'}[rango];
+  contador.textContent = `${realizadas} sesión${realizadas === 1 ? '' : 'es'} realizada${realizadas === 1 ? '' : 's'} ${etiquetaRango}`;
+
+  contHist.innerHTML = filtradas.length
+    ? filtradas.map(c=>tarjetaCita(c, false)).join('')
+    : '<p class="empty">No hay sesiones en este período.</p>';
+}
+
+document.querySelectorAll('.filtro-historial-btn').forEach(b=>{
+  b.addEventListener('click', ()=> pintarHistorialFiltrado(b.dataset.rango));
+});
 
 function tarjetaCita(c, esProxima){
   const f = new Date(c.fecha_hora);
@@ -1771,6 +1825,10 @@ document.getElementById('inputLogo').addEventListener('change', async (e)=>{
   msg.textContent = 'Logo actualizado.';
   msg.className = 'msg ok';
   setTimeout(()=>{ if(msg.textContent==='Logo actualizado.') msg.textContent=''; }, 3000);
+});
+
+document.getElementById('atajoAgregarPaciente').addEventListener('click', ()=>{
+  document.getElementById('btnNuevoPaciente').click();
 });
 
 document.getElementById('atajoNuevaConsulta').addEventListener('click', ()=>{
