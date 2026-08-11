@@ -11,6 +11,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,400;1,600&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
 <style>
   :root{--primario:#2E7D32;--primario-claro:#7BC043;--primario-suave:#A8C99B;--bg:#F7F9F6;--ink:#1A1A1A;--gray:#7a7a7a;--line:#ececec;--err:#c62828;--ok:#2e7d32;}
   *{box-sizing:border-box;margin:0;padding:0;}
@@ -101,7 +102,9 @@
   .select-orden{width:auto;min-width:200px;padding:9px 12px;font-size:12.5px;}
 
   .grid-pacientes{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:14px;}
-  .pac-card{background:#fff;border:1.5px solid var(--line);border-radius:16px;padding:18px;cursor:grab;transition:box-shadow .15s,border-color .15s,opacity .15s;}
+  .pac-card{position:relative;background:#fff;border:1.5px solid var(--line);border-radius:16px;padding:18px;cursor:grab;transition:box-shadow .15s,border-color .15s,opacity .15s;}
+  .pac-btn-mas{position:absolute;top:12px;right:12px;width:26px;height:26px;border-radius:50%;background:var(--primario);color:#fff;border:none;font-size:16px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;}
+  .pac-btn-mas:hover{background:var(--primario-claro);}
   .pac-card:active{cursor:grabbing;}
   .pac-card.arrastrando{opacity:.4;}
   .pac-card.zona-drop{border-color:var(--primario);border-style:dashed;}
@@ -243,6 +246,16 @@
   .hoy-avatar-item .ha-hora{font-size:9.5px;color:var(--gray);}
 
   .grid-dashboard{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-top:0;}
+  .grid-kpis{display:grid;grid-template-columns:repeat(6,1fr);gap:14px;}
+  .kpi-card{background:#fff;border:1.5px solid var(--line);border-radius:14px;padding:16px 14px;text-align:center;}
+  .kpi-num{font-size:22px;font-weight:800;color:var(--primario);}
+  .kpi-label{font-size:10.5px;color:var(--gray);font-weight:700;margin-top:4px;line-height:1.4;}
+  .grid-graficas{display:grid;grid-template-columns:1.5fr 1fr;gap:16px;margin-top:24px;}
+  .grafica-card{background:#fff;border:1.5px solid var(--line);border-radius:16px;padding:18px 20px;}
+  .grafica-card h4{font-size:12px;letter-spacing:.5px;text-transform:uppercase;color:var(--gray);font-weight:800;margin-bottom:14px;}
+  .grafica-card canvas{max-height:220px;}
+  @media(max-width:900px){.grid-kpis{grid-template-columns:repeat(3,1fr);}.grid-graficas{grid-template-columns:1fr;}}
+  @media(max-width:480px){.grid-kpis{grid-template-columns:1fr 1fr;}}
   .card-dash{background:#fff;border:none;border-radius:20px;padding:22px;box-shadow:0 2px 14px rgba(0,0,0,.05);}
   .card-dash-icono{width:38px;height:38px;border-radius:12px;display:flex;align-items:center;justify-content:center;margin-bottom:14px;}
   .card-dash-icono svg{width:19px;height:19px;}
@@ -442,6 +455,45 @@
         </div>
         <div class="card-dash-num" id="montoPendiente">—</div>
         <div class="card-dash-label">Por cobrar (citas pendientes de pago)</div>
+      </div>
+    </div>
+
+    <h2 style="margin-top:44px;">Tu actividad</h2>
+    <div class="grid-kpis">
+      <div class="kpi-card">
+        <div class="kpi-num" id="kpiMinutosHoy">—</div>
+        <div class="kpi-label">Minutos de sesión hoy</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-num" id="kpiMinutosSemana">—</div>
+        <div class="kpi-label">Minutos esta semana</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-num" id="kpiMinutosMes">—</div>
+        <div class="kpi-label">Minutos este mes</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-num" id="kpiTotalPacientes">—</div>
+        <div class="kpi-label">Pacientes en total</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-num" id="kpiNuevosMes">—</div>
+        <div class="kpi-label">Pacientes nuevos este mes</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-num" id="kpiTasaCancelacion">—</div>
+        <div class="kpi-label">Tasa de cancelación (mes)</div>
+      </div>
+    </div>
+
+    <div class="grid-graficas">
+      <div class="grafica-card">
+        <h4>Ingresos — últimos 7 días</h4>
+        <canvas id="graficaIngresos"></canvas>
+      </div>
+      <div class="grafica-card">
+        <h4>Pacientes por estado</h4>
+        <canvas id="graficaPacientes"></canvas>
       </div>
     </div>
 
@@ -1061,6 +1113,8 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 const DIAS = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
 let yo = null;
 let pasadasCache = [];
+let chartIngresos = null;
+let chartPacientes = null;
 let rangoHistorialActual = 'semana';
 
 /* ---------- arranque: exigir sesión válida y aprobada ---------- */
@@ -1736,6 +1790,7 @@ function pintarPacientes(){
 
     return `
       <div class="pac-card" draggable="${arrastrable}" data-id="${p.id}">
+        <button class="pac-btn-mas" onclick="crearSesionDesdeTarjeta('${p.id}')" title="Crear consulta rápida con ${escapar(p.nombre)}">＋</button>
         <div class="pac-card-top">
           <div class="pac-avatar" ${avatarEstilo}>${p.foto_url ? '' : inicial}</div>
           <div style="min-width:0;">
@@ -1886,7 +1941,7 @@ async function cargarResumen(){
     capitalizar(new Date().toLocaleDateString('es-MX', {weekday:'long', day:'numeric', month:'long'}));
 
   const { data: pacientesDash } = await sb.from('pacientes')
-    .select('estado').eq('psicologo_id', yo.id);
+    .select('estado, fecha_inicio').eq('psicologo_id', yo.id);
   const activos = (pacientesDash||[]).filter(p=> (p.estado||'activo')==='activo').length;
   const inactivos = (pacientesDash||[]).filter(p=> p.estado==='pausa').length;
   document.getElementById('numPacientesActivos').textContent = activos;
@@ -1979,6 +2034,88 @@ async function cargarResumen(){
   contHoy.innerHTML = hoy.length
     ? hoy.map(c=>tarjetaCita(c, true)).join('')
     : '<p class="empty">No tienes sesiones hoy.</p>';
+
+  /* ---------- KPIs adicionales ---------- */
+  const inicioSemana = new Date(); inicioSemana.setDate(inicioSemana.getDate() - 7);
+  const pausa = (pacientesDash||[]).filter(p=> p.estado==='pausa').length;
+  const dadosDeAlta = (pacientesDash||[]).filter(p=> p.estado==='dado_de_alta').length;
+  const archivados = (pacientesDash||[]).filter(p=> p.estado==='archivado').length;
+  const totalPacientesActivos = (pacientesDash||[]).filter(p=> p.estado !== 'archivado').length;
+  const nuevosMes = (pacientesDash||[]).filter(p=>{
+    if(!p.fecha_inicio) return false;
+    const f = new Date(p.fecha_inicio + 'T12:00:00');
+    return f >= inicioMes && f <= finMes;
+  }).length;
+
+  const sumaDuracion = (lista)=> lista
+    .filter(c=> c.estado === 'confirmada' || c.estado === 'completada')
+    .reduce((sum,c)=> sum + (Number(c.duracion_minutos)||0), 0);
+
+  const minutosHoy = sumaDuracion(activas.filter(c=>{
+    const f = new Date(c.fecha_hora); return f >= inicioHoy && f <= finHoy;
+  }));
+  const minutosSemana = sumaDuracion(activas.filter(c=> new Date(c.fecha_hora) >= inicioSemana && new Date(c.fecha_hora) <= ahora));
+  const minutosMes = sumaDuracion(activas.filter(c=> new Date(c.fecha_hora) >= inicioMes && new Date(c.fecha_hora) <= finMes));
+
+  const citasMesTodas = (citasDash||[]).filter(c=>{
+    const f = new Date(c.fecha_hora); return f >= inicioMes && f <= finMes;
+  });
+  const canceladasMes = citasMesTodas.filter(c=> c.estado === 'cancelada');
+  const tasaCancelacion = citasMesTodas.length ? Math.round((canceladasMes.length / citasMesTodas.length) * 100) : 0;
+
+  document.getElementById('kpiMinutosHoy').textContent = minutosHoy;
+  document.getElementById('kpiMinutosSemana').textContent = minutosSemana;
+  document.getElementById('kpiMinutosMes').textContent = minutosMes;
+  document.getElementById('kpiTotalPacientes').textContent = totalPacientesActivos;
+  document.getElementById('kpiNuevosMes').textContent = nuevosMes;
+  document.getElementById('kpiTasaCancelacion').textContent = tasaCancelacion + '%';
+
+  /* ---------- gráfica: ingresos últimos 7 días ---------- */
+  const etiquetasDias = [];
+  const valoresIngresos = [];
+  for(let i = 6; i >= 0; i--){
+    const d = new Date(); d.setDate(d.getDate() - i); d.setHours(0,0,0,0);
+    const finD = new Date(d); finD.setHours(23,59,59,999);
+    etiquetasDias.push(d.toLocaleDateString('es-MX', {weekday:'short'}));
+    const ingresoDia = activas
+      .filter(c=>{
+        const f = new Date(c.fecha_hora);
+        return f >= d && f <= finD && (c.estado==='confirmada' || c.estado==='completada');
+      })
+      .reduce((sum,c)=> sum + (Number(c.precio)||0), 0);
+    valoresIngresos.push(ingresoDia);
+  }
+
+  const ctxIngresos = document.getElementById('graficaIngresos');
+  if(chartIngresos) chartIngresos.destroy();
+  chartIngresos = new Chart(ctxIngresos, {
+    type: 'bar',
+    data: {
+      labels: etiquetasDias,
+      datasets: [{ data: valoresIngresos, backgroundColor: '#2E7D32', borderRadius: 6 }]
+    },
+    options: {
+      plugins: { legend: { display: false } },
+      scales: { y: { beginAtZero: true, ticks: { callback: v => '$'+v } } }
+    }
+  });
+
+  /* ---------- gráfica: pacientes por estado ---------- */
+  const ctxPacientes = document.getElementById('graficaPacientes');
+  if(chartPacientes) chartPacientes.destroy();
+  chartPacientes = new Chart(ctxPacientes, {
+    type: 'doughnut',
+    data: {
+      labels: ['Activos', 'En pausa', 'Dados de alta', 'Archivados'],
+      datasets: [{
+        data: [activos, pausa, dadosDeAlta, archivados],
+        backgroundColor: ['#2E7D32', '#F5A623', '#1a5cb0', '#999']
+      }]
+    },
+    options: {
+      plugins: { legend: { position: 'bottom', labels: { boxWidth: 10, font: { size: 10.5 } } } }
+    }
+  });
 
   const proximasOrdenadas = activas
     .filter(c=> new Date(c.fecha_hora) >= ahora)
@@ -3204,6 +3341,18 @@ function crVolverInicio(){
   crMostrarPaso('crPasoTipo');
 }
 window.crVolverInicio = crVolverInicio;
+
+function crearSesionDesdeTarjeta(pacienteId){
+  crPacienteSel = pacienteId;
+  document.getElementById('crBuscarPaciente').value = '';
+  document.getElementById('msgConsultaRapida').textContent = '';
+  crPintarListaPacientes('');
+  document.getElementById('crDetalleCosto').style.display = 'block';
+  document.getElementById('crBtnCrear').style.display = 'inline-block';
+  crMostrarPaso('crPasoExistente');
+  abrirModal('modalConsultaRapida');
+}
+window.crearSesionDesdeTarjeta = crearSesionDesdeTarjeta;
 
 document.getElementById('crBtnExistente').addEventListener('click', ()=>{
   crPacienteSel = null;
