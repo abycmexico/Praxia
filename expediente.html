@@ -50,6 +50,22 @@
   section{display:none;}
   section.active{display:block;}
   .bloque{border:1.5px solid var(--line);border-radius:16px;padding:22px 24px;margin-bottom:18px;}
+  .grid-resumen{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+  .tarjeta-resumen{border:1.5px solid var(--line);border-radius:16px;padding:18px 20px;background:#fff;}
+  .tarjeta-resumen h4{font-size:12px;letter-spacing:.5px;text-transform:uppercase;color:var(--gray);font-weight:800;margin-bottom:12px;}
+  .tr-cabecera{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;}
+  .tr-cabecera h4{margin-bottom:0;}
+  .btn-ver-mas{background:none;border:none;color:var(--primario);font-size:11.5px;font-weight:700;cursor:pointer;font-family:inherit;}
+  .res-texto{font-size:13px;line-height:1.6;color:var(--ink);}
+  .res-alerta{color:#b23b3b;font-weight:600;}
+  #resAlertaCard{border-color:#f0c9c9;background:#FFFBFB;}
+  .res-lista{display:flex;flex-direction:column;gap:8px;}
+  .res-item{font-size:12.5px;border-bottom:1px solid var(--line);padding-bottom:8px;}
+  .res-item:last-child{border-bottom:none;padding-bottom:0;}
+  .res-item strong{display:block;font-size:13px;margin-bottom:2px;}
+  .res-item .res-meta{color:var(--gray);font-size:11px;}
+  .res-vacio{font-size:12.5px;color:var(--gray);}
+  @media(max-width:700px){.grid-resumen{grid-template-columns:1fr;}}
   .riesgo-bloque{border-color:#f0c9c9;background:#FFFBFB;}
   .item-lista-clinica{border:1.5px solid var(--line);border-radius:12px;padding:14px 16px;margin-bottom:10px;background:#fff;font-size:13px;line-height:1.6;}
   .item-lista-clinica p{margin:2px 0;}
@@ -143,7 +159,8 @@
     <div id="estadoConsentimiento" class="estado-consentimiento"></div>
 
     <nav class="tabs">
-      <button class="active" data-tab="ficha">Ficha</button>
+      <button class="active" data-tab="resumen">Resumen</button>
+      <button data-tab="ficha">Ficha</button>
       <button data-tab="antecedentes">Antecedentes</button>
       <button data-tab="evaluacion">Evaluación</button>
       <button data-tab="diagnostico">Diagnóstico</button>
@@ -156,7 +173,58 @@
       <button data-tab="alta">Seguimiento y alta</button>
     </nav>
 
-    <section id="tab-ficha" class="active">
+    <section id="tab-resumen" class="active">
+      <div class="grid-resumen">
+        <div class="tarjeta-resumen">
+          <h4>Motivo de consulta</h4>
+          <p id="resMotivoConsulta" class="res-texto">—</p>
+        </div>
+
+        <div class="tarjeta-resumen">
+          <h4>Sesiones</h4>
+          <div id="resSesiones" class="res-lista"></div>
+        </div>
+
+        <div class="tarjeta-resumen" id="resAlertaCard" style="display:none;">
+          <h4>⚠ Alerta clínica documentada</h4>
+          <p id="resAlerta" class="res-texto res-alerta"></p>
+        </div>
+
+        <div class="tarjeta-resumen">
+          <div class="tr-cabecera">
+            <h4>Objetivos terapéuticos</h4>
+            <button type="button" class="btn-ver-mas" onclick="irAPestana('objetivos')">Ver todos</button>
+          </div>
+          <div id="resObjetivos" class="res-lista"></div>
+        </div>
+
+        <div class="tarjeta-resumen">
+          <div class="tr-cabecera">
+            <h4>Notas recientes</h4>
+            <button type="button" class="btn-ver-mas" onclick="irAPestana('notas')">Ver todas</button>
+          </div>
+          <div id="resNotas" class="res-lista"></div>
+        </div>
+
+        <div class="tarjeta-resumen">
+          <div class="tr-cabecera">
+            <h4>Evaluaciones recientes</h4>
+            <button type="button" class="btn-ver-mas" onclick="irAPestana('evaluacion')">Ver todas</button>
+          </div>
+          <div id="resEvaluaciones" class="res-lista"></div>
+        </div>
+
+        <div class="tarjeta-resumen">
+          <div class="tr-cabecera">
+            <h4>Documentos recientes</h4>
+            <button type="button" class="btn-ver-mas" onclick="irAPestana('documentos')">Ver todos</button>
+          </div>
+          <div id="resDocumentos" class="res-lista"></div>
+        </div>
+      </div>
+    </section>
+
+    <section id="tab-ficha">
       <form id="formFicha">
         <div class="bloque">
           <h3>Datos personales</h3>
@@ -762,6 +830,7 @@ async function iniciar(){
   cargarObjetivos();
   cargarMedicamentos();
   cargarConsentimiento();
+  cargarResumenPaciente();
 }
 
 /* ---------- consentimiento ---------- */
@@ -1965,6 +2034,123 @@ function escapar(t){
   const d = document.createElement('div');
   d.textContent = t == null ? '' : t;
   return d.innerHTML;
+}
+
+/* ---------- resumen / dashboard del paciente ---------- */
+function irAPestana(tab){
+  document.querySelector(`nav.tabs button[data-tab="${tab}"]`)?.click();
+}
+window.irAPestana = irAPestana;
+
+async function cargarResumenPaciente(){
+  // Motivo de consulta
+  document.getElementById('resMotivoConsulta').textContent = paciente.motivo_consulta || 'Sin registrar todavía.';
+
+  // Alertas clínicas (solo si hay algo documentado)
+  const alertaCard = document.getElementById('resAlertaCard');
+  if(paciente.riesgo_nivel || paciente.riesgo_actual){
+    alertaCard.style.display = 'block';
+    const nivel = paciente.riesgo_nivel ? `Nivel registrado: ${paciente.riesgo_nivel}. ` : '';
+    document.getElementById('resAlerta').textContent = nivel + (paciente.riesgo_actual || '');
+  } else {
+    alertaCard.style.display = 'none';
+  }
+
+  // Sesiones: próxima y última
+  const { data: citas } = await sb.from('citas')
+    .select('fecha_hora, estado').eq('paciente_id', paciente.id)
+    .neq('estado', 'cancelada').order('fecha_hora');
+
+  const contSesiones = document.getElementById('resSesiones');
+  if(citas && citas.length){
+    const ahora = new Date();
+    const futuras = citas.filter(c=> new Date(c.fecha_hora) >= ahora);
+    const pasadas = citas.filter(c=> new Date(c.fecha_hora) < ahora);
+    const proxima = futuras[0];
+    const ultima = pasadas[pasadas.length - 1];
+
+    let html = '';
+    html += `<div class="res-item"><strong>Próxima sesión</strong><span class="res-meta">${proxima ? new Date(proxima.fecha_hora).toLocaleString('es-MX',{dateStyle:'medium',timeStyle:'short'}) : 'No hay ninguna agendada'}</span></div>`;
+    html += `<div class="res-item"><strong>Última sesión</strong><span class="res-meta">${ultima ? new Date(ultima.fecha_hora).toLocaleString('es-MX',{dateStyle:'medium',timeStyle:'short'}) : 'Todavía no hay sesiones pasadas'}</span></div>`;
+    contSesiones.innerHTML = html;
+  } else {
+    contSesiones.innerHTML = '<p class="res-vacio">Sin sesiones registradas.</p>';
+  }
+
+  // Objetivos terapéuticos: mini resumen de progreso
+  const { data: objetivos } = await sb.from('objetivos_terapeuticos')
+    .select('objetivo, estado').eq('paciente_id', paciente.id).order('creado_en', {ascending:false});
+
+  const contObjetivos = document.getElementById('resObjetivos');
+  if(objetivos && objetivos.length){
+    const etiquetas = { pendiente:'Pendiente', en_progreso:'En progreso', logrado:'Logrado', pausado:'Pausado' };
+    contObjetivos.innerHTML = objetivos.slice(0,4).map(o=>`
+      <div class="res-item">
+        <strong>${escapar(o.objetivo)}</strong>
+        <span class="res-meta">${etiquetas[o.estado] || o.estado}</span>
+      </div>
+    `).join('');
+  } else {
+    contObjetivos.innerHTML = '<p class="res-vacio">Sin objetivos registrados.</p>';
+  }
+
+  // Notas recientes
+  const { data: citasPropias } = await sb.from('citas')
+    .select('id').eq('paciente_id', paciente.id);
+  const idsCitas = (citasPropias || []).map(c=>c.id);
+
+  const contNotas = document.getElementById('resNotas');
+  let notasRes = [];
+  if(idsCitas.length){
+    const { data } = await sb.from('notas_sesion')
+      .select('actualizado_en, observaciones').in('cita_id', idsCitas)
+      .order('actualizado_en', {ascending:false}).limit(2);
+    notasRes = data || [];
+  }
+  if(notasRes.length){
+    contNotas.innerHTML = notasRes.map(n=>`
+      <div class="res-item">
+        <span class="res-meta">${new Date(n.actualizado_en).toLocaleDateString('es-MX')}</span>
+        <div>${escapar((n.observaciones || 'Sin observaciones registradas.').slice(0,120))}${n.observaciones && n.observaciones.length > 120 ? '…' : ''}</div>
+      </div>
+    `).join('');
+  } else {
+    contNotas.innerHTML = '<p class="res-vacio">Sin notas registradas.</p>';
+  }
+
+  // Evaluaciones recientes
+  const { data: evalRes } = await sb.from('evaluaciones_psicologicas')
+    .select('nombre_prueba, fecha_aplicacion').eq('paciente_id', paciente.id)
+    .order('creado_en', {ascending:false}).limit(2);
+
+  const contEval = document.getElementById('resEvaluaciones');
+  if(evalRes && evalRes.length){
+    contEval.innerHTML = evalRes.map(e=>`
+      <div class="res-item">
+        <strong>${escapar(e.nombre_prueba)}</strong>
+        <span class="res-meta">${e.fecha_aplicacion ? new Date(e.fecha_aplicacion+'T12:00:00').toLocaleDateString('es-MX') : 'Sin fecha'}</span>
+      </div>
+    `).join('');
+  } else {
+    contEval.innerHTML = '<p class="res-vacio">Sin evaluaciones registradas.</p>';
+  }
+
+  // Documentos recientes
+  const { data: docsRes } = await sb.from('documentos')
+    .select('nombre, subido_en').eq('paciente_id', paciente.id)
+    .order('subido_en', {ascending:false}).limit(3);
+
+  const contDocs = document.getElementById('resDocumentos');
+  if(docsRes && docsRes.length){
+    contDocs.innerHTML = docsRes.map(d=>`
+      <div class="res-item">
+        <strong>${escapar(d.nombre)}</strong>
+        <span class="res-meta">${new Date(d.subido_en).toLocaleDateString('es-MX')}</span>
+      </div>
+    `).join('');
+  } else {
+    contDocs.innerHTML = '<p class="res-vacio">Sin documentos.</p>';
+  }
 }
 
 iniciar();
