@@ -2477,7 +2477,91 @@ const AYUDAS = {
   diagnostico: 'Diagnóstico si lo hay. No todos los casos requieren uno, y anotarlo tiene consecuencias: queda en un expediente clínico.',
   codigoDiagnostico: 'Clave del sistema que uses. CIE-11 es el vigente en México para efectos oficiales; el DSM-5-TR es de uso clínico frecuente.',
   diagnosticoFecha: 'Cuándo se estableció esta impresión diagnóstica. Permite seguir cómo evoluciona el caso.',
-  diagnosticosDiferenciales: 'Qué otros cuadros consideraste y por qué los descartaste. Documentarlo respalda tu razonamiento clínico.'
+  diagnosticosDiferenciales: 'Qué otros cuadros consideraste y por qué los descartaste. Documentarlo respalda tu razonamiento clínico.',
+
+  /* --- antecedentes --- */
+  antecedentesMedicos: 'Enfermedades, cirugías y padecimientos crónicos. Algunos cuadros médicos explican síntomas que parecen psicológicos.',
+  antecedentesPsicologicos: 'Procesos terapéuticos previos: con quién, cuánto duraron, por qué terminaron y cómo le fue.',
+  antecedentesPsiquiatricos: 'Diagnósticos y atención psiquiátrica previa, incluyendo internamientos si los hubo.',
+  tratamientosAnteriores: 'Qué se intentó antes, farmacológico o psicoterapéutico, y qué resultado dio. Evita repetir lo que ya no funcionó.',
+  hospitalizaciones: 'Internamientos médicos o psiquiátricos, con fecha y motivo.',
+  consumoSustancias: 'Alcohol, tabaco y otras sustancias: cuáles, con qué frecuencia y desde cuándo. Incluye el uso de medicamentos sin prescripción.',
+  alergias: 'Alergias conocidas, sobre todo a medicamentos. Es dato relevante si se canaliza a psiquiatría.',
+  enfermedadesRelevantes: 'Padecimientos actuales que puedan influir en el proceso o en el tratamiento.',
+  antecedentesFamiliares: 'Padecimientos psiquiátricos, neurológicos o consumo en la familia directa. Aporta a la lectura del caso.',
+  historiaPrenatal: 'Embarazo, parto y primeros meses. Relevante sobre todo en casos infantiles o del neurodesarrollo.',
+  historiaInfancia: 'Cómo fue su infancia: crianza, hitos del desarrollo, eventos importantes.',
+  historiaAdolescencia: 'Cambios, conflictos y experiencias significativas de esa etapa.',
+  historiaDesarrollo: 'Hitos del desarrollo motor, del lenguaje y social, y si hubo retrasos.',
+  relacionesFamiliares: 'Con quién vive y cómo son esos vínculos hoy.',
+  dinamicaFamiliar: 'Cómo funciona la familia: roles, comunicación, límites, conflictos recurrentes.',
+  historiaEscolar: 'Trayectoria académica, rendimiento, adaptación y dificultades.',
+  historiaLaboral: 'Trayectoria de trabajo, estabilidad, satisfacción y conflictos.',
+  relacionesPareja: 'Historia de pareja y características de la relación actual si la hay.',
+  vidaSocial: 'Amistades, actividades y qué tan aislada o acompañada está la persona.',
+  eventosSignificativos: 'Pérdidas, duelos, violencia, accidentes o experiencias adversas que hayan marcado su historia. Anota solo lo que la persona decida compartir.',
+  recursosPersonales: 'Fortalezas propias: habilidades de afrontamiento, intereses, logros, aquello en lo que se apoya.',
+  redApoyo: 'Con quién cuenta realmente ante una dificultad. Es un factor protector de primer orden.',
+
+  /* --- plan de tratamiento --- */
+  planEnfoque: 'Marco teórico desde el que trabajarás el caso: cognitivo-conductual, psicodinámico, sistémico, humanista, integrativo.',
+  planIntervenciones: 'Técnicas y estrategias concretas que piensas usar, no objetivos generales.',
+  planFrecuencia: 'Cada cuánto se sesionará durante esta fase del tratamiento.',
+  planDuracionEstimada: 'Cuántas sesiones o meses estimas. Es una estimación y puede ajustarse.',
+  planIndicadores: 'Cómo sabrás que hay avance: qué señales concretas y observables lo mostrarían.',
+  planRecomendaciones: 'Indicaciones para el paciente fuera de sesión, o sugerencias de canalización.',
+
+  /* --- riesgo --- */
+  riesgoActual: 'Descripción clínica del riesgo al momento de esta valoración. Si no hay indicadores, anótalo explícitamente: dejarlo en blanco no equivale a haber descartado el riesgo.',
+  riesgoIdeacionSuicida: 'Si hay ideas de muerte o suicidio, documenta frecuencia, intensidad, si existe un plan, si hay acceso a medios y si ha habido intentos previos. El antecedente de intento es el predictor más fuerte.',
+  riesgoAutolesiones: 'Conductas autolesivas sin intención suicida: tipo, frecuencia y qué función parecen cumplir.',
+  riesgoTerceros: 'Indicadores de riesgo hacia otras personas. Puede implicar deberes legales de protección: valóralo con cuidado.',
+  riesgoNivel: 'Tu valoración global del riesgo en este momento. Se registra con fecha porque el riesgo cambia y hay que reevaluarlo.',
+  riesgoFactoresRiesgo: 'Lo que eleva el riesgo: intentos previos, aislamiento, consumo, desesperanza, pérdida reciente, acceso a medios letales.',
+  riesgoFactoresProtectores: 'Lo que lo contiene: red de apoyo, motivos para vivir, responsabilidades percibidas, creencias, vínculo terapéutico.',
+  riesgoPlanIntervencion: 'Qué acordaste hacer: plan de seguridad, contacto de emergencia, retiro de medios, canalización, frecuencia de seguimiento. En México, la Línea de la Vida es 800 911 2000, 24 horas. Documentarlo protege al paciente y respalda tu actuación.',
+  riesgoFechaEvaluacion: 'Fecha de esta valoración. El riesgo se reevalúa: una valoración vieja no describe la situación actual.',
+
+  /* --- seguimiento y alta --- */
+  seguimientoEvolucionGeneral: 'Cómo ha evolucionado el caso desde el inicio, en conjunto.',
+  seguimientoObjetivosAlcanzados: 'Qué se logró efectivamente durante el proceso.',
+  seguimientoObjetivosPendientes: 'Qué quedó sin trabajar y por qué. Es información valiosa si retoma terapia después.',
+  fechaAlta: 'Fecha en que concluye el proceso.',
+  estadoAlta: 'Cómo termina: alta por objetivos cumplidos, abandono, canalización a otro profesional o suspensión.',
+  motivoAlta: 'Por qué concluye el proceso, en tus palabras.',
+  recomendacionesAlta: 'Qué le recomiendas al cerrar: mantenimiento, señales de alarma, cuándo volver a consultar.',
+  seguimientoPosterior: 'Si se acordó algún contacto de seguimiento, cuándo y de qué tipo.',
+
+  /* --- notas de sesión --- */
+  nObjetivos: 'Qué se buscaba trabajar en esta sesión concreta.',
+  nObservaciones: 'Lo relevante de la sesión: contenido, cómo llegó, qué se observó. Redáctalo pensando en que es un documento clínico que otro profesional podría leer.',
+  nTareas: 'Qué se acordó que hará entre esta sesión y la siguiente.',
+  nEvolucion: 'Cambios respecto a sesiones anteriores: mejoría, retroceso o sin cambios.',
+
+  /* --- evaluaciones y pruebas --- */
+  epNombre: 'Nombre completo de la prueba o instrumento aplicado.',
+  epFecha: 'Fecha de aplicación. Los resultados pierden vigencia con el tiempo.',
+  epAplicadaPor: 'Quién la aplicó y calificó, si no fuiste tú.',
+  epMotivo: 'Qué pregunta clínica buscabas responder con esta prueba.',
+  epResultado: 'Puntajes obtenidos, con la escala o baremo usado.',
+  epInterpretacion: 'Qué significan esos puntajes en este caso. Un puntaje sin interpretación no dice nada por sí solo.',
+  epObservaciones: 'Condiciones de aplicación y conducta durante la prueba: pueden afectar la validez del resultado.',
+
+  /* --- objetivos terapéuticos --- */
+  objTexto: 'Formúlalo concreto y observable, de modo que se pueda saber si se cumplió.',
+  objDescripcion: 'Cómo se trabajará y cómo se medirá el avance.',
+  objPrioridad: 'Qué tan urgente es respecto a los demás objetivos.',
+  objFecha: 'Fecha estimada para alcanzarlo. Sirve para revisar el avance, no es un plazo rígido.',
+
+  /* --- medicación --- */
+  medNombre: 'Nombre del medicamento que el paciente ya tiene prescrito. Aquí solo se registra lo indicado por un médico: la prescripción no es facultad del psicólogo.',
+  medDosis: 'Dosis tal como fue prescrita por el médico tratante.',
+  medFrecuencia: 'Cada cuánto lo toma, según la indicación médica.',
+  medMedico: 'Médico o psiquiatra que lo prescribió. Útil para coordinar la atención.',
+  medFechaInicio: 'Desde cuándo lo toma.',
+  medFechaFin: 'Hasta cuándo, si el tratamiento ya concluyó.',
+  medMotivo: 'Para qué fue indicado.',
+  medObservaciones: 'Efectos referidos, adherencia y cambios que el paciente reporte.'
 };
 
 /* Sugerencias para acelerar el llenado. En campos de una línea se ofrecen
@@ -2501,7 +2585,39 @@ const SUGERENCIAS = {
   evalMemoria: ['Sin fallas aparentes de memoria', 'Refiere olvidos cotidianos frecuentes', 'Dificultad de evocación reciente'],
   evalInsight: ['Insight completo: reconoce el problema y la necesidad de ayuda', 'Insight parcial', 'Insight ausente'],
   evalJuicio: ['Juicio conservado', 'Juicio debilitado', 'Juicio alterado'],
-  evalFactoresProtectores: ['Red de apoyo familiar presente', 'Buena adherencia al tratamiento', 'Proyecto de vida definido', 'Motivos para vivir identificados']
+  evalFactoresProtectores: ['Red de apoyo familiar presente', 'Buena adherencia al tratamiento', 'Proyecto de vida definido', 'Motivos para vivir identificados'],
+
+  /* antecedentes: lo mas comun es "sin antecedentes", y escribirlo cada vez cansa */
+  antecedentesMedicos: ['Sin antecedentes médicos relevantes', 'Niega enfermedades crónicas'],
+  antecedentesPsicologicos: ['Sin atención psicológica previa', 'Proceso terapéutico previo concluido', 'Abandonó un proceso previo'],
+  antecedentesPsiquiatricos: ['Sin antecedentes psiquiátricos', 'En tratamiento psiquiátrico actual', 'Tratamiento psiquiátrico previo'],
+  hospitalizaciones: ['Sin hospitalizaciones previas'],
+  alergias: ['Niega alergias conocidas'],
+  consumoSustancias: ['Niega consumo de sustancias', 'Consumo social de alcohol', 'Tabaquismo activo', 'Consumo de alcohol de riesgo'],
+  antecedentesFamiliares: ['Sin antecedentes familiares relevantes', 'Antecedente familiar de depresión', 'Antecedente familiar de consumo de alcohol'],
+  redApoyo: ['Red de apoyo familiar amplia', 'Red de apoyo limitada', 'Cuenta con apoyo de pareja', 'Aislamiento social'],
+
+  /* plan */
+  planEnfoque: ['Cognitivo-conductual', 'Psicodinámico', 'Sistémico', 'Humanista', 'Terapia breve centrada en soluciones', 'Integrativo'],
+  planFrecuencia: ['Semanal', 'Quincenal', 'Mensual'],
+  planDuracionEstimada: ['De 6 a 8 sesiones', 'De 10 a 12 sesiones', 'De 3 a 6 meses', 'Proceso abierto, a revisar'],
+
+  /* riesgo: redaccion sobria y explicita, que es lo que se espera del expediente */
+  riesgoActual: ['Sin indicadores de riesgo al momento de la valoración', 'Riesgo presente, se documenta a continuación'],
+  riesgoIdeacionSuicida: ['Niega ideación suicida', 'Ideación pasiva, sin plan ni intención', 'Ideación con plan estructurado', 'Antecedente de intento previo'],
+  riesgoAutolesiones: ['Niega conductas autolesivas', 'Autolesiones previas, sin episodios recientes', 'Autolesiones activas'],
+  riesgoTerceros: ['Sin indicadores de riesgo hacia terceros'],
+  riesgoNivel: ['Sin riesgo detectado', 'Bajo', 'Moderado', 'Alto'],
+  riesgoPlanIntervencion: ['Se elabora plan de seguridad con el paciente', 'Se identifica contacto de emergencia', 'Se acuerda retiro de medios de riesgo del entorno', 'Se canaliza a valoración psiquiátrica', 'Se incrementa la frecuencia de sesiones', 'Se proporciona la Línea de la Vida: 800 911 2000'],
+
+  /* alta */
+  estadoAlta: ['Alta por objetivos cumplidos', 'Alta por mejoría', 'Abandono del proceso', 'Canalización a otro profesional', 'Suspensión temporal'],
+  seguimientoPosterior: ['Sin seguimiento acordado', 'Seguimiento telefónico en un mes', 'Sesión de seguimiento a los tres meses', 'Puerta abierta a solicitud del paciente'],
+
+  /* modales */
+  objPrioridad: ['Alta', 'Media', 'Baja'],
+  nEvolucion: ['Sin cambios respecto a la sesión anterior', 'Mejoría', 'Retroceso', 'Avance en los objetivos planteados'],
+  medFrecuencia: ['Cada 24 horas', 'Cada 12 horas', 'Cada 8 horas', 'Por la mañana', 'Por la noche', 'Según indicación médica']
 };
 
 function insertarSugerencia(campo, texto){
