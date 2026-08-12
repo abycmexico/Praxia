@@ -35,6 +35,8 @@
   .sidebar-user-info{min-width:0;}
   .sidebar-user-nombre{font-size:12.5px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
   .sidebar-user-rol{font-size:10.5px;color:var(--gray);}
+  .btn-admin-maestro{display:block;text-align:center;background:#F2F6F1;border:1.5px solid var(--primario-suave);border-radius:20px;padding:9px;font-size:11.5px;font-weight:800;color:var(--primario);margin-top:8px;text-decoration:none;}
+  .btn-admin-maestro:hover{background:var(--primario);color:#fff;border-color:var(--primario);}
   .btn-salir{background:none;border:1.5px solid var(--line);border-radius:20px;padding:9px;font-size:11.5px;font-weight:700;cursor:pointer;font-family:inherit;color:var(--gray);margin-top:8px;}
   .btn-salir:hover{border-color:var(--err);color:var(--err);}
   .marca-pie{display:flex;justify-content:center;padding-top:16px;opacity:.35;}
@@ -396,6 +398,7 @@
         <div class="sidebar-user-rol">Psicólogo clínico</div>
       </div>
     </div>
+    <a id="atajoAdmin" class="btn-admin-maestro" href="./admin.html" style="display:none;">Administración de Praxia</a>
     <button id="btnSalir" class="btn-salir">Cerrar sesión</button>
     <div class="marca-pie"><img src="./assets/praxia-isotipo.png" alt="Praxia"></div>
   </aside>
@@ -1193,6 +1196,28 @@ let chartIngresos = null;
 let chartPacientes = null;
 let rangoHistorialActual = 'semana';
 
+/* ---------- atajo al panel maestro ---------- */
+// Esto solo esconde o muestra el boton. Quien puede de verdad entrar y
+// aprobar lo decide la base: es_admin() en las politicas de RLS.
+const CORREO_ADMIN = 'abycmexico@gmail.com';
+
+async function mostrarAtajoAdmin(correo){
+  if(correo !== CORREO_ADMIN) return;
+
+  const atajo = document.getElementById('atajoAdmin');
+  atajo.style.display = 'block';
+
+  // Cuantos consultorios esperan aprobacion, para no tener que entrar a
+  // revisar el panel a ciegas.
+  const { count } = await sb.from('psicologos')
+    .select('id', { count: 'exact', head: true })
+    .eq('estado', 'pendiente');
+
+  if(count > 0){
+    atajo.textContent = `Administración · ${count} por aprobar`;
+  }
+}
+
 /* ---------- arranque: exigir sesión válida y aprobada ---------- */
 async function iniciar(){
   const { data: { session } } = await sb.auth.getSession();
@@ -1218,6 +1243,7 @@ async function iniciar(){
   }
 
   yo = psi;
+  mostrarAtajoAdmin(session.user.email);
   document.getElementById('quien').textContent = psi.nombre;
   document.getElementById('avatarIniciales').textContent = iniciales(psi.nombre);
   document.getElementById('miIdTexto').textContent = psi.id;
