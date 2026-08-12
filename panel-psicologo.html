@@ -50,6 +50,27 @@
   .eq-caja{background:#F7FAF6;border:1.5px solid var(--primario-suave);border-radius:12px;padding:15px 17px;margin-top:16px;}
   .eq-caja-titulo{font-size:12.5px;font-weight:800;margin-bottom:5px;}
   .eq-caja-texto{font-size:11.5px;color:var(--gray);font-weight:600;line-height:1.55;}
+  /* organigrama y KPIs del consultorio */
+  .eq-totales{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:16px;}
+  .eq-total{background:#F7FAF6;border:1.5px solid var(--line);border-radius:12px;padding:13px 14px;text-align:center;}
+  .eq-total-num{font-size:19px;font-weight:800;color:var(--primario);line-height:1.2;}
+  .eq-total-etq{font-size:10.5px;color:var(--gray);font-weight:700;margin-top:3px;line-height:1.3;}
+  .eq-area{margin-top:20px;}
+  .eq-area-titulo{font-size:11px;font-weight:800;letter-spacing:.6px;text-transform:uppercase;color:var(--gray);padding-bottom:7px;border-bottom:1.5px solid var(--line);display:flex;align-items:center;gap:8px;}
+  .eq-area-titulo span{background:#EDF6EC;color:var(--primario);border-radius:20px;padding:1px 8px;font-size:10px;letter-spacing:0;}
+  .eq-kpis{display:flex;gap:12px;flex-wrap:wrap;margin-top:5px;font-size:11px;color:var(--gray);font-weight:600;}
+  .eq-kpis strong{color:var(--ink);font-weight:800;}
+  @media(max-width:700px){ .eq-totales{grid-template-columns:repeat(2,1fr);} }
+
+  /* pantalla de baja del consultorio */
+  .baja-pantalla{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px 24px;background:var(--bg);}
+  .baja-logo{height:28px;margin-bottom:28px;}
+  .baja-caja{background:#fff;border:1.5px solid var(--line);border-radius:18px;padding:32px 34px;max-width:520px;width:100%;box-shadow:0 2px 16px rgba(0,0,0,.05);}
+  .baja-caja h1{font-size:22px;margin-bottom:10px;line-height:1.3;}
+  .baja-sub{font-size:13.5px;color:var(--gray);line-height:1.65;font-weight:600;margin-bottom:16px;}
+  .baja-dato{background:#F7FAF6;border:1.5px solid var(--primario-suave);border-radius:12px;padding:14px 16px;font-size:12.5px;color:var(--ink);line-height:1.6;font-weight:600;margin-bottom:18px;}
+  .baja-dato strong{display:block;margin-bottom:4px;color:var(--primario);}
+
   .eq-quitar{background:none;border:1.5px solid var(--line);border-radius:20px;padding:5px 12px;font-size:11px;font-weight:700;font-family:inherit;color:var(--gray);cursor:pointer;white-space:nowrap;}
   .eq-quitar:hover{border-color:var(--err);color:var(--err);}
   .rejilla-alta{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px;}
@@ -1219,6 +1240,35 @@ let chartIngresos = null;
 let chartPacientes = null;
 let rangoHistorialActual = 'semana';
 
+/* ---------- baja de un consultorio ---------- */
+function pintarBajaConsultorio(psi){
+  const consultorio = psi.baja_consultorio_nombre || 'el consultorio';
+  const fecha = new Date(psi.baja_consultorio_en).toLocaleDateString('es-MX', { day:'numeric', month:'long', year:'numeric' });
+
+  document.body.innerHTML = `
+    <div class="baja-pantalla">
+      <img src="./assets/praxia-logo-completo.png" alt="Praxia" class="baja-logo">
+      <div class="baja-caja">
+        <h1>${escapar(consultorio)} te dio de baja</h1>
+        <p class="baja-sub">El ${escapar(fecha)} el responsable de ${escapar(consultorio)} retiró tu acceso al consultorio.</p>
+
+        <div class="baja-dato">
+          <strong>Tu información sigue guardada.</strong>
+          Tus pacientes y sus expedientes siguen siendo tuyos: no se borraron ni pasaron a nadie más.
+        </div>
+
+        <p class="baja-sub">Si necesitas recuperar el acceso, pídele al responsable de ${escapar(consultorio)} que te dé de alta otra vez con una liga nueva.</p>
+
+        <button id="btnSalirBaja" class="btn btn-primary" style="width:auto;margin-top:20px;">Cerrar sesión</button>
+      </div>
+    </div>`;
+
+  document.getElementById('btnSalirBaja').addEventListener('click', async ()=>{
+    await sb.auth.signOut();
+    location.href = './login.html';
+  });
+}
+
 /* ---------- equipo del consultorio ---------- */
 /* El dueño ve la operacion de su consultorio, no los expedientes de los
    pacientes que atienden sus colaboradores. Esa separacion la sostiene la
@@ -1275,40 +1325,90 @@ async function crearConsultorio(){
 
 async function pintarEquipoDueno(cont){
   const { data: equipo, error } = await sb.from('psicologos')
-    .select('id, nombre, correo, estado, rol_consultorio')
+    .select('id, nombre, correo, estado, rol_consultorio, especialidad')
     .eq('consultorio_id', yo.consultorio_id);
 
   if(error){ cont.innerHTML = `<p class="empty">No se pudo cargar el equipo: ${escapar(error.message)}</p>`; return; }
 
-  // Sesiones del mes por psicologo, que es lo que la base deja ver al dueño.
+  // Sesiones e ingresos del mes, y pacientes activos: lo que la base deja
+  // ver al responsable. Nada de esto toca contenido clinico.
   const inicioMes = new Date();
   inicioMes.setDate(1); inicioMes.setHours(0,0,0,0);
   const { data: citasEquipo } = await sb.from('citas')
-    .select('psicologo_id, estado').gte('fecha_hora', inicioMes.toISOString());
+    .select('psicologo_id, estado, precio').gte('fecha_hora', inicioMes.toISOString());
+  const { data: pacientesEquipo } = await sb.from('equipo_pacientes')
+    .select('psicologo_id, estado');
 
-  const sesionesPor = {};
+  const sesionesPor = {}, ingresosPor = {}, pacientesPor = {};
   (citasEquipo||[]).forEach(c=>{
     if(c.estado === 'cancelada') return;
     sesionesPor[c.psicologo_id] = (sesionesPor[c.psicologo_id] || 0) + 1;
+    if(c.estado === 'completada') ingresosPor[c.psicologo_id] = (ingresosPor[c.psicologo_id] || 0) + Number(c.precio || 0);
+  });
+  (pacientesEquipo||[]).forEach(p=>{
+    if(p.estado !== 'activo') return;
+    pacientesPor[p.psicologo_id] = (pacientesPor[p.psicologo_id] || 0) + 1;
   });
 
-  const filas = (equipo||[]).map(p=>`
+  const dinero = n => '$' + Number(n||0).toLocaleString('es-MX');
+
+  // Totales del consultorio, arriba del organigrama
+  const totalSesiones = Object.values(sesionesPor).reduce((a,b)=>a+b,0);
+  const totalIngresos = Object.values(ingresosPor).reduce((a,b)=>a+b,0);
+  const totalPacientes = Object.values(pacientesPor).reduce((a,b)=>a+b,0);
+
+  const tarjetaMiembro = p => `
     <div class="eq-miembro">
       <div class="eq-avatar">${escapar(iniciales(p.nombre))}</div>
       <div class="eq-datos">
         <div class="eq-nombre">${escapar(p.nombre)}${p.id === yo.id ? ' (tú)' : ''}</div>
         <div class="eq-correo">${escapar(p.correo)}</div>
+        <div class="eq-kpis">
+          <span><strong>${pacientesPor[p.id] || 0}</strong> pacientes</span>
+          <span><strong>${sesionesPor[p.id] || 0}</strong> sesiones</span>
+          <span><strong>${dinero(ingresosPor[p.id])}</strong> cobrado</span>
+        </div>
       </div>
-      <div class="eq-metrica">${sesionesPor[p.id] || 0} sesiones<br>este mes</div>
       <span class="eq-rol ${p.rol_consultorio === 'dueno' ? '' : 'colaborador'}">${p.rol_consultorio === 'dueno' ? 'Responsable' : 'Colaborador'}</span>
       ${p.rol_consultorio === 'dueno' ? '' : `<button type="button" class="eq-quitar" data-id="${escapar(p.id)}" data-nombre="${escapar(p.nombre)}">Retirar</button>`}
+    </div>`;
+
+  // Organigrama: agrupado por especialidad, con el responsable al frente.
+  const porEspecialidad = {};
+  (equipo||[]).forEach(p=>{
+    const area = (p.especialidad || '').trim() || 'Sin especialidad definida';
+    (porEspecialidad[area] = porEspecialidad[area] || []).push(p);
+  });
+
+  const areas = Object.keys(porEspecialidad).sort((a,b)=>{
+    if(a === 'Sin especialidad definida') return 1;
+    if(b === 'Sin especialidad definida') return -1;
+    return a.localeCompare(b, 'es');
+  });
+
+  const filas = areas.map(area=>`
+    <div class="eq-area">
+      <div class="eq-area-titulo">${escapar(area)} <span>${porEspecialidad[area].length}</span></div>
+      ${porEspecialidad[area]
+        .sort((a,b)=> (a.rol_consultorio === 'dueno' ? -1 : 1) - (b.rol_consultorio === 'dueno' ? -1 : 1))
+        .map(tarjetaMiembro).join('')}
     </div>`).join('');
+
+  const resumen = `
+    <div class="eq-totales">
+      <div class="eq-total"><div class="eq-total-num">${(equipo||[]).length}</div><div class="eq-total-etq">Psicólogos</div></div>
+      <div class="eq-total"><div class="eq-total-num">${totalPacientes}</div><div class="eq-total-etq">Pacientes activos</div></div>
+      <div class="eq-total"><div class="eq-total-num">${totalSesiones}</div><div class="eq-total-etq">Sesiones este mes</div></div>
+      <div class="eq-total"><div class="eq-total-num">${dinero(totalIngresos)}</div><div class="eq-total-etq">Cobrado este mes</div></div>
+    </div>`;
 
   cont.innerHTML = `
     <div class="eq-caja">
       <div class="eq-caja-titulo">${escapar(miConsultorio?.nombre || 'Mi consultorio')}</div>
       <div class="eq-caja-texto">Eres el responsable. Ves la agenda y las sesiones de tu equipo, no los expedientes de sus pacientes.</div>
     </div>
+
+    ${resumen}
 
     <div style="margin-top:18px;">${filas || '<p class="empty">Todavía no hay nadie más en el equipo.</p>'}</div>
 
@@ -1493,6 +1593,11 @@ async function iniciar(){
   }
 
   yo = psi;
+
+  // Si lo dieron de baja de un consultorio, se le dice de frente en vez de
+  // que descubra solo que ya no ve nada.
+  if(psi.baja_consultorio_en){ pintarBajaConsultorio(psi); return; }
+
   await procesarInvitacionPendiente();
   cargarEquipo();
   mostrarAtajoAdmin(session.user.email);
