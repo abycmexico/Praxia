@@ -181,6 +181,13 @@
   .exp-previa iframe{width:100%;height:520px;border:none;display:block;}
   .exp-cargando{font-size:12.5px;color:var(--gray);font-weight:700;}
   .exp-aviso{font-size:11.5px;color:var(--gray);font-weight:600;line-height:1.55;margin-top:12px;}
+  .doc-aviso-falta{background:#FFF6E5;border:1.5px solid #F0D9A8;border-radius:12px;padding:12px 14px;font-size:12px;font-weight:600;color:#7a5600;line-height:1.55;margin-bottom:18px;}
+  .doc-aviso-falta a{color:#7a5600;font-weight:800;border-bottom:1.5px solid #7a5600;}
+  #docCampos{margin-top:16px;}
+  #docCampos label{display:block;font-size:12px;font-weight:700;margin-bottom:5px;margin-top:12px;}
+  #docCampos input,#docCampos textarea,#docCampos select{width:100%;padding:9px 11px;border:1.5px solid var(--line);border-radius:9px;font-family:inherit;font-size:12.5px;}
+  #docCampos textarea{min-height:70px;resize:vertical;line-height:1.5;}
+  .doc-pista{font-size:11px;color:var(--gray);font-weight:600;margin-top:4px;line-height:1.45;}
   @media(max-width:820px){
     .exp-cuerpo{grid-template-columns:1fr;}
     .exp-previa{min-height:300px;}
@@ -203,6 +210,7 @@
     <img src="./assets/praxia-logo-completo.png" alt="Praxia">
   </a>
   <div class="right">
+    <button class="btn btn-ghost" id="btnDocumentos">Generar documento</button>
     <button class="btn btn-ghost" id="btnExportar">Exportar expediente</button>
   </div>
 </header>
@@ -765,6 +773,33 @@
     <div class="modal-actions">
       <button type="button" class="btn btn-ghost" id="btnCerrarExportar">Cancelar</button>
       <button type="button" class="btn btn-primario" id="btnDescargarPDF">Descargar PDF</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-bg" id="modalDocumentos">
+  <div class="modal modal-ancho">
+    <h3>Generar documento</h3>
+    <p class="modal-sub">Documentos que puedes firmar como psicólogo. Se emiten con tu cédula profesional.</p>
+
+    <div id="avisoCedula" class="doc-aviso-falta" style="display:none;">
+      No tienes registrada tu cédula profesional. Un documento sin cédula no acredita tu calidad de profesionista.
+      <a href="./completar-perfil-psicologo.html">Agrégala en tu perfil</a> antes de emitirlo.
+    </div>
+
+    <div class="exp-cuerpo">
+      <div>
+        <div id="docOpciones"></div>
+        <div id="docCampos"></div>
+      </div>
+      <div class="exp-previa" id="docPrevia">
+        <span class="exp-cargando">Preparando vista previa...</span>
+      </div>
+    </div>
+
+    <div class="modal-actions">
+      <button type="button" class="btn btn-ghost" id="btnCerrarDocumentos">Cancelar</button>
+      <button type="button" class="btn btn-primario" id="btnDescargarDocumento">Descargar documento</button>
     </div>
   </div>
 </div>
@@ -2578,6 +2613,310 @@ document.getElementById('btnDescargarPDF').addEventListener('click', async ()=>{
   }
   btn.disabled = false;
   btn.textContent = 'Descargar PDF';
+});
+
+/* ---------- documentos oficiales ---------- */
+/* Documentos que un psicologo si puede firmar. La prescripcion de
+   medicamentos no entra aqui a proposito: en Mexico no es facultad del
+   psicologo, y la seccion de medicacion del expediente solo registra lo
+   que indico un medico. */
+
+const TIPOS_DOCUMENTO = {
+  constancia: {
+    nombre: 'Constancia de atención',
+    resumen: 'Acredita que la persona asiste o asistió a consulta psicológica contigo.',
+    para: 'La piden en escuelas, trabajos o trámites. No incluye contenido clínico.',
+    campos: [
+      { id: 'dirigidoA', etiqueta: 'Dirigida a', tipo: 'text', pista: 'Si no sabes a quién va dirigida, deja "A quien corresponda".', valor: ()=> 'A quien corresponda' },
+      { id: 'desde', etiqueta: 'Recibe atención desde', tipo: 'date', valor: ()=> paciente.fecha_primera_sesion || paciente.fecha_inicio || '' },
+      { id: 'frecuencia', etiqueta: 'Frecuencia', tipo: 'text', valor: ()=> paciente.frecuencia_sesiones || '' },
+      { id: 'proposito', etiqueta: 'Se expide para', tipo: 'text', valor: ()=> 'los fines que al interesado convengan' }
+    ]
+  },
+  informe: {
+    nombre: 'Informe psicológico',
+    resumen: 'Documento clínico con motivo, procedimiento, resultados y conclusiones.',
+    para: 'Cuando otra instancia solicita formalmente tu valoración profesional.',
+    campos: [
+      { id: 'dirigidoA', etiqueta: 'Dirigido a', tipo: 'text', valor: ()=> 'A quien corresponda' },
+      { id: 'motivo', etiqueta: 'Motivo de la valoración', tipo: 'textarea', valor: ()=> paciente.motivo_consulta || '' },
+      { id: 'procedimiento', etiqueta: 'Procedimiento', tipo: 'textarea', pista: 'Entrevistas, observación e instrumentos aplicados.', valor: ()=> '' },
+      { id: 'resultados', etiqueta: 'Resultados', tipo: 'textarea', valor: ()=> paciente.eval_funcionamiento_general || '' },
+      { id: 'conclusiones', etiqueta: 'Conclusiones', tipo: 'textarea', valor: ()=> paciente.impresion_clinica || '' },
+      { id: 'recomendaciones', etiqueta: 'Recomendaciones', tipo: 'textarea', valor: ()=> paciente.plan_recomendaciones || '' }
+    ]
+  },
+  canalizacion: {
+    nombre: 'Carta de canalización',
+    resumen: 'Deriva al paciente con otro profesional, por ejemplo a valoración psiquiátrica.',
+    para: 'El documento a usar cuando detectas que hace falta medicación o atención médica.',
+    campos: [
+      { id: 'dirigidoA', etiqueta: 'Dirigida a', tipo: 'text', pista: 'Nombre del profesional o de la institución.', valor: ()=> 'A quien corresponda' },
+      { id: 'especialidad', etiqueta: 'Especialidad a la que se canaliza', tipo: 'text', valor: ()=> 'Psiquiatría' },
+      { id: 'motivo', etiqueta: 'Motivo de la canalización', tipo: 'textarea', valor: ()=> '' },
+      { id: 'resumen', etiqueta: 'Resumen del caso', tipo: 'textarea', pista: 'Solo lo necesario para que el otro profesional retome el caso.', valor: ()=> paciente.impresion_clinica || '' },
+      { id: 'tratamiento', etiqueta: 'Intervención realizada hasta ahora', tipo: 'textarea', valor: ()=> paciente.plan_enfoque || '' }
+    ]
+  },
+  alta: {
+    nombre: 'Constancia de alta',
+    resumen: 'Hace constar la conclusión del proceso terapéutico.',
+    para: 'Al cerrar el proceso, cuando el paciente o una instancia la solicita.',
+    campos: [
+      { id: 'dirigidoA', etiqueta: 'Dirigida a', tipo: 'text', valor: ()=> 'A quien corresponda' },
+      { id: 'desde', etiqueta: 'Atendido desde', tipo: 'date', valor: ()=> paciente.fecha_primera_sesion || paciente.fecha_inicio || '' },
+      { id: 'fechaAlta', etiqueta: 'Fecha de alta', tipo: 'date', valor: ()=> paciente.fecha_alta || '' },
+      { id: 'motivoAlta', etiqueta: 'Motivo del alta', tipo: 'textarea', valor: ()=> paciente.motivo_alta || paciente.estado_alta || '' },
+      { id: 'recomendaciones', etiqueta: 'Recomendaciones', tipo: 'textarea', valor: ()=> paciente.recomendaciones_alta || '' }
+    ]
+  }
+};
+
+let tipoDocElegido = 'constancia';
+let urlPreviaDoc = null;
+
+function folioDocumento(tipo){
+  const f = new Date();
+  const ymd = `${f.getFullYear()}${String(f.getMonth()+1).padStart(2,'0')}${String(f.getDate()).padStart(2,'0')}`;
+  return `${tipo.slice(0,3).toUpperCase()}-${ymd}-${String(paciente.id).slice(0,4).toUpperCase()}`;
+}
+
+function fechaLarga(iso){
+  if(!iso) return '';
+  const d = new Date(String(iso).length <= 10 ? iso + 'T12:00:00' : iso);
+  return d.toLocaleDateString('es-MX', { day:'numeric', month:'long', year:'numeric' });
+}
+
+async function construirDocumento(tipoClave, valores){
+  const tipo = TIPOS_DOCUMENTO[tipoClave];
+  const { data: cfg } = await sb.from('configuracion')
+    .select('nombre_consultorio, logo_url').eq('psicologo_id', yo.id).maybeSingle();
+
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ unit:'mm', format:'a4' });
+  const pageW = doc.internal.pageSize.getWidth();
+  const pageH = doc.internal.pageSize.getHeight();
+  const margen = 22;
+  const ancho = pageW - margen*2;
+  let y = margen;
+
+  const VERDE = [46,125,50], GRIS = [120,120,120], NEGRO = [26,26,26];
+
+  function salto(alto){ if(y + alto > pageH - 45){ doc.addPage(); y = margen; } }
+
+  function parrafoDoc(texto, opciones = {}){
+    if(!texto) return;
+    doc.setFont('helvetica', opciones.negrita ? 'bold' : 'normal');
+    doc.setFontSize(opciones.tam || 10.5);
+    doc.setTextColor(...(opciones.color || NEGRO));
+    const lineas = doc.splitTextToSize(String(texto), ancho);
+    lineas.forEach(l=>{ salto(6); doc.text(l, margen, y, opciones.centrado ? { align:'center', maxWidth:ancho } : undefined); y += 5.6; });
+    y += opciones.espacio ?? 3;
+  }
+
+  function apartado(titulo, texto){
+    if(!texto) return;
+    salto(14);
+    doc.setFont('helvetica','bold');
+    doc.setFontSize(10);
+    doc.setTextColor(...VERDE);
+    doc.text(titulo.toUpperCase(), margen, y);
+    y += 6;
+    parrafoDoc(texto);
+    y += 2;
+  }
+
+  /* ---- encabezado ---- */
+  let xTexto = margen;
+  if(cfg && cfg.logo_url){
+    const logo = await obtenerLogoBase64(cfg.logo_url);
+    if(logo){
+      try{ doc.addImage(logo.base64, logo.formato, margen, y, 18, 18); xTexto = margen + 23; }catch(e){}
+    }
+  }
+  doc.setFont('helvetica','bold'); doc.setFontSize(13); doc.setTextColor(...VERDE);
+  doc.text(cfg?.nombre_consultorio || yo.nombre, xTexto, y + 6);
+  doc.setFont('helvetica','normal'); doc.setFontSize(9); doc.setTextColor(...GRIS);
+  doc.text(yo.nombre + (yo.especialidad ? ` · ${yo.especialidad}` : ''), xTexto, y + 11.5);
+  doc.text(`Cédula profesional ${yo.cedula_profesional || '—'}`, xTexto, y + 16);
+  y += 25;
+  doc.setDrawColor(...VERDE); doc.setLineWidth(0.6);
+  doc.line(margen, y, pageW - margen, y);
+  y += 12;
+
+  /* ---- titulo, folio y lugar ---- */
+  doc.setFont('helvetica','bold'); doc.setFontSize(14); doc.setTextColor(...NEGRO);
+  doc.text(tipo.nombre.toUpperCase(), pageW/2, y, { align:'center' });
+  y += 8;
+  doc.setFont('helvetica','normal'); doc.setFontSize(9); doc.setTextColor(...GRIS);
+  doc.text(`Folio ${folioDocumento(tipoClave)}`, pageW/2, y, { align:'center' });
+  y += 12;
+
+  const lugar = yo.ciudad ? `${yo.ciudad}, a ${fechaLarga(new Date().toISOString())}` : `A ${fechaLarga(new Date().toISOString())}`;
+  doc.setFontSize(10); doc.setTextColor(...NEGRO);
+  doc.text(lugar, pageW - margen, y, { align:'right' });
+  y += 12;
+
+  parrafoDoc(valores.dirigidoA || 'A quien corresponda', { negrita:true, espacio:8 });
+
+  /* ---- cuerpo, distinto por tipo ---- */
+  const nombrePac = paciente.nombre;
+  const edad = paciente.fecha_nacimiento ? Math.floor((Date.now() - new Date(paciente.fecha_nacimiento).getTime())/31557600000) : null;
+  const quien = `${nombrePac}${edad ? `, de ${edad} años de edad` : ''}`;
+
+  if(tipoClave === 'constancia'){
+    parrafoDoc(`Por medio del presente hago constar que ${quien} recibe atención psicológica en este consultorio${valores.desde ? ` desde el ${fechaLarga(valores.desde)}` : ''}${valores.frecuencia ? `, con una frecuencia ${String(valores.frecuencia).toLowerCase()}` : ''}.`, { espacio:6 });
+    parrafoDoc(`La presente se expide a solicitud del interesado para ${valores.proposito || 'los fines que al interesado convengan'}.`, { espacio:6 });
+    parrafoDoc('Este documento acredita únicamente la asistencia a consulta y no contiene información clínica, la cual está protegida por el secreto profesional.', { tam:9, color:GRIS });
+  }
+
+  if(tipoClave === 'informe'){
+    parrafoDoc(`El presente informe corresponde a ${quien}, atendido en este consultorio.`, { espacio:6 });
+    apartado('Motivo de la valoración', valores.motivo);
+    apartado('Procedimiento', valores.procedimiento);
+    apartado('Resultados', valores.resultados);
+    apartado('Conclusiones', valores.conclusiones);
+    apartado('Recomendaciones', valores.recomendaciones);
+    parrafoDoc('La información contenida en este informe es confidencial y se entrega con autorización de la persona interesada, para el fin específico que la motivó.', { tam:9, color:GRIS });
+  }
+
+  if(tipoClave === 'canalizacion'){
+    parrafoDoc(`Por este medio canalizo a ${quien}, a quien he brindado atención psicológica, para valoración por ${valores.especialidad || 'el área correspondiente'}.`, { espacio:6 });
+    apartado('Motivo de la canalización', valores.motivo);
+    apartado('Resumen del caso', valores.resumen);
+    apartado('Intervención realizada', valores.tratamiento);
+    parrafoDoc('Quedo a sus órdenes para coordinar la atención conjunta. Esta información se comparte con autorización de la persona interesada.', { espacio:6 });
+  }
+
+  if(tipoClave === 'alta'){
+    parrafoDoc(`Hago constar que ${quien} concluyó su proceso de atención psicológica en este consultorio${valores.desde ? `, iniciado el ${fechaLarga(valores.desde)}` : ''}${valores.fechaAlta ? ` y concluido el ${fechaLarga(valores.fechaAlta)}` : ''}.`, { espacio:6 });
+    apartado('Motivo del alta', valores.motivoAlta);
+    apartado('Recomendaciones', valores.recomendaciones);
+  }
+
+  /* ---- firma ---- */
+  y = Math.max(y + 18, pageH - 62);
+  doc.setDrawColor(...GRIS); doc.setLineWidth(0.4);
+  doc.line(pageW/2 - 38, y, pageW/2 + 38, y);
+  y += 6;
+  doc.setFont('helvetica','bold'); doc.setFontSize(10.5); doc.setTextColor(...NEGRO);
+  doc.text(yo.nombre, pageW/2, y, { align:'center' });
+  y += 5.5;
+  doc.setFont('helvetica','normal'); doc.setFontSize(9); doc.setTextColor(...GRIS);
+  doc.text(`Cédula profesional ${yo.cedula_profesional || '—'}`, pageW/2, y, { align:'center' });
+  if(yo.especialidad){ y += 4.5; doc.text(yo.especialidad, pageW/2, y, { align:'center' }); }
+
+  /* ---- pie ---- */
+  const contacto = [yo.direccion, yo.ciudad, yo.telefono, yo.correo].filter(Boolean).join(' · ');
+  doc.setFontSize(7.5); doc.setTextColor(...GRIS);
+  doc.setDrawColor(230,230,230); doc.setLineWidth(0.3);
+  doc.line(margen, pageH - 20, pageW - margen, pageH - 20);
+  if(contacto) doc.text(contacto, pageW/2, pageH - 15, { align:'center', maxWidth: ancho });
+  doc.text('Documento requiere firma autógrafa para su validez.', pageW/2, pageH - 11, { align:'center' });
+
+  const nombreArchivo = `${tipoClave}-${nombrePac.replace(/\s+/g,'-').toLowerCase()}.pdf`;
+  return { doc, nombreArchivo };
+}
+
+function valoresDocumento(){
+  const valores = {};
+  TIPOS_DOCUMENTO[tipoDocElegido].campos.forEach(c=>{
+    const el = document.getElementById('doc_' + c.id);
+    valores[c.id] = el ? el.value : '';
+  });
+  return valores;
+}
+
+function pintarCamposDocumento(){
+  const cont = document.getElementById('docCampos');
+  cont.innerHTML = '';
+  TIPOS_DOCUMENTO[tipoDocElegido].campos.forEach(c=>{
+    const label = document.createElement('label');
+    label.setAttribute('for', 'doc_' + c.id);
+    label.textContent = c.etiqueta;
+    cont.appendChild(label);
+
+    const el = document.createElement(c.tipo === 'textarea' ? 'textarea' : 'input');
+    if(c.tipo !== 'textarea') el.type = c.tipo;
+    el.id = 'doc_' + c.id;
+    try{ el.value = c.valor ? (c.valor() || '') : ''; }catch(e){ el.value = ''; }
+    el.addEventListener('change', refrescarPreviaDocumento);
+    cont.appendChild(el);
+
+    if(c.pista){
+      const pista = document.createElement('p');
+      pista.className = 'doc-pista';
+      pista.textContent = c.pista;
+      cont.appendChild(pista);
+    }
+  });
+}
+
+function pintarOpcionesDocumento(){
+  const cont = document.getElementById('docOpciones');
+  cont.innerHTML = '';
+  Object.entries(TIPOS_DOCUMENTO).forEach(([clave, t])=>{
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'exp-opcion' + (clave === tipoDocElegido ? ' sel' : '');
+    btn.innerHTML = `
+      <div class="exp-opcion-nombre">${escapar(t.nombre)}</div>
+      <div class="exp-opcion-resumen">${escapar(t.resumen)}</div>
+      <div class="exp-opcion-para">${escapar(t.para)}</div>`;
+    btn.addEventListener('click', ()=>{
+      if(tipoDocElegido === clave) return;
+      tipoDocElegido = clave;
+      pintarOpcionesDocumento();
+      pintarCamposDocumento();
+      refrescarPreviaDocumento();
+    });
+    cont.appendChild(btn);
+  });
+}
+
+async function refrescarPreviaDocumento(){
+  const caja = document.getElementById('docPrevia');
+  caja.innerHTML = '<span class="exp-cargando">Preparando vista previa...</span>';
+  try{
+    const { doc } = await construirDocumento(tipoDocElegido, valoresDocumento());
+    if(urlPreviaDoc) URL.revokeObjectURL(urlPreviaDoc);
+    urlPreviaDoc = doc.output('bloburl');
+    const visor = document.createElement('iframe');
+    visor.title = 'Vista previa del documento';
+    visor.src = urlPreviaDoc;
+    caja.innerHTML = '';
+    caja.appendChild(visor);
+  }catch(e){
+    caja.innerHTML = '<span class="exp-cargando">No se pudo generar la vista previa: ' + escapar(e.message) + '</span>';
+  }
+}
+
+document.getElementById('btnDocumentos').addEventListener('click', ()=>{
+  document.getElementById('modalDocumentos').classList.add('show');
+  document.getElementById('avisoCedula').style.display = yo.cedula_profesional ? 'none' : 'block';
+  pintarOpcionesDocumento();
+  pintarCamposDocumento();
+  refrescarPreviaDocumento();
+});
+
+document.getElementById('btnCerrarDocumentos').addEventListener('click', ()=>{
+  document.getElementById('modalDocumentos').classList.remove('show');
+  if(urlPreviaDoc){ URL.revokeObjectURL(urlPreviaDoc); urlPreviaDoc = null; }
+});
+
+document.getElementById('btnDescargarDocumento').addEventListener('click', async ()=>{
+  const btn = document.getElementById('btnDescargarDocumento');
+  btn.disabled = true;
+  btn.textContent = 'Generando...';
+  try{
+    const { doc, nombreArchivo } = await construirDocumento(tipoDocElegido, valoresDocumento());
+    doc.save(nombreArchivo);
+    document.getElementById('modalDocumentos').classList.remove('show');
+  }catch(e){
+    alert('No se pudo generar el documento: ' + e.message);
+  }
+  btn.disabled = false;
+  btn.textContent = 'Descargar documento';
 });
 
 /* ---------- ayuda contextual y sugerencias ---------- */
