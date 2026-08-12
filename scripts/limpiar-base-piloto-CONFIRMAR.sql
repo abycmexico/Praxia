@@ -1,17 +1,18 @@
--- LIMPIEZA PARA ARRANCAR EL PILOTO
+-- LIMPIEZA PARA ARRANCAR EL PILOTO  (pegar en el SQL Editor de Supabase)
 --
 -- Deja la base vacia de datos y conserva UNICAMENTE la cuenta maestra
 -- abycmexico@gmail.com (su login y su perfil de psicologo aprobado).
 -- Todo lo demas se borra: cuentas de prueba, la de Cristian Gonzalez, los
 -- otros correos propios, y todos los pacientes, citas y expedientes.
 --
--- ESTO NO SE PUEDE DESHACER. Antes de correrlo debe existir un respaldo
--- (supabase db dump --data-only -f respaldo.sql).
+-- ESTO NO SE PUEDE DESHACER. Debe existir un respaldo antes de correrlo.
+--
+-- Sin begin/commit a proposito: el SQL Editor ya corre todo dentro de su
+-- propia transaccion, y el bloque DO es atomico por si mismo. Si algo falla
+-- a la mitad, no se borra nada.
 --
 -- Las llaves foraneas son NO ACTION, asi que el orden importa: primero los
 -- hijos, luego los padres.
-
-begin;
 
 do $$
 declare
@@ -64,7 +65,7 @@ begin
   update psicologos set estado = 'aprobado' where id = v_admin;
 end $$;
 
--- Revision antes de confirmar
+-- Resultado: debe quedar 1 usuario, 1 psicologo y 0 en todo lo demas.
 select 'auth.users'  as tabla, count(*) from auth.users
 union all select 'psicologos',    count(*) from psicologos
 union all select 'pacientes',     count(*) from pacientes
@@ -72,7 +73,3 @@ union all select 'citas',         count(*) from citas
 union all select 'notas_sesion',  count(*) from notas_sesion
 union all select 'documentos',    count(*) from documentos
 order by 1;
-
--- Esta version CONFIRMA los cambios.
--- No hay vuelta atras: el respaldo es la unica forma de recuperar.
-commit;
