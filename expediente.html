@@ -53,7 +53,24 @@
   nav.tabs button.active{color:var(--ink);border-bottom-color:var(--primario);}
   section{display:none;}
   section.active{display:block;}
-  .bloque{border:1.5px solid var(--line);border-radius:16px;padding:22px 24px;margin-bottom:18px;}
+  .bloque{border:1.5px solid var(--line);border-radius:16px;padding:22px 24px;margin-bottom:18px;background:#fff;transition:border-color .15s,box-shadow .15s;}
+  .bloque:hover{box-shadow:0 2px 14px rgba(0,0,0,.05);}
+  .bloque.completo{border-color:var(--primario-suave);}
+
+  /* cabecera de tarjeta: colapsa y muestra cuanto falta por llenar */
+  .bloque-cabecera{display:flex;align-items:flex-start;justify-content:space-between;gap:14px;cursor:pointer;user-select:none;}
+  .bloque-cabecera-txt{flex:1;min-width:0;}
+  .bloque-estado{display:flex;align-items:center;gap:9px;flex-shrink:0;padding-top:2px;}
+  .pastilla{font-size:10.5px;font-weight:800;padding:4px 10px;border-radius:20px;white-space:nowrap;letter-spacing:.2px;}
+  .pastilla.vacio{background:#F4F4F4;color:#8a8a8a;}
+  .pastilla.parcial{background:#FFF6E5;color:#9a6a00;}
+  .pastilla.completo{background:#EDF6EC;color:var(--primario);}
+  .flecha-bloque{width:22px;height:22px;border:none;background:none;cursor:pointer;color:var(--gray);font-size:11px;transition:transform .2s;flex-shrink:0;padding:0;font-family:inherit;}
+  .bloque.colapsado .flecha-bloque{transform:rotate(-90deg);}
+  .bloque.colapsado .bloque-cuerpo{display:none;}
+  .bloque.colapsado .bh{display:none;}
+  .bloque-cuerpo{margin-top:18px;}
+  .bloque-cuerpo .bh{margin-top:-6px;}
   .buscador-expediente{position:relative;margin:16px 0 20px;}
   .buscador-expediente input{width:100%;padding:12px 16px;border:1.5px solid var(--line);border-radius:12px;font-family:inherit;font-size:14px;}
   .buscador-expediente input:focus{outline:none;border-color:var(--primario);}
@@ -2546,8 +2563,111 @@ function aplicarAyudasYSugerencias(){
   });
 }
 
+/* ---------- tarjetas: cada bloque colapsa y muestra su avance ---------- */
+/* El expediente son 127 campos en 12 secciones. Sin una señal de cuanto
+   lleva llenado cada parte, el psicologo no sabe donde se quedo. */
+
+function camposDelBloque(bloque){
+  return [...bloque.querySelectorAll('input, select, textarea')]
+    .filter(c => !c.disabled && c.type !== 'hidden' && c.type !== 'file');
+}
+
+function actualizarAvance(bloque){
+  const campos = camposDelBloque(bloque);
+  const pastilla = bloque.querySelector('.pastilla');
+  if(!pastilla) return;
+
+  const llenos = campos.filter(c =>
+    c.type === 'checkbox' ? c.checked : String(c.value || '').trim() !== ''
+  ).length;
+
+  pastilla.classList.remove('vacio','parcial','completo');
+  bloque.classList.remove('completo');
+
+  if(llenos === 0){
+    pastilla.textContent = `${campos.length} campos`;
+    pastilla.classList.add('vacio');
+  } else if(llenos === campos.length){
+    pastilla.textContent = 'Completo';
+    pastilla.classList.add('completo');
+    bloque.classList.add('completo');
+  } else {
+    pastilla.textContent = `${llenos} de ${campos.length}`;
+    pastilla.classList.add('parcial');
+  }
+}
+
+function convertirBloquesEnTarjetas(){
+  document.querySelectorAll('.bloque').forEach(bloque => {
+    if(bloque.querySelector('.bloque-cabecera')) return;
+
+    const titulo = bloque.querySelector('h3');
+    if(!titulo) return;
+    const descripcion = bloque.querySelector('.bh');
+
+    const cabecera = document.createElement('div');
+    cabecera.className = 'bloque-cabecera';
+    const textos = document.createElement('div');
+    textos.className = 'bloque-cabecera-txt';
+    const estado = document.createElement('div');
+    estado.className = 'bloque-estado';
+
+    const cuerpo = document.createElement('div');
+    cuerpo.className = 'bloque-cuerpo';
+    // Todo lo que no sea el titulo o su descripcion pasa al cuerpo plegable.
+    while(bloque.firstChild){
+      const hijo = bloque.firstChild;
+      if(hijo === titulo || hijo === descripcion) bloque.removeChild(hijo);
+      else cuerpo.appendChild(hijo);
+    }
+
+    textos.appendChild(titulo);
+    if(descripcion) textos.appendChild(descripcion);
+
+    const tieneCampos = camposDelBloque(cuerpo).length > 0;
+    if(tieneCampos){
+      const pastilla = document.createElement('span');
+      pastilla.className = 'pastilla vacio';
+      estado.appendChild(pastilla);
+    }
+
+    const flecha = document.createElement('button');
+    flecha.type = 'button';
+    flecha.className = 'flecha-bloque';
+    flecha.textContent = '▼';
+    flecha.setAttribute('aria-expanded', 'true');
+    flecha.setAttribute('aria-label', `Contraer ${titulo.textContent.trim()}`);
+    estado.appendChild(flecha);
+
+    cabecera.appendChild(textos);
+    cabecera.appendChild(estado);
+    bloque.appendChild(cabecera);
+    bloque.appendChild(cuerpo);
+
+    cabecera.addEventListener('click', (e)=>{
+      // Escribir dentro de la tarjeta no debe plegarla.
+      if(e.target.closest('input, select, textarea, .ayuda')) return;
+      const colapsado = bloque.classList.toggle('colapsado');
+      flecha.setAttribute('aria-expanded', String(!colapsado));
+      flecha.setAttribute('aria-label', `${colapsado ? 'Expandir' : 'Contraer'} ${titulo.textContent.trim()}`);
+    });
+
+    if(tieneCampos){
+      bloque.addEventListener('input', ()=> actualizarAvance(bloque));
+      bloque.addEventListener('change', ()=> actualizarAvance(bloque));
+      actualizarAvance(bloque);
+    }
+  });
+}
+
+// Los datos llegan despues de iniciar(), asi que el avance se recalcula.
+function refrescarAvances(){
+  document.querySelectorAll('.bloque').forEach(actualizarAvance);
+}
+
 aplicarAyudasYSugerencias();
-iniciar();
+convertirBloquesEnTarjetas();
+iniciar().then(refrescarAvances).catch(()=>{});
 </script>
 
 </body>
