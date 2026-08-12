@@ -102,6 +102,18 @@
   .bloque .bh{font-size:12px;color:var(--gray);margin-bottom:18px;line-height:1.6;}
   .rejilla{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
   .campo{margin-bottom:0;}
+
+  /* ayuda contextual: el "?" junto a la etiqueta */
+  .ayuda{display:inline-flex;align-items:center;justify-content:center;width:15px;height:15px;padding:0;border-radius:50%;border:1.5px solid var(--line);background:#fff;color:var(--gray);font-size:9.5px;font-weight:800;font-family:inherit;cursor:help;margin-left:6px;position:relative;vertical-align:middle;}
+  .ayuda:hover,.ayuda:focus{background:var(--primario);color:#fff;border-color:var(--primario);outline:none;}
+  .ayuda-burbuja{position:absolute;bottom:calc(100% + 9px);left:50%;transform:translateX(-50%);width:250px;max-width:70vw;background:var(--ink);color:#fff;font-size:11.5px;font-weight:500;line-height:1.55;letter-spacing:.1px;padding:10px 12px;border-radius:10px;text-align:left;opacity:0;visibility:hidden;transition:opacity .15s ease;z-index:60;pointer-events:none;box-shadow:0 6px 20px rgba(0,0,0,.16);}
+  .ayuda-burbuja::after{content:"";position:absolute;top:100%;left:50%;transform:translateX(-50%);border:5px solid transparent;border-top-color:var(--ink);}
+  .ayuda:hover .ayuda-burbuja,.ayuda:focus .ayuda-burbuja{opacity:1;visibility:visible;}
+
+  /* sugerencias en campos de texto largo, donde datalist no aplica */
+  .sugerencias{display:flex;flex-wrap:wrap;gap:6px;margin-top:7px;}
+  .chip-sug{background:#F2F6F1;border:1.5px solid transparent;border-radius:20px;padding:5px 11px;font-size:11px;font-weight:700;font-family:inherit;color:var(--primario);cursor:pointer;line-height:1.3;text-align:left;}
+  .chip-sug:hover{border-color:var(--primario);background:#fff;}
   label{display:block;font-size:12px;font-weight:700;margin-bottom:6px;}
   input,select,textarea{width:100%;padding:11px 13px;border:1.5px solid var(--line);border-radius:10px;font-family:inherit;font-size:14px;background:#fff;color:var(--ink);}
   input:focus,select:focus,textarea:focus{outline:none;border-color:var(--primario);}
@@ -2383,6 +2395,158 @@ async function ejecutarBusquedaExpediente(q){
   cont.innerHTML = resultados || '<div class="resultado-vacio">Sin resultados para esa búsqueda.</div>';
 }
 
+/* ---------- ayuda contextual y sugerencias ---------- */
+/* Se inyectan desde aqui y no en el HTML: son 127 campos, y tenerlo en un
+   solo lugar hace que agregar una ayuda sea una linea, no editar el markup. */
+
+const AYUDAS = {
+  /* --- ficha: datos personales --- */
+  nombre: 'Nombre completo como aparece en su identificación oficial. Es el que se usa en constancias e informes.',
+  correo: 'Se llena solo cuando el paciente tiene cuenta en Praxia. No se edita desde aquí para evitar que deje de coincidir con su acceso.',
+  telefono: 'Número de contacto directo. Sirve para recordatorios de sesión.',
+  fechaNacimiento: 'Al capturarla se calcula la edad y, si es menor de edad, el expediente activa los campos del tutor legal.',
+  genero: 'Género con el que la persona se identifica, que no necesariamente coincide con el sexo asignado al nacer.',
+  pronombres: 'Cómo pide la persona que se le nombre. Anotarlo evita errores en sesión y en los informes.',
+  ocupacion: 'A qué se dedica actualmente. Da contexto sobre rutina, carga y fuentes de estrés.',
+  estadoCivil: 'Situación de pareja actual. Relevante para entender su red de apoyo inmediata.',
+  escolaridad: 'Último grado de estudios concluido. Ayuda a ajustar el lenguaje de las intervenciones y de las pruebas que apliques.',
+  direccion: 'Domicilio del paciente. Requerido en constancias e informes con validez oficial.',
+
+  /* --- ficha: tutor y emergencia --- */
+  tutorNombre: 'Obligatorio cuando el paciente es menor de edad: es quien otorga el consentimiento informado en su representación.',
+  tutorRelacion: 'Parentesco o figura legal respecto al paciente (madre, padre, tutor designado).',
+  tutorCorreo: 'A este correo llegan los avisos y el consentimiento cuando el paciente es menor de edad.',
+  emergenciaNombre: 'Persona a la que se puede contactar ante una crisis. Conviene confirmarla con el paciente antes de anotarla.',
+  emergenciaTelefono: 'Teléfono del contacto de emergencia. Verifícalo: es el dato que más se desactualiza.',
+  emergenciaRelacion: 'Vínculo del contacto con el paciente.',
+
+  /* --- ficha: encuadre --- */
+  tipoAtencion: 'Formato del proceso: individual, de pareja, familiar o grupal.',
+  modalidadAtencion: 'Si la atención es presencial, por videollamada o combinada.',
+  frecuenciaSesiones: 'Cada cuánto se acordó sesionar. Es parte del encuadre terapéutico.',
+  fechaPrimeraSesion: 'Fecha del primer contacto clínico. Marca el inicio formal del expediente.',
+  estado: 'Situación del proceso: activo, en pausa, dado de alta o abandonado.',
+  quienRefiere: 'Quién lo canalizó: viene por cuenta propia, lo refiere un médico, la escuela, otro profesional.',
+  tiempoEvolucion: 'Desde cuándo presenta el problema. Distingue un cuadro reciente de uno de años.',
+
+  /* --- ficha: motivo --- */
+  motivoConsulta: 'El motivo en las palabras del paciente, no en términos técnicos. Anota literalmente lo que dice que lo trae a consulta.',
+  problemaActual: 'Descripción clínica del problema: cómo se manifiesta, con qué frecuencia, en qué contextos y cómo le afecta.',
+  sintomasReportados: 'Lo que el paciente reporta sentir o experimentar. Distíngelo de lo que tú observas, que va en Evaluación.',
+  expectativasPaciente: 'Qué espera lograr con la terapia. Detectar expectativas poco realistas desde el inicio evita abandonos.',
+  objetivosIniciales: 'Qué se acordó trabajar en las primeras sesiones. Se detallan después en Objetivos terapéuticos.',
+  factoresDesencadenantes: 'Qué ocurrió antes de que el problema apareciera o empeorara: pérdidas, cambios, conflictos.',
+  observacionesGenerales: 'Cualquier dato relevante que no encaje en los campos anteriores.',
+
+  /* --- evaluación: examen mental --- */
+  evalAparienciaConducta: 'Lo observable: arreglo personal, higiene, postura, contacto visual, actitud hacia la entrevista, inquietud o lentitud motora.',
+  evalEstadoAnimo: 'El ánimo que el paciente refiere sentir de forma sostenida (lo que él dice). Se contrasta con el afecto, que es lo que tú observas.',
+  evalAfecto: 'La expresión emocional que observas durante la sesión: si es congruente con lo que narra, aplanada, lábil o restringida.',
+  evalLenguaje: 'Ritmo, volumen, fluidez y coherencia del habla: acelerado, enlentecido, con bloqueos, tono monótono.',
+  evalPensamiento: 'Dos cosas: el curso (lógico, disgregado, con fuga de ideas) y el contenido (ideas obsesivas, delirantes, sobrevaloradas).',
+  evalPercepcion: 'Presencia o ausencia de alucinaciones, ilusiones o experiencias de despersonalización o desrealización.',
+  evalOrientacion: 'Si sabe quién es, dónde está y en qué fecha. Se anota como orientado en persona, espacio y tiempo.',
+  evalAtencion: 'Capacidad de sostener y dirigir la atención durante la entrevista; si se distrae o pierde el hilo.',
+  evalMemoria: 'Memoria inmediata, reciente y remota. Anota fallas concretas que hayas observado, no impresiones generales.',
+  evalInsight: 'Conciencia de enfermedad: qué tanto reconoce que tiene un problema y necesita ayuda. Suele graduarse de nulo a completo.',
+  evalJuicio: 'Capacidad de evaluar situaciones y anticipar consecuencias para tomar decisiones. Se describe como conservado, debilitado o alterado.',
+  evalFuncionamientoGeneral: 'Cómo le está yendo en lo cotidiano: trabajo o escuela, relaciones, autocuidado.',
+  evalFactoresRiesgo: 'Lo que aumenta la probabilidad de deterioro: aislamiento, consumo, intentos previos, acceso a medios letales.',
+  evalFactoresProtectores: 'Lo que sostiene y protege: red de apoyo, motivos para vivir, adherencia al tratamiento, creencias personales.',
+
+  /* --- diagnóstico --- */
+  impresionClinica: 'Tu lectura clínica integrada del caso, en prosa. No requiere una etiqueta diagnóstica.',
+  hipotesisTrabajo: 'Qué explica lo que le pasa, según tu marco teórico. Es una hipótesis: puede cambiar conforme avance el proceso.',
+  diagnostico: 'Diagnóstico si lo hay. No todos los casos requieren uno, y anotarlo tiene consecuencias: queda en un expediente clínico.',
+  codigoDiagnostico: 'Clave del sistema que uses. CIE-11 es el vigente en México para efectos oficiales; el DSM-5-TR es de uso clínico frecuente.',
+  diagnosticoFecha: 'Cuándo se estableció esta impresión diagnóstica. Permite seguir cómo evoluciona el caso.',
+  diagnosticosDiferenciales: 'Qué otros cuadros consideraste y por qué los descartaste. Documentarlo respalda tu razonamiento clínico.'
+};
+
+/* Sugerencias para acelerar el llenado. En campos de una línea se ofrecen
+   como autocompletado; en los de texto largo, como botones que insertan. */
+const SUGERENCIAS = {
+  pronombres: ['ella/la', 'él/lo', 'elle/le', 'Sin información'],
+  tutorRelacion: ['Madre', 'Padre', 'Abuelo/a', 'Tío/a', 'Hermano/a mayor', 'Tutor legal designado'],
+  emergenciaRelacion: ['Madre', 'Padre', 'Pareja', 'Hermano/a', 'Hijo/a', 'Amigo/a cercano/a'],
+  quienRefiere: ['Acude por cuenta propia', 'Referido por médico general', 'Referido por psiquiatra', 'Referido por la escuela', 'Referido por otro psicólogo', 'Recomendado por un familiar'],
+  tiempoEvolucion: ['Menos de 1 mes', '1 a 6 meses', '6 meses a 1 año', '1 a 5 años', 'Más de 5 años', 'De toda la vida'],
+  pais: ['México'],
+
+  evalAparienciaConducta: ['Arreglo y aseo adecuados', 'Contacto visual sostenido', 'Contacto visual evitativo', 'Colaborador durante la entrevista', 'Inquietud psicomotriz', 'Enlentecimiento psicomotor'],
+  evalEstadoAnimo: ['Refiere ánimo eutímico', 'Refiere ánimo triste la mayor parte del día', 'Refiere ansiedad persistente', 'Refiere irritabilidad'],
+  evalAfecto: ['Afecto congruente con el discurso', 'Afecto aplanado', 'Afecto lábil', 'Afecto restringido'],
+  evalLenguaje: ['Fluido y coherente, volumen y ritmo normales', 'Habla enlentecida', 'Habla acelerada', 'Tono monótono'],
+  evalPensamiento: ['Curso lógico y coherente, sin alteraciones del contenido', 'Rumiaciones', 'Ideas obsesivas', 'Pensamiento disgregado'],
+  evalPercepcion: ['Sin alteraciones sensoperceptivas', 'Refiere alucinaciones auditivas', 'Refiere despersonalización'],
+  evalOrientacion: ['Orientado en persona, espacio y tiempo', 'Desorientado en tiempo'],
+  evalAtencion: ['Atención conservada durante la entrevista', 'Dificultad para sostener la atención', 'Se distrae con facilidad'],
+  evalMemoria: ['Sin fallas aparentes de memoria', 'Refiere olvidos cotidianos frecuentes', 'Dificultad de evocación reciente'],
+  evalInsight: ['Insight completo: reconoce el problema y la necesidad de ayuda', 'Insight parcial', 'Insight ausente'],
+  evalJuicio: ['Juicio conservado', 'Juicio debilitado', 'Juicio alterado'],
+  evalFactoresProtectores: ['Red de apoyo familiar presente', 'Buena adherencia al tratamiento', 'Proyecto de vida definido', 'Motivos para vivir identificados']
+};
+
+function insertarSugerencia(campo, texto){
+  const actual = campo.value.trim();
+  campo.value = actual ? `${actual}\n${texto}` : texto;
+  // Se dispara para que el guardado automático se entere del cambio.
+  campo.dispatchEvent(new Event('input', { bubbles: true }));
+  campo.focus();
+}
+
+function aplicarAyudasYSugerencias(){
+  document.querySelectorAll('label[for]').forEach(label => {
+    const id = label.getAttribute('for');
+    const campo = document.getElementById(id);
+
+    if(AYUDAS[id] && !label.querySelector('.ayuda')){
+      const boton = document.createElement('button');
+      boton.type = 'button';
+      boton.className = 'ayuda';
+      boton.setAttribute('aria-label', `Qué va en ${label.textContent.trim()}`);
+      boton.textContent = '?';
+      const burbuja = document.createElement('span');
+      burbuja.className = 'ayuda-burbuja';
+      burbuja.textContent = AYUDAS[id];
+      boton.appendChild(burbuja);
+      label.appendChild(boton);
+    }
+
+    const sugerencias = SUGERENCIAS[id];
+    if(!sugerencias || !campo) return;
+
+    if(campo.tagName === 'TEXTAREA'){
+      if(campo.parentNode.querySelector('.sugerencias')) return;
+      const cont = document.createElement('div');
+      cont.className = 'sugerencias';
+      sugerencias.forEach(texto => {
+        const chip = document.createElement('button');
+        chip.type = 'button';
+        chip.className = 'chip-sug';
+        chip.textContent = texto;
+        chip.addEventListener('click', ()=> insertarSugerencia(campo, texto));
+        cont.appendChild(chip);
+      });
+      campo.parentNode.appendChild(cont);
+    } else if(!campo.getAttribute('list')){
+      const idLista = `dl-auto-${id}`;
+      if(!document.getElementById(idLista)){
+        const lista = document.createElement('datalist');
+        lista.id = idLista;
+        sugerencias.forEach(texto => {
+          const opcion = document.createElement('option');
+          opcion.value = texto;
+          lista.appendChild(opcion);
+        });
+        campo.parentNode.appendChild(lista);
+      }
+      campo.setAttribute('list', idLista);
+    }
+  });
+}
+
+aplicarAyudasYSugerencias();
 iniciar();
 </script>
 
