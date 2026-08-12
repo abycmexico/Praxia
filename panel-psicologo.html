@@ -50,6 +50,8 @@
   .eq-caja{background:#F7FAF6;border:1.5px solid var(--primario-suave);border-radius:12px;padding:15px 17px;margin-top:16px;}
   .eq-caja-titulo{font-size:12.5px;font-weight:800;margin-bottom:5px;}
   .eq-caja-texto{font-size:11.5px;color:var(--gray);font-weight:600;line-height:1.55;}
+  .eq-quitar{background:none;border:1.5px solid var(--line);border-radius:20px;padding:5px 12px;font-size:11px;font-weight:700;font-family:inherit;color:var(--gray);cursor:pointer;white-space:nowrap;}
+  .eq-quitar:hover{border-color:var(--err);color:var(--err);}
   .rejilla-alta{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px;}
   .rejilla-alta label{display:block;font-size:12px;font-weight:700;margin-bottom:5px;}
   @media(max-width:700px){ .rejilla-alta{grid-template-columns:1fr;} }
@@ -1299,6 +1301,7 @@ async function pintarEquipoDueno(cont){
       </div>
       <div class="eq-metrica">${sesionesPor[p.id] || 0} sesiones<br>este mes</div>
       <span class="eq-rol ${p.rol_consultorio === 'dueno' ? '' : 'colaborador'}">${p.rol_consultorio === 'dueno' ? 'Responsable' : 'Colaborador'}</span>
+      ${p.rol_consultorio === 'dueno' ? '' : `<button type="button" class="eq-quitar" data-id="${escapar(p.id)}" data-nombre="${escapar(p.nombre)}">Retirar</button>`}
     </div>`).join('');
 
   cont.innerHTML = `
@@ -1332,6 +1335,10 @@ async function pintarEquipoDueno(cont){
       maneje esa información.
     </p>`;
 
+  cont.querySelectorAll('.eq-quitar').forEach(btn=>{
+    btn.addEventListener('click', ()=> retirarDelConsultorio(btn.dataset.id, btn.dataset.nombre));
+  });
+
   document.getElementById('btnMostrarAlta').addEventListener('click', ()=>{
     document.getElementById('formAlta').style.display = 'block';
     document.getElementById('btnMostrarAlta').style.display = 'none';
@@ -1349,6 +1356,29 @@ function pintarEquipoColaborador(cont){
         solo ve tu agenda y cuántas sesiones das.
       </div>
     </div>`;
+}
+
+async function retirarDelConsultorio(id, nombre){
+  // Se dice de frente lo que pasa y lo que no: la cuenta y los expedientes
+  // no se tocan, para que nadie crea que esto borra a un psicologo.
+  const aviso = `¿Retirar a ${nombre} de tu consultorio?\n\n` +
+    `Conserva su cuenta, sus pacientes y sus expedientes: solo deja de pertenecer al consultorio ` +
+    `y dejarás de ver su agenda.\n\nPuedes volver a darlo de alta con una liga nueva.`;
+  if(!confirm(aviso)) return;
+
+  const { data, error } = await sb.rpc('quitar_del_consultorio', { p_psicologo_id: id });
+  const r = Array.isArray(data) ? data[0] : data;
+
+  const msg = document.getElementById('msgEquipo');
+  if(error || !r || !r.ok){
+    msg.textContent = error?.message || r?.mensaje || 'No se pudo retirar.';
+    msg.className = 'msg err';
+    return;
+  }
+
+  // El mensaje avisa si se va con pacientes, que es lo que hay que resolver.
+  alert(r.mensaje);
+  cargarEquipo();
 }
 
 async function generarInvitacion(){
