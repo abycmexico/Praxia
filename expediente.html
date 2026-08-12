@@ -167,6 +167,25 @@
   .modal .modal-sub{font-size:13px;color:var(--gray);margin-bottom:22px;}
   .modal .campo{margin-bottom:16px;}
   .modal-actions{display:flex;gap:10px;margin-top:20px;justify-content:flex-end;flex-wrap:wrap;}
+
+  /* exportar: elegir plantilla y ver el PDF antes de descargarlo */
+  .modal-ancho{max-width:1000px;}
+  .exp-cuerpo{display:grid;grid-template-columns:290px 1fr;gap:22px;align-items:start;}
+  .exp-opcion{width:100%;text-align:left;background:#fff;border:1.5px solid var(--line);border-radius:14px;padding:14px 16px;cursor:pointer;font-family:inherit;margin-bottom:10px;display:block;}
+  .exp-opcion:hover{border-color:var(--primario-suave);}
+  .exp-opcion.sel{border-color:var(--primario);background:#F7FAF6;}
+  .exp-opcion-nombre{font-size:13.5px;font-weight:800;color:var(--ink);margin-bottom:4px;}
+  .exp-opcion-resumen{font-size:11.5px;color:var(--gray);font-weight:600;line-height:1.5;}
+  .exp-opcion-para{font-size:11px;color:var(--primario);font-weight:700;line-height:1.45;margin-top:6px;}
+  .exp-previa{border:1.5px solid var(--line);border-radius:14px;overflow:hidden;background:#F4F4F4;min-height:460px;display:flex;align-items:center;justify-content:center;position:relative;}
+  .exp-previa iframe{width:100%;height:520px;border:none;display:block;}
+  .exp-cargando{font-size:12.5px;color:var(--gray);font-weight:700;}
+  .exp-aviso{font-size:11.5px;color:var(--gray);font-weight:600;line-height:1.55;margin-top:12px;}
+  @media(max-width:820px){
+    .exp-cuerpo{grid-template-columns:1fr;}
+    .exp-previa{min-height:300px;}
+    .exp-previa iframe{height:340px;}
+  }
   @media(max-width:640px){
     header{padding:16px 20px;}
     .rejilla{grid-template-columns:1fr;}
@@ -727,6 +746,28 @@
 </main>
 <div class="marca-pie"><img src="./assets/praxia-isotipo.png" alt="Praxia"></div>
 
+
+<div class="modal-bg" id="modalExportar">
+  <div class="modal modal-ancho">
+    <h3>Exportar expediente</h3>
+    <p class="modal-sub">Elige qué incluir y revisa cómo queda antes de descargarlo.</p>
+
+    <div class="exp-cuerpo">
+      <div>
+        <div id="expOpciones"></div>
+        <p class="exp-aviso">Este documento contiene información clínica confidencial. Compártelo solo con quien el paciente haya autorizado.</p>
+      </div>
+      <div class="exp-previa" id="expPrevia">
+        <span class="exp-cargando">Preparando vista previa...</span>
+      </div>
+    </div>
+
+    <div class="modal-actions">
+      <button type="button" class="btn btn-ghost" id="btnCerrarExportar">Cancelar</button>
+      <button type="button" class="btn btn-primario" id="btnDescargarPDF">Descargar PDF</button>
+    </div>
+  </div>
+</div>
 
 <div class="modal-bg" id="modalNota">
   <div class="modal">
@@ -1864,10 +1905,47 @@ async function obtenerLogoBase64(url){
   }
 }
 
-document.getElementById('btnExportar').addEventListener('click', async ()=>{
-  const btn = document.getElementById('btnExportar');
-  btn.disabled = true;
-  btn.textContent = 'Preparando PDF...';
+/* Cada seccion del PDF se identifica por su titulo, de modo que las
+   plantillas se arman sin tener que tocar el cuerpo de la exportacion. */
+const CLAVE_POR_TITULO = {
+  'Datos del paciente': 'datos',
+  'Antecedentes personales': 'antecedentes',
+  'Historia personal y familiar': 'historia',
+  'Evaluación psicológica': 'evaluacion',
+  'Evaluaciones y pruebas psicológicas': 'pruebas',
+  'Impresión clínica / diagnóstico': 'diagnostico',
+  'Objetivos terapéuticos': 'objetivos',
+  'Plan de tratamiento': 'plan',
+  'Evaluación de riesgo': 'riesgo',
+  'Medicación': 'medicacion',
+  'Documentos': 'documentos',
+  'Sesiones': 'sesiones',
+  'Seguimiento y alta': 'alta'
+};
+
+const PLANTILLAS_PDF = {
+  completo: {
+    nombre: 'Expediente completo',
+    resumen: 'Todo el expediente en orden clínico. Es el respaldo íntegro del caso.',
+    para: 'Para archivo, respaldo propio o entrega formal del expediente.',
+    secciones: ['datos','antecedentes','historia','evaluacion','pruebas','diagnostico','objetivos','plan','riesgo','medicacion','documentos','sesiones','alta']
+  },
+  evolucion: {
+    nombre: 'Informe de evolución',
+    resumen: 'Motivo, objetivos, avance y sesiones. Sin antecedentes ni historia de vida.',
+    para: 'Para compartir avances con el paciente o con quien lo refirió, sin exponer su historia completa.',
+    secciones: ['datos','diagnostico','objetivos','plan','sesiones','alta']
+  },
+  canalizacion: {
+    nombre: 'Resumen para canalización',
+    resumen: 'Lo que otro profesional necesita para retomar el caso: evaluación, diagnóstico, riesgo y medicación.',
+    para: 'Para derivar a psiquiatría u otro profesional. Deja fuera las notas de sesión.',
+    secciones: ['datos','antecedentes','evaluacion','pruebas','diagnostico','riesgo','medicacion','plan']
+  }
+};
+
+async function construirPDF(clavePlantilla){
+  const plantilla = PLANTILLAS_PDF[clavePlantilla] || PLANTILLAS_PDF.completo;
 
   const { data: citas } = await sb.from('citas')
     .select('id, fecha_hora, duracion_minutos, estado')
@@ -1907,7 +1985,14 @@ document.getElementById('btnExportar').addEventListener('click', async ()=>{
     }
   }
 
+  // Si la seccion no entra en la plantilla elegida, se marca y todo lo que
+  // venga despues se omite hasta el siguiente titulo. Asi las plantillas no
+  // obligan a envolver cada seccion en un if.
+  let omitiendo = false;
+
   function tituloSeccion(texto){
+    omitiendo = !plantilla.secciones.includes(CLAVE_POR_TITULO[texto] || texto);
+    if(omitiendo) return;
     saltoDePagina(14);
     doc.setFillColor(...VERDE);
     doc.rect(margen, y, 3, 6, 'F');
@@ -1919,7 +2004,7 @@ document.getElementById('btnExportar').addEventListener('click', async ()=>{
   }
 
   function campo(etiqueta, valor){
-    if(!valor) return;
+    if(omitiendo || !valor) return;
     saltoDePagina(6);
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(9.5);
@@ -1932,7 +2017,7 @@ document.getElementById('btnExportar').addEventListener('click', async ()=>{
   }
 
   function parrafo(etiqueta, texto){
-    if(!texto) return;
+    if(omitiendo || !texto) return;
     saltoDePagina(10);
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(9.5);
@@ -1978,11 +2063,13 @@ document.getElementById('btnExportar').addEventListener('click', async ()=>{
 
   // ---------- datos del paciente ----------
   tituloSeccion('Datos del paciente');
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(11);
-  doc.setTextColor(...NEGRO);
-  doc.text(paciente.nombre, margen, y);
-  y += 8;
+  if(!omitiendo){
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(11);
+    doc.setTextColor(...NEGRO);
+    doc.text(paciente.nombre, margen, y);
+    y += 8;
+  }
 
   campo('Correo', paciente.correo);
   campo('Teléfono', paciente.telefono);
@@ -2072,7 +2159,9 @@ document.getElementById('btnExportar').addEventListener('click', async ()=>{
 
   // ---------- documentos ----------
   tituloSeccion('Documentos');
-  if(docs && docs.length){
+  if(omitiendo){
+    /* la plantilla no incluye documentos */
+  } else if(docs && docs.length){
     docs.forEach(d=>{
       saltoDePagina(6);
       doc.setFont('helvetica', 'normal');
@@ -2093,7 +2182,9 @@ document.getElementById('btnExportar').addEventListener('click', async ()=>{
 
   // ---------- sesiones ----------
   tituloSeccion('Sesiones');
-  if(citas && citas.length){
+  if(omitiendo){
+    /* la plantilla no incluye el detalle de sesiones */
+  } else if(citas && citas.length){
     citas.forEach(c=>{
       const f = new Date(c.fecha_hora);
       saltoDePagina(12);
@@ -2150,12 +2241,10 @@ document.getElementById('btnExportar').addEventListener('click', async ()=>{
     doc.text(`Página ${i} de ${totalPaginas}`, pageW - margen, pageH - 9, { align: 'right' });
   }
 
-  const nombreArchivo = `expediente-${paciente.nombre.replace(/\s+/g,'-').toLowerCase()}.pdf`;
-  doc.save(nombreArchivo);
-
-  btn.disabled = false;
-  btn.textContent = 'Exportar expediente';
-});
+  const sufijo = { completo: 'expediente', evolucion: 'informe-evolucion', canalizacion: 'resumen-canalizacion' }[clavePlantilla] || 'expediente';
+  const nombreArchivo = `${sufijo}-${paciente.nombre.replace(/\s+/g,'-').toLowerCase()}.pdf`;
+  return { doc, nombreArchivo };
+}
 
 /* ---------- util ---------- */
 function vacioNull(v){ const t = (v||'').trim(); return t === '' ? null : t; }
@@ -2411,6 +2500,85 @@ async function ejecutarBusquedaExpediente(q){
 
   cont.innerHTML = resultados || '<div class="resultado-vacio">Sin resultados para esa búsqueda.</div>';
 }
+
+/* ---------- exportar: elegir plantilla y previsualizar ---------- */
+/* La vista previa no es una simulacion: se genera el PDF de verdad y se
+   muestra en un visor, asi que lo que se ve es exactamente lo que baja. */
+
+let plantillaElegida = 'completo';
+let urlPreviaActual = null;
+
+function pintarOpcionesExportar(){
+  const cont = document.getElementById('expOpciones');
+  cont.innerHTML = '';
+  Object.entries(PLANTILLAS_PDF).forEach(([clave, p])=>{
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'exp-opcion' + (clave === plantillaElegida ? ' sel' : '');
+    btn.innerHTML = `
+      <div class="exp-opcion-nombre">${escapar(p.nombre)}</div>
+      <div class="exp-opcion-resumen">${escapar(p.resumen)}</div>
+      <div class="exp-opcion-para">${escapar(p.para)}</div>`;
+    btn.addEventListener('click', ()=>{
+      if(plantillaElegida === clave) return;
+      plantillaElegida = clave;
+      pintarOpcionesExportar();
+      refrescarVistaPrevia();
+    });
+    cont.appendChild(btn);
+  });
+}
+
+function liberarPrevia(){
+  if(urlPreviaActual){
+    URL.revokeObjectURL(urlPreviaActual);
+    urlPreviaActual = null;
+  }
+}
+
+async function refrescarVistaPrevia(){
+  const caja = document.getElementById('expPrevia');
+  caja.innerHTML = '<span class="exp-cargando">Preparando vista previa...</span>';
+  try{
+    const { doc } = await construirPDF(plantillaElegida);
+    liberarPrevia();
+    urlPreviaActual = doc.output('bloburl');
+    const visor = document.createElement('iframe');
+    visor.title = 'Vista previa del expediente';
+    visor.src = urlPreviaActual;
+    caja.innerHTML = '';
+    caja.appendChild(visor);
+  }catch(e){
+    caja.innerHTML = '<span class="exp-cargando">No se pudo generar la vista previa: ' + escapar(e.message) + '</span>';
+  }
+}
+
+document.getElementById('btnExportar').addEventListener('click', ()=>{
+  document.getElementById('modalExportar').classList.add('show');
+  pintarOpcionesExportar();
+  refrescarVistaPrevia();
+});
+
+document.getElementById('btnCerrarExportar').addEventListener('click', ()=>{
+  document.getElementById('modalExportar').classList.remove('show');
+  liberarPrevia();
+});
+
+document.getElementById('btnDescargarPDF').addEventListener('click', async ()=>{
+  const btn = document.getElementById('btnDescargarPDF');
+  btn.disabled = true;
+  btn.textContent = 'Generando...';
+  try{
+    const { doc, nombreArchivo } = await construirPDF(plantillaElegida);
+    doc.save(nombreArchivo);
+    document.getElementById('modalExportar').classList.remove('show');
+    liberarPrevia();
+  }catch(e){
+    alert('No se pudo generar el PDF: ' + e.message);
+  }
+  btn.disabled = false;
+  btn.textContent = 'Descargar PDF';
+});
 
 /* ---------- ayuda contextual y sugerencias ---------- */
 /* Se inyectan desde aqui y no en el HTML: son 127 campos, y tenerlo en un
