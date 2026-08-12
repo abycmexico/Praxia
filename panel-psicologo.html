@@ -35,6 +35,23 @@
   .sidebar-user-info{min-width:0;}
   .sidebar-user-nombre{font-size:12.5px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
   .sidebar-user-rol{font-size:10.5px;color:var(--gray);}
+  /* equipo del consultorio */
+  .eq-miembro{display:flex;align-items:center;gap:13px;padding:13px 0;border-bottom:1px solid var(--line);}
+  .eq-miembro:last-child{border-bottom:none;}
+  .eq-avatar{width:38px;height:38px;border-radius:50%;background:#EDF6EC;color:var(--primario);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:13px;flex-shrink:0;}
+  .eq-datos{flex:1;min-width:0;}
+  .eq-nombre{font-size:13.5px;font-weight:800;}
+  .eq-correo{font-size:11.5px;color:var(--gray);font-weight:600;}
+  .eq-rol{font-size:10px;font-weight:800;letter-spacing:.4px;text-transform:uppercase;padding:3px 9px;border-radius:20px;background:#F2F6F1;color:var(--primario);white-space:nowrap;}
+  .eq-rol.colaborador{background:#F4F4F4;color:var(--gray);}
+  .eq-metrica{font-size:11.5px;color:var(--gray);font-weight:700;white-space:nowrap;text-align:right;}
+  .eq-liga{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;}
+  .eq-liga input{flex:1;min-width:220px;font-size:11.5px;font-family:monospace;background:#FAFAFA;}
+  .eq-caja{background:#F7FAF6;border:1.5px solid var(--primario-suave);border-radius:12px;padding:15px 17px;margin-top:16px;}
+  .eq-caja-titulo{font-size:12.5px;font-weight:800;margin-bottom:5px;}
+  .eq-caja-texto{font-size:11.5px;color:var(--gray);font-weight:600;line-height:1.55;}
+  .eq-aviso-privacidad{font-size:11px;color:var(--gray);font-weight:600;line-height:1.55;margin-top:14px;padding-top:13px;border-top:1px solid var(--line);}
+
   .btn-admin-maestro{display:block;text-align:center;background:#F2F6F1;border:1.5px solid var(--primario-suave);border-radius:20px;padding:9px;font-size:11.5px;font-weight:800;color:var(--primario);margin-top:8px;text-decoration:none;}
   .btn-admin-maestro:hover{background:var(--primario);color:#fff;border-color:var(--primario);}
   .btn-salir{background:none;border:1.5px solid var(--line);border-radius:20px;padding:9px;font-size:11.5px;font-weight:700;cursor:pointer;font-family:inherit;color:var(--gray);margin-top:8px;}
@@ -701,9 +718,10 @@
       <p class="msg" id="msgNombreConsultorio"></p>
     </div>
 
-    <div class="bloque aviso-futuro">
+    <div class="bloque" id="bloqueEquipo">
       <h3>Equipo del consultorio</h3>
-      <p class="bh">Próximamente vas a poder dar de alta a otros psicólogos que trabajen en tu mismo consultorio, con acceso solo a sus propios pacientes. Todavía no está disponible.</p>
+      <p class="bh">Da de alta a otros psicólogos que trabajen contigo. Cada quien atiende a sus propios pacientes; tú ves la operación del consultorio, no los expedientes de los demás.</p>
+      <div id="equipoContenido"><p class="empty">Cargando...</p></div>
     </div>
   </section>
 
@@ -1196,6 +1214,174 @@ let chartIngresos = null;
 let chartPacientes = null;
 let rangoHistorialActual = 'semana';
 
+/* ---------- equipo del consultorio ---------- */
+/* El dueño ve la operacion de su consultorio, no los expedientes de los
+   pacientes que atienden sus colaboradores. Esa separacion la sostiene la
+   base con RLS; aqui solo se pinta lo que la base deja ver. */
+
+let miConsultorio = null;
+
+async function cargarEquipo(){
+  const cont = document.getElementById('equipoContenido');
+  if(!cont) return;
+
+  const { data: consultorio } = await sb.from('consultorios')
+    .select('*').eq('id', yo.consultorio_id || '00000000-0000-0000-0000-000000000000').maybeSingle();
+  miConsultorio = consultorio || null;
+
+  if(!yo.consultorio_id){ pintarSinConsultorio(cont); return; }
+  if(yo.rol_consultorio === 'dueno'){ await pintarEquipoDueno(cont); return; }
+  pintarEquipoColaborador(cont);
+}
+
+function pintarSinConsultorio(cont){
+  cont.innerHTML = `
+    <div class="eq-caja">
+      <div class="eq-caja-titulo">Todavía no tienes consultorio</div>
+      <div class="eq-caja-texto">Créalo si trabajas con más psicólogos. Tú quedas como responsable y podrás invitarlos con una liga.</div>
+    </div>
+    <label for="nombreNuevoConsultorio" style="margin-top:16px;">Nombre del consultorio</label>
+    <input type="text" id="nombreNuevoConsultorio" placeholder="Ej. CAPSI">
+    <button class="btn btn-primary" id="btnCrearConsultorio" style="width:auto;margin-top:12px;">Crear consultorio</button>
+    <p class="msg" id="msgEquipo"></p>`;
+
+  document.getElementById('btnCrearConsultorio').addEventListener('click', crearConsultorio);
+}
+
+async function crearConsultorio(){
+  const nombre = document.getElementById('nombreNuevoConsultorio').value.trim();
+  const msg = document.getElementById('msgEquipo');
+  if(!nombre){ msg.textContent = 'Ponle un nombre al consultorio.'; msg.className = 'msg err'; return; }
+
+  msg.textContent = 'Creando...'; msg.className = 'msg';
+
+  const { data: nuevo, error } = await sb.from('consultorios')
+    .insert({ nombre, dueno_id: yo.id }).select('id').single();
+  if(error){ msg.textContent = 'No se pudo crear: ' + error.message; msg.className = 'msg err'; return; }
+
+  const { error: errPsi } = await sb.from('psicologos')
+    .update({ consultorio_id: nuevo.id, rol_consultorio: 'dueno' }).eq('id', yo.id);
+  if(errPsi){ msg.textContent = 'El consultorio se creó pero no quedaste ligado: ' + errPsi.message; msg.className = 'msg err'; return; }
+
+  yo.consultorio_id = nuevo.id;
+  yo.rol_consultorio = 'dueno';
+  cargarEquipo();
+}
+
+async function pintarEquipoDueno(cont){
+  const { data: equipo, error } = await sb.from('psicologos')
+    .select('id, nombre, correo, estado, rol_consultorio')
+    .eq('consultorio_id', yo.consultorio_id);
+
+  if(error){ cont.innerHTML = `<p class="empty">No se pudo cargar el equipo: ${escapar(error.message)}</p>`; return; }
+
+  // Sesiones del mes por psicologo, que es lo que la base deja ver al dueño.
+  const inicioMes = new Date();
+  inicioMes.setDate(1); inicioMes.setHours(0,0,0,0);
+  const { data: citasEquipo } = await sb.from('citas')
+    .select('psicologo_id, estado').gte('fecha_hora', inicioMes.toISOString());
+
+  const sesionesPor = {};
+  (citasEquipo||[]).forEach(c=>{
+    if(c.estado === 'cancelada') return;
+    sesionesPor[c.psicologo_id] = (sesionesPor[c.psicologo_id] || 0) + 1;
+  });
+
+  const filas = (equipo||[]).map(p=>`
+    <div class="eq-miembro">
+      <div class="eq-avatar">${escapar(iniciales(p.nombre))}</div>
+      <div class="eq-datos">
+        <div class="eq-nombre">${escapar(p.nombre)}${p.id === yo.id ? ' (tú)' : ''}</div>
+        <div class="eq-correo">${escapar(p.correo)}</div>
+      </div>
+      <div class="eq-metrica">${sesionesPor[p.id] || 0} sesiones<br>este mes</div>
+      <span class="eq-rol ${p.rol_consultorio === 'dueno' ? '' : 'colaborador'}">${p.rol_consultorio === 'dueno' ? 'Responsable' : 'Colaborador'}</span>
+    </div>`).join('');
+
+  cont.innerHTML = `
+    <div class="eq-caja">
+      <div class="eq-caja-titulo">${escapar(miConsultorio?.nombre || 'Mi consultorio')}</div>
+      <div class="eq-caja-texto">Eres el responsable. Ves la agenda y las sesiones de tu equipo, no los expedientes de sus pacientes.</div>
+    </div>
+
+    <div style="margin-top:18px;">${filas || '<p class="empty">Todavía no hay nadie más en el equipo.</p>'}</div>
+
+    <button class="btn btn-primary" id="btnInvitar" style="width:auto;margin-top:16px;">Invitar a un psicólogo</button>
+    <div id="cajaLiga"></div>
+    <p class="msg" id="msgEquipo"></p>
+
+    <p class="eq-aviso-privacidad">
+      Cada psicólogo es responsable de los datos de sus propios pacientes. Por eso no tienes acceso
+      a sus notas de sesión ni a sus expedientes: sus pacientes consintieron que su psicólogo tratante
+      maneje esa información.
+    </p>`;
+
+  document.getElementById('btnInvitar').addEventListener('click', generarInvitacion);
+}
+
+function pintarEquipoColaborador(cont){
+  cont.innerHTML = `
+    <div class="eq-caja">
+      <div class="eq-caja-titulo">Perteneces a ${escapar(miConsultorio?.nombre || 'un consultorio')}</div>
+      <div class="eq-caja-texto">
+        Tus pacientes y sus expedientes son tuyos: nadie más los ve. El responsable del consultorio
+        solo ve tu agenda y cuántas sesiones das.
+      </div>
+    </div>`;
+}
+
+async function generarInvitacion(){
+  const msg = document.getElementById('msgEquipo');
+  msg.textContent = 'Generando liga...'; msg.className = 'msg';
+
+  const codigo = (crypto.randomUUID ? crypto.randomUUID().replace(/-/g,'') : String(Math.random()).slice(2)).slice(0, 12).toUpperCase();
+
+  const { error } = await sb.from('invitaciones_consultorio')
+    .insert({ consultorio_id: yo.consultorio_id, codigo, creada_por: yo.id });
+  if(error){ msg.textContent = 'No se pudo generar: ' + error.message; msg.className = 'msg err'; return; }
+
+  const base = `${location.origin}${location.pathname.replace(/[^/]+$/,'')}`;
+  const liga = `${base}panel-psicologo.html?invitacion=${codigo}`;
+
+  msg.textContent = '';
+  document.getElementById('cajaLiga').innerHTML = `
+    <div class="eq-caja">
+      <div class="eq-caja-titulo">Liga de invitación</div>
+      <div class="eq-caja-texto">Mándasela al psicólogo. Sirve una sola vez y vence en 14 días. Debe tener ya su cuenta en Praxia.</div>
+      <div class="eq-liga">
+        <input type="text" id="ligaInvitacion" readonly value="${escapar(liga)}">
+        <button class="btn btn-secundario" id="btnCopiarLiga" style="width:auto;">Copiar</button>
+      </div>
+    </div>`;
+
+  document.getElementById('btnCopiarLiga').addEventListener('click', ()=>{
+    const campo = document.getElementById('ligaInvitacion');
+    campo.select();
+    navigator.clipboard.writeText(campo.value).then(()=>{
+      document.getElementById('btnCopiarLiga').textContent = 'Copiada';
+    }).catch(()=>{});
+  });
+}
+
+// Si llega por una liga de invitacion, se procesa al entrar al panel.
+async function procesarInvitacionPendiente(){
+  const codigo = new URLSearchParams(location.search).get('invitacion');
+  if(!codigo) return;
+
+  const { data, error } = await sb.rpc('aceptar_invitacion_consultorio', { p_codigo: codigo });
+  const r = Array.isArray(data) ? data[0] : data;
+
+  if(error || !r || !r.ok){
+    alert('No se pudo unir al consultorio: ' + (error?.message || r?.mensaje || 'error desconocido'));
+  } else {
+    alert(r.mensaje);
+    const { data: psi } = await sb.from('psicologos').select('*').eq('id', yo.id).maybeSingle();
+    if(psi) yo = psi;
+  }
+  // Se limpia la URL para que recargar no reintente una liga ya usada.
+  history.replaceState({}, '', location.pathname);
+}
+
 /* ---------- atajo al panel maestro ---------- */
 // Esto solo esconde o muestra el boton. Quien puede de verdad entrar y
 // aprobar lo decide la base: es_admin() en las politicas de RLS.
@@ -1243,6 +1429,8 @@ async function iniciar(){
   }
 
   yo = psi;
+  await procesarInvitacionPendiente();
+  cargarEquipo();
   mostrarAtajoAdmin(session.user.email);
   document.getElementById('quien').textContent = psi.nombre;
   document.getElementById('avatarIniciales').textContent = iniciales(psi.nombre);
