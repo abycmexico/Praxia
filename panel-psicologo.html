@@ -50,6 +50,9 @@
   .eq-caja{background:#F7FAF6;border:1.5px solid var(--primario-suave);border-radius:12px;padding:15px 17px;margin-top:16px;}
   .eq-caja-titulo{font-size:12.5px;font-weight:800;margin-bottom:5px;}
   .eq-caja-texto{font-size:11.5px;color:var(--gray);font-weight:600;line-height:1.55;}
+  .rejilla-alta{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px;}
+  .rejilla-alta label{display:block;font-size:12px;font-weight:700;margin-bottom:5px;}
+  @media(max-width:700px){ .rejilla-alta{grid-template-columns:1fr;} }
   .eq-aviso-privacidad{font-size:11px;color:var(--gray);font-weight:600;line-height:1.55;margin-top:14px;padding-top:13px;border-top:1px solid var(--line);}
 
   .btn-admin-maestro{display:block;text-align:center;background:#F2F6F1;border:1.5px solid var(--primario-suave);border-radius:20px;padding:9px;font-size:11.5px;font-weight:800;color:var(--primario);margin-top:8px;text-decoration:none;}
@@ -1306,7 +1309,20 @@ async function pintarEquipoDueno(cont){
 
     <div style="margin-top:18px;">${filas || '<p class="empty">Todavía no hay nadie más en el equipo.</p>'}</div>
 
-    <button class="btn btn-primary" id="btnInvitar" style="width:auto;margin-top:16px;">Invitar a un psicólogo</button>
+    <button class="btn btn-primary" id="btnMostrarAlta" style="width:auto;margin-top:16px;">Dar de alta a un psicólogo</button>
+
+    <div id="formAlta" style="display:none;margin-top:16px;">
+      <p class="bh">Captura sus datos aquí. Al abrir la liga solo tendrá que entrar con su correo y aceptar los términos: no repite el registro ni espera aprobación.</p>
+      <div class="rejilla-alta">
+        <div><label for="altaNombre">Nombre completo</label><input type="text" id="altaNombre" placeholder="Ej. Ana Ruiz"></div>
+        <div><label for="altaCorreo">Correo</label><input type="email" id="altaCorreo" placeholder="Con el que va a entrar"></div>
+        <div><label for="altaEspecialidad">Especialidad</label><input type="text" id="altaEspecialidad" placeholder="Ej. Psicología infantil"></div>
+        <div><label for="altaCedula">Cédula profesional</label><input type="text" id="altaCedula"></div>
+        <div><label for="altaTelefono">Teléfono</label><input type="tel" id="altaTelefono"></div>
+      </div>
+      <button class="btn btn-primary" id="btnInvitar" style="width:auto;margin-top:14px;">Generar liga de alta</button>
+    </div>
+
     <div id="cajaLiga"></div>
     <p class="msg" id="msgEquipo"></p>
 
@@ -1316,6 +1332,11 @@ async function pintarEquipoDueno(cont){
       maneje esa información.
     </p>`;
 
+  document.getElementById('btnMostrarAlta').addEventListener('click', ()=>{
+    document.getElementById('formAlta').style.display = 'block';
+    document.getElementById('btnMostrarAlta').style.display = 'none';
+    document.getElementById('altaNombre').focus();
+  });
   document.getElementById('btnInvitar').addEventListener('click', generarInvitacion);
 }
 
@@ -1332,22 +1353,35 @@ function pintarEquipoColaborador(cont){
 
 async function generarInvitacion(){
   const msg = document.getElementById('msgEquipo');
+  const nombre = document.getElementById('altaNombre').value.trim();
+  const correo = document.getElementById('altaCorreo').value.trim();
+
+  if(!nombre){ msg.textContent = 'Escribe al menos su nombre.'; msg.className = 'msg err'; return; }
+
   msg.textContent = 'Generando liga...'; msg.className = 'msg';
 
   const codigo = (crypto.randomUUID ? crypto.randomUUID().replace(/-/g,'') : String(Math.random()).slice(2)).slice(0, 12).toUpperCase();
 
-  const { error } = await sb.from('invitaciones_consultorio')
-    .insert({ consultorio_id: yo.consultorio_id, codigo, creada_por: yo.id });
+  const { error } = await sb.from('invitaciones_consultorio').insert({
+    consultorio_id: yo.consultorio_id,
+    codigo,
+    creada_por: yo.id,
+    nombre,
+    correo: correo || null,
+    especialidad: document.getElementById('altaEspecialidad').value.trim() || null,
+    cedula_profesional: document.getElementById('altaCedula').value.trim() || null,
+    telefono: document.getElementById('altaTelefono').value.trim() || null
+  });
   if(error){ msg.textContent = 'No se pudo generar: ' + error.message; msg.className = 'msg err'; return; }
 
   const base = `${location.origin}${location.pathname.replace(/[^/]+$/,'')}`;
-  const liga = `${base}panel-psicologo.html?invitacion=${codigo}`;
+  const liga = `${base}unirme-consultorio.html?codigo=${codigo}`;
 
   msg.textContent = '';
   document.getElementById('cajaLiga').innerHTML = `
     <div class="eq-caja">
-      <div class="eq-caja-titulo">Liga de invitación</div>
-      <div class="eq-caja-texto">Mándasela al psicólogo. Sirve una sola vez y vence en 14 días. Debe tener ya su cuenta en Praxia.</div>
+      <div class="eq-caja-titulo">Liga para ${escapar(nombre)}</div>
+      <div class="eq-caja-texto">Mándasela. Solo tendrá que entrar${correo ? ` con ${escapar(correo)}` : ''} y aceptar los términos. Sirve una vez y vence en 14 días.</div>
       <div class="eq-liga">
         <input type="text" id="ligaInvitacion" readonly value="${escapar(liga)}">
         <button class="btn btn-secundario" id="btnCopiarLiga" style="width:auto;">Copiar</button>

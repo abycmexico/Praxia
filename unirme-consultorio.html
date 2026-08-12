@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow">
+<title>Unirme al consultorio | Praxia</title>
+<link rel="icon" type="image/png" href="./assets/praxia-isotipo.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,400;1,600&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  :root{--primario:#2E7D32;--primario-claro:#7BC043;--primario-suave:#A8C99B;--bg:#F7F9F6;--ink:#1A1A1A;--gray:#7a7a7a;--line:#ececec;--err:#c62828;--ok:#2e7d32;}
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{background:var(--bg);color:var(--ink);font-family:'Montserrat',Arial,sans-serif;font-weight:500;min-height:100vh;display:flex;flex-direction:column;}
+  a{color:inherit;text-decoration:none;}
+  header{display:flex;align-items:center;padding:24px 32px;border-bottom:1.5px solid var(--line);}
+  header img{height:26px;}
+  main{flex:1;display:flex;align-items:center;justify-content:center;padding:40px 24px;}
+  .box{width:100%;max-width:460px;}
+  .box h1{font-size:25px;margin-bottom:8px;line-height:1.25;}
+  .box p.sub{color:var(--gray);font-size:14px;margin-bottom:26px;line-height:1.6;}
+  .tarjeta{background:#fff;border:1.5px solid var(--line);border-radius:16px;padding:20px 22px;margin-bottom:22px;}
+  .dato{display:flex;justify-content:space-between;gap:14px;padding:8px 0;border-bottom:1px solid var(--line);font-size:13px;}
+  .dato:last-child{border-bottom:none;}
+  .dato-etq{color:var(--gray);font-weight:700;}
+  .dato-val{font-weight:700;text-align:right;}
+  .terminos{background:#fff;border:1.5px solid var(--line);border-radius:14px;padding:16px 18px;margin-bottom:20px;}
+  .terminos-texto{max-height:170px;overflow:auto;font-size:11.5px;color:var(--gray);line-height:1.65;font-weight:500;white-space:pre-line;margin-bottom:14px;}
+  .check{display:flex;gap:10px;align-items:flex-start;font-size:12.5px;font-weight:700;cursor:pointer;}
+  .check input{margin-top:2px;flex-shrink:0;width:auto;}
+  button{width:100%;padding:14px;border:none;border-radius:30px;background:var(--primario);color:#fff;font-weight:700;font-size:15px;cursor:pointer;font-family:inherit;}
+  button:hover{background:var(--primario-claro);}
+  button:disabled{opacity:.5;cursor:default;}
+  .btn-google{display:flex;align-items:center;justify-content:center;gap:10px;background:#fff;border:1.5px solid var(--line);color:var(--ink);}
+  .btn-google:hover{background:#fff;border-color:var(--primario);}
+  .msg{margin-top:16px;font-size:13.5px;min-height:18px;text-align:center;}
+  .msg.err{color:var(--err);}
+  .msg.ok{color:var(--ok);}
+  .marca-pie{display:flex;justify-content:center;padding:24px 0 8px;opacity:.35;}
+  .marca-pie img{height:18px;}
+</style>
+</head>
+<body>
+
+<header><a href="./index.html"><img src="./assets/praxia-logo-completo.png" alt="Praxia"></a></header>
+
+<main>
+  <div class="box" id="caja">
+    <h1>Un momento</h1>
+    <p class="sub">Validando la invitación...</p>
+  </div>
+</main>
+<div class="marca-pie"><img src="./assets/praxia-isotipo.png" alt="Praxia"></div>
+
+<script>
+const SUPABASE_URL = 'https://uxbpfyeahqpertamhdxt.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_xaaA4lYAQZjdcMFRhMGtuQ_fvIeJKv7';
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+const caja = document.getElementById('caja');
+const codigo = new URLSearchParams(location.search).get('codigo');
+
+const TEXTO_TERMINOS = `Al aceptar, reconoces que eres el profesional responsable de la atención que brindas a través de Praxia y del tratamiento de los datos personales de tus pacientes, incluidos sus datos de salud, que son datos sensibles conforme a la Ley Federal de Protección de Datos Personales en Posesión de los Particulares.
+
+Praxia es la plataforma tecnológica que te permite administrar tu consulta y actúa como encargado del tratamiento: no decide sobre tu información clínica ni interviene en tu criterio profesional.
+
+Te comprometes a ejercer dentro del marco de tu cédula profesional, a resguardar el secreto profesional, y a recabar el consentimiento informado de tus pacientes.
+
+Al unirte a un consultorio, el responsable del mismo podrá ver tu agenda y el número de sesiones que realizas, con fines administrativos. No tendrá acceso a tus notas de sesión ni a los expedientes clínicos de tus pacientes, que permanecen bajo tu responsabilidad.`;
+
+function escapar(t){
+  return String(t == null ? '' : t).replace(/[&<>"']/g, c => (
+    {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]
+  ));
+}
+
+function pintarError(titulo, detalle){
+  caja.innerHTML = `<h1>${escapar(titulo)}</h1><p class="sub">${escapar(detalle)}</p>
+    <p class="sub"><a href="./login.html" style="font-weight:700;border-bottom:1.5px solid var(--primario);">Ir a Praxia</a></p>`;
+}
+
+async function iniciar(){
+  if(!codigo){ pintarError('Liga incompleta', 'Pídele a tu consultorio que te comparta la liga de nuevo.'); return; }
+
+  const { data, error } = await sb.rpc('info_publica_invitacion', { p_codigo: codigo });
+  const inv = Array.isArray(data) ? data[0] : data;
+
+  if(error){ pintarError('No pudimos validar la invitación', error.message); return; }
+  if(!inv){ pintarError('Liga no válida', 'Esta invitación no existe. Pide una nueva a tu consultorio.'); return; }
+  if(!inv.vigente){ pintarError('Liga no disponible', 'Esta invitación ya se usó o venció. Pide una nueva a tu consultorio.'); return; }
+
+  const { data: { session } } = await sb.auth.getSession();
+  pintarInvitacion(inv, session);
+}
+
+function pintarInvitacion(inv, session){
+  caja.innerHTML = `
+    <h1>Te invitaron a ${escapar(inv.nombre_consultorio)}</h1>
+    <p class="sub">${escapar(inv.nombre_responsable)} te dio de alta en su consultorio. Tus datos ya están cargados: solo confirma y entras.</p>
+
+    <div class="tarjeta">
+      <div class="dato"><span class="dato-etq">Nombre</span><span class="dato-val">${escapar(inv.nombre_invitado || '—')}</span></div>
+      <div class="dato"><span class="dato-etq">Consultorio</span><span class="dato-val">${escapar(inv.nombre_consultorio)}</span></div>
+      <div class="dato"><span class="dato-etq">Te invita</span><span class="dato-val">${escapar(inv.nombre_responsable)}</span></div>
+    </div>
+
+    <div class="terminos">
+      <div class="terminos-texto">${escapar(TEXTO_TERMINOS)}</div>
+      <label class="check">
+        <input type="checkbox" id="checkTerminos">
+        <span>He leído y acepto los términos y mi responsabilidad profesional.</span>
+      </label>
+    </div>
+
+    <button id="btnEntrar" class="${session ? '' : 'btn-google'}">${session ? 'Unirme al consultorio' : 'Continuar con Google'}</button>
+    <p class="msg" id="msg"></p>`;
+
+  document.getElementById('btnEntrar').addEventListener('click', ()=> session ? unirme() : entrarConGoogle());
+}
+
+async function entrarConGoogle(){
+  const msg = document.getElementById('msg');
+  if(!document.getElementById('checkTerminos').checked){
+    msg.textContent = 'Necesitas aceptar los términos para continuar.';
+    msg.className = 'msg err';
+    return;
+  }
+  // Se vuelve a esta misma pantalla con el código, para completar el alta.
+  const base = `${location.origin}${location.pathname}`;
+  await sb.auth.signInWithOAuth({
+    provider: 'google',
+    options: { redirectTo: `${base}?codigo=${encodeURIComponent(codigo)}` }
+  });
+}
+
+async function unirme(){
+  const btn = document.getElementById('btnEntrar');
+  const msg = document.getElementById('msg');
+
+  if(!document.getElementById('checkTerminos').checked){
+    msg.textContent = 'Necesitas aceptar los términos para continuar.';
+    msg.className = 'msg err';
+    return;
+  }
+
+  btn.disabled = true;
+  msg.textContent = 'Dando de alta tu cuenta...';
+  msg.className = 'msg';
+
+  const { data, error } = await sb.rpc('aceptar_invitacion_consultorio', { p_codigo: codigo });
+  const r = Array.isArray(data) ? data[0] : data;
+
+  if(error || !r || !r.ok){
+    msg.textContent = error?.message || r?.mensaje || 'No se pudo completar el alta.';
+    msg.className = 'msg err';
+    btn.disabled = false;
+    return;
+  }
+
+  // Queda registrada la aceptación de términos del colaborador.
+  const { data: { session } } = await sb.auth.getSession();
+  if(session){
+    await sb.from('psicologos').update({
+      terminos_aceptados_en: new Date().toISOString(),
+      terminos_version_aceptada: '2026-08-v1'
+    }).eq('id', session.user.id);
+  }
+
+  msg.textContent = r.mensaje + ' Entrando...';
+  msg.className = 'msg ok';
+  setTimeout(()=>{ location.href = './panel-psicologo.html'; }, 900);
+}
+
+iniciar();
+</script>
+
+</body>
+</html>
