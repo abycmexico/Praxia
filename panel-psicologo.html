@@ -53,6 +53,24 @@
   .eq-caja{background:#F7FAF6;border:1.5px solid var(--primario-suave);border-radius:12px;padding:15px 17px;margin-top:16px;}
   .eq-caja-titulo{font-size:12.5px;font-weight:800;margin-bottom:5px;}
   .eq-caja-texto{font-size:11.5px;color:var(--gray);font-weight:600;line-height:1.55;}
+  /* mi plan */
+  .plan-caja{border:1.5px solid var(--line);border-radius:14px;padding:16px 18px;background:#FAFAFA;}
+  .plan-caja.ok{background:#F7FAF6;border-color:var(--primario-suave);}
+  .plan-caja.urge{background:#FFF6E5;border-color:#F0D9A8;}
+  .plan-estado{font-size:14.5px;font-weight:800;margin-bottom:4px;}
+  .plan-caja.ok .plan-estado{color:var(--primario);}
+  .plan-caja.urge .plan-estado{color:#8a6300;}
+  .plan-detalle{font-size:12.5px;color:var(--gray);font-weight:600;line-height:1.6;}
+  .planes-rejilla{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:16px;}
+  .plan-tarjeta{border:1.5px solid var(--line);border-radius:14px;padding:18px 20px;background:#fff;display:flex;flex-direction:column;}
+  .plan-tarjeta.actual{border-color:var(--primario);background:#F7FAF6;}
+  .plan-nombre{font-size:15px;font-weight:800;margin-bottom:6px;}
+  .plan-precio{font-size:26px;font-weight:800;color:var(--primario);line-height:1.1;}
+  .plan-precio span{font-size:12px;color:var(--gray);font-weight:700;}
+  .plan-desc{font-size:11.5px;color:var(--gray);font-weight:600;line-height:1.55;margin:10px 0 16px;flex:1;}
+  .plan-actual-etq{font-size:11px;font-weight:800;color:var(--primario);text-transform:uppercase;letter-spacing:.4px;}
+  @media(max-width:700px){ .planes-rejilla{grid-template-columns:1fr;} }
+
   /* organigrama y KPIs del consultorio */
   .eq-totales{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:16px;}
   .eq-total{background:#F7FAF6;border:1.5px solid var(--line);border-radius:12px;padding:13px 14px;text-align:center;}
@@ -773,6 +791,12 @@
     <h2>Configuración del consultorio</h2>
     <p class="sub">Estos ajustes definen cómo se agendan tus sesiones. Los cambios aplican a las citas nuevas: las que ya están agendadas conservan la duración y el precio con que se hicieron.</p>
 
+    <div class="bloque" id="bloquePlan">
+      <h3>Mi plan</h3>
+      <p class="bh">Tu suscripción a Praxia. Es independiente de lo que tú le cobras a tus pacientes.</p>
+      <div id="planContenido"><p class="empty">Cargando...</p></div>
+    </div>
+
     <form id="formConfig">
       <div class="bloque">
         <h3>Mi perfil</h3>
@@ -1258,6 +1282,176 @@ let chartIngresos = null;
 let chartPacientes = null;
 let rangoHistorialActual = 'semana';
 
+/* ---------- mi plan ---------- */
+/* Lo que manda es fin_periodo, no el estado: una suscripcion cancelada
+   sigue dando acceso hasta que cierre el mes que ya se pago. */
+
+function fechaLegible(iso){
+  return new Date(iso).toLocaleDateString('es-MX', { day:'numeric', month:'long', year:'numeric' });
+}
+
+function diasQueFaltan(iso){
+  return Math.max(0, Math.ceil((new Date(iso) - Date.now()) / 86400000));
+}
+
+async function cargarPlan(){
+  const cont = document.getElementById('planContenido');
+  if(!cont) return;
+
+  const { data, error } = await sb.rpc('mi_suscripcion');
+  const s = Array.isArray(data) ? data[0] : data;
+
+  if(error){ cont.innerHTML = `<p class="empty">No se pudo cargar tu plan: ${escapar(error.message)}</p>`; return; }
+  if(!s){ cont.innerHTML = '<p class="empty">Todavía no tienes un plan asignado.</p>'; return; }
+
+  const { data: planes } = await sb.from('planes').select('*').eq('activo', true).order('orden');
+
+  // Lo primero es decir en que situacion esta, sin que tenga que deducirlo.
+  let aviso = '', acciones = '';
+  const dias = diasQueFaltan(s.fin_periodo);
+
+  if(!s.soy_titular){
+    aviso = `<div class="plan-caja">
+      <div class="plan-estado">Cubierto por tu consultorio</div>
+      <div class="plan-detalle">Tu suscripción la administra el responsable del consultorio. No tienes que pagar nada por tu cuenta.</div>
+    </div>`;
+  } else if(s.estado === 'prueba'){
+    aviso = `<div class="plan-caja ${dias <= 7 ? 'urge' : ''}">
+      <div class="plan-estado">Estás en tu prueba gratis</div>
+      <div class="plan-detalle">Te ${dias === 1 ? 'queda 1 día' : `quedan ${dias} días`}, hasta el ${escapar(fechaLegible(s.fin_periodo))}. Contrata un plan para no perder el acceso.</div>
+    </div>`;
+  } else if(s.estado === 'cancelada'){
+    aviso = `<div class="plan-caja urge">
+      <div class="plan-estado">Cancelaste la renovación</div>
+      <div class="plan-detalle">Conservas el acceso hasta el ${escapar(fechaLegible(s.fin_periodo))} y no se te volverá a cobrar. Puedes reactivarlo antes de esa fecha.</div>
+    </div>`;
+    acciones = `<button type="button" class="btn btn-primary" id="btnReactivar" style="width:auto;">Reactivar renovación</button>`;
+  } else if(s.estado === 'impago'){
+    aviso = `<div class="plan-caja urge">
+      <div class="plan-estado">No pudimos cobrar tu último recibo</div>
+      <div class="plan-detalle">Tu acceso sigue activo hasta el ${escapar(fechaLegible(s.fin_periodo))}. Revisa tu método de pago para que no se interrumpa.</div>
+    </div>`;
+  } else if(s.estado === 'vencida' || !s.vigente){
+    aviso = `<div class="plan-caja urge">
+      <div class="plan-estado">Tu plan venció</div>
+      <div class="plan-detalle">Contrata de nuevo para recuperar el acceso.</div>
+    </div>`;
+  } else {
+    aviso = `<div class="plan-caja ok">
+      <div class="plan-estado">Plan ${escapar(s.plan_nombre)} activo</div>
+      <div class="plan-detalle">Se renueva el ${escapar(fechaLegible(s.fin_periodo))} por $${Number(s.precio_mensual).toLocaleString('es-MX')} MXN.</div>
+    </div>`;
+    acciones = `<button type="button" class="btn btn-ghost" id="btnCancelarPlan" style="width:auto;">Cancelar renovación</button>`;
+  }
+
+  // Los planes solo se le ofrecen a quien puede contratar.
+  let opciones = '';
+  if(s.soy_titular){
+    opciones = `<div class="planes-rejilla">
+      ${(planes||[]).map(p=>{
+        const esActual = p.id === s.plan_id && s.estado !== 'prueba';
+        return `<div class="plan-tarjeta ${esActual ? 'actual' : ''}">
+          <div class="plan-nombre">${escapar(p.nombre)}</div>
+          <div class="plan-precio">$${Number(p.precio_mensual).toLocaleString('es-MX')}<span> MXN / mes</span></div>
+          <div class="plan-desc">${escapar(p.descripcion || '')}</div>
+          ${esActual
+            ? '<div class="plan-actual-etq">Tu plan actual</div>'
+            : `<button type="button" class="btn btn-primary btn-contratar" data-plan="${escapar(p.id)}">
+                 ${s.estado === 'prueba' || !s.vigente ? 'Contratar' : 'Cambiar a este plan'}
+               </button>`}
+        </div>`;
+      }).join('')}
+    </div>`;
+  }
+
+  cont.innerHTML = aviso + opciones +
+    (acciones ? `<div style="margin-top:16px;">${acciones}</div>` : '') +
+    '<p class="msg" id="msgPlan"></p>';
+
+  cont.querySelectorAll('.btn-contratar').forEach(b=>{
+    b.addEventListener('click', ()=> contratarPlan(b.dataset.plan, b));
+  });
+  document.getElementById('btnCancelarPlan')?.addEventListener('click', cancelarPlan);
+  document.getElementById('btnReactivar')?.addEventListener('click', reactivarPlan);
+}
+
+async function contratarPlan(planId, boton){
+  const msg = document.getElementById('msgPlan');
+  boton.disabled = true;
+  const textoPrevio = boton.textContent;
+  boton.textContent = 'Abriendo pago...';
+  msg.textContent = ''; msg.className = 'msg';
+
+  try{
+    const { data: { session } } = await sb.auth.getSession();
+    const base = `${location.origin}${location.pathname.replace(/[^/]+$/,'')}`;
+
+    const respuesta = await fetch(`${SUPABASE_URL}/functions/v1/crear-checkout`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${session.access_token}`
+      },
+      body: JSON.stringify({
+        plan_id: planId,
+        url_exito: `${base}panel-psicologo.html?suscripcion=ok`,
+        url_cancelar: `${base}panel-psicologo.html?suscripcion=cancelado`
+      })
+    });
+
+    const r = await respuesta.json();
+    if(!respuesta.ok || !r.url){
+      msg.textContent = r.error || 'No se pudo abrir el pago.';
+      msg.className = 'msg err';
+      boton.disabled = false; boton.textContent = textoPrevio;
+      return;
+    }
+    location.href = r.url;
+  }catch(e){
+    msg.textContent = 'No se pudo abrir el pago: ' + e.message;
+    msg.className = 'msg err';
+    boton.disabled = false; boton.textContent = textoPrevio;
+  }
+}
+
+async function cancelarPlan(){
+  if(!confirm('¿Cancelar la renovación automática?\n\nConservas el acceso hasta que termine el periodo que ya pagaste, y no se te vuelve a cobrar. Puedes reactivarlo antes de esa fecha.')) return;
+  const { data, error } = await sb.rpc('cancelar_renovacion');
+  const r = Array.isArray(data) ? data[0] : data;
+  const msg = document.getElementById('msgPlan');
+  if(error || !r || !r.ok){
+    msg.textContent = error?.message || r?.mensaje || 'No se pudo cancelar.';
+    msg.className = 'msg err';
+    return;
+  }
+  alert(r.mensaje);
+  cargarPlan();
+}
+
+async function reactivarPlan(){
+  const { data, error } = await sb.rpc('reactivar_renovacion');
+  const r = Array.isArray(data) ? data[0] : data;
+  const msg = document.getElementById('msgPlan');
+  if(error || !r || !r.ok){
+    msg.textContent = error?.message || r?.mensaje || 'No se pudo reactivar.';
+    msg.className = 'msg err';
+    return;
+  }
+  cargarPlan();
+}
+
+// Al volver de Stripe el webhook puede tardar un instante en registrar el
+// pago, asi que se recarga el plan un momento despues.
+function avisarRegresoDeStripe(){
+  const estado = new URLSearchParams(location.search).get('suscripcion');
+  if(!estado) return;
+  history.replaceState({}, '', location.pathname);
+  if(estado === 'ok'){
+    setTimeout(cargarPlan, 2500);
+    alert('¡Listo! Tu pago se está registrando. Si tu plan no aparece actualizado en unos segundos, recarga la página.');
+  }
+}
+
 /* ---------- baja de un consultorio ---------- */
 function pintarBajaConsultorio(psi){
   const consultorio = psi.baja_consultorio_nombre || 'el consultorio';
@@ -1691,6 +1885,8 @@ async function iniciar(){
 
   await procesarInvitacionPendiente();
   cargarEquipo();
+  cargarPlan();
+  avisarRegresoDeStripe();
   mostrarAtajoAdmin(session.user.email);
   document.getElementById('quien').textContent = psi.nombre;
   document.getElementById('avatarIniciales').textContent = iniciales(psi.nombre);
