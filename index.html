@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Praxia — El consultorio virtual para profesionales de la consulta</title>
-<meta name="description" content="Agenda, sesiones por videollamada, expedientes y cobros en un solo lugar. Praxia es el sistema donde llevas tu consulta virtual, sin depender de WhatsApp, Zoom ni hojas de cálculo.">
+<meta name="description" content="Agenda, sesiones por videollamada, expediente clínico y control de cobros en un solo lugar. Praxia es el sistema donde llevas tu consulta virtual, sin depender de WhatsApp, Zoom ni hojas de cálculo.">
 <link rel="icon" type="image/png" href="./assets/praxia-isotipo.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -143,7 +143,18 @@
   .plan li::before{content:"✓";position:absolute;left:0;color:var(--verde-suave);font-weight:800;}
   .plan .btn{width:100%;text-align:center;}
   .grid-precios.grid-dos{grid-template-columns:repeat(2,1fr);max-width:720px;margin:0 auto;}
-  .nota-codigo{text-align:center;color:#9a9a9a;font-size:13.5px;margin-top:26px;line-height:1.6;}
+  .nota-codigo{text-align:center;color:#9a9a9a;font-size:13.5px;margin-top:26px;line-height:1.6;max-width:620px;margin-left:auto;margin-right:auto;}
+  .titulo-comparativa{text-align:center;font-size:20px;margin-top:56px;margin-bottom:22px;color:#fff;}
+  .tabla-envoltura{overflow-x:auto;max-width:820px;margin:0 auto;border-radius:16px;border:1.5px solid #2c2c2c;}
+  .comparativa{width:100%;border-collapse:collapse;font-size:13.5px;min-width:560px;background:#1c1c1c;}
+  .comparativa th{padding:16px 18px;text-align:left;font-size:13px;font-weight:800;color:#fff;border-bottom:1.5px solid #2c2c2c;vertical-align:top;}
+  .comparativa th span{display:block;font-size:11.5px;color:#8f8f8f;font-weight:700;margin-top:3px;}
+  .comparativa td{padding:11px 18px;border-bottom:1px solid #262626;color:#c4c4c4;}
+  .comparativa tr:last-child td{border-bottom:none;}
+  .comparativa th:not(:first-child),.comparativa td:not(:first-child){text-align:center;width:150px;color:var(--verde-suave);font-weight:700;}
+  .comparativa td.no{color:#5c5c5c;}
+  .comparativa .col-destacada{background:#20281f;}
+  .comparativa tr.grupo td{background:#161616;color:#8f8f8f;font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:1px;padding:10px 18px;}
   @media(max-width:860px){.grid-precios,.grid-precios.grid-dos{grid-template-columns:1fr;}.plan.destacado{order:-1;}}
 
   .seguridad{text-align:center;}
@@ -256,7 +267,7 @@
     <span><span class="punto"></span>Videollamadas privadas</span>
     <span><span class="punto"></span>Expediente y notas por sesión</span>
     <span><span class="punto"></span>Agenda configurable</span>
-    <span><span class="punto"></span>Cobro integrado</span>
+    <span><span class="punto"></span>Constancias e informes</span>
   </div>
 </div>
 
@@ -271,7 +282,7 @@
       <li>Agenda visible solo para ti y tus pacientes, sin intermediarios</li>
       <li>Menos tiempo coordinando horarios de un lado a otro</li>
       <li>Un solo lugar para las notas de cada sesión</li>
-      <li>El cobro queda resuelto antes de que empiece la consulta</li>
+      <li>Tus cobros registrados, y a la vista quién te debe</li>
       <li>Una vista clara de cómo va tu consulta cada mes</li>
     </ul>
   </div>
@@ -296,23 +307,33 @@
       </div>
       <div class="card-feature">
         <div class="num">03</div>
-        <h3>Cobro integrado</h3>
-        <p>El pago se resuelve al momento de agendar, sin intermediarios ni transferencias manuales. La cita queda confirmada solo cuando ya está cubierta.</p>
+        <h3>Expediente clínico completo</h3>
+        <p>Quince secciones, del motivo de consulta al alta: antecedentes, examen mental, pruebas aplicadas, diagnóstico, objetivos, plan, riesgo y medicación. Cada campo explica qué va ahí.</p>
       </div>
       <div class="card-feature">
         <div class="num">04</div>
-        <h3>Expediente por paciente</h3>
-        <p>Datos personales, motivo de consulta, contacto de emergencia y estado del caso, en un solo lugar y visible únicamente para ti.</p>
+        <h3>Notas por sesión</h3>
+        <p>Objetivos, observaciones, acuerdos y evolución de cada consulta. Son privadas del psicólogo tratante: nadie más las ve, ni dentro del mismo consultorio.</p>
       </div>
       <div class="card-feature">
         <div class="num">05</div>
-        <h3>Notas por sesión</h3>
-        <p>Objetivos, observaciones, acuerdos y evolución de cada consulta, documentados de forma que se puedan revisar meses después.</p>
+        <h3>Constancias e informes</h3>
+        <p>Constancia de atención, informe psicológico, carta de canalización y constancia de alta. Prellenados desde el expediente, con tu cédula profesional, folio y firma.</p>
       </div>
       <div class="card-feature">
         <div class="num">06</div>
+        <h3>Control de cobros</h3>
+        <p>Registras cada pago con su método y fecha, aunque lo hayas cobrado en efectivo o por transferencia. Sabes al momento quién te debe y cuánto llevas del mes.</p>
+      </div>
+      <div class="card-feature">
+        <div class="num">07</div>
         <h3>Portal para tu paciente</h3>
-        <p>Tu paciente ve sus próximas sesiones y su historial, y puede reagendar o cancelar dentro de las reglas que tú definiste.</p>
+        <p>Ve sus próximas sesiones, entra a la videollamada, sube documentos y propone horarios. Y si prefieres, puedes llevar su expediente sin que él tenga cuenta.</p>
+      </div>
+      <div class="card-feature">
+        <div class="num">08</div>
+        <h3>Tu equipo, si lo tienes</h3>
+        <p>Varios psicólogos en un consultorio, organizados por especialidad. Cada quien atiende a sus pacientes y decide si comparte sus expedientes con el responsable.</p>
       </div>
     </div>
   </div>
@@ -382,7 +403,7 @@
       </div>
       <div class="card-testimonio">
         <span class="badge-ejemplo">Ejemplo ilustrativo</span>
-        <p class="testimonio-texto">"Ya no ando cobrando por transferencia ni recordando manualmente las citas de mis pacientes por WhatsApp."</p>
+        <p class="testimonio-texto">"Tengo el expediente completo de cada paciente en un solo lugar, y las constancias salen con mi cédula en un clic."</p>
         <div class="testimonio-autor">
           <div class="testimonio-avatar">AR</div>
           <div>
@@ -445,6 +466,55 @@
 
     <p class="nota-codigo">
       ¿Te invitaron? Al crear tu cuenta puedes canjear tu código de invitación en lugar de pagar.
+    </p>
+
+    <h3 class="titulo-comparativa">Qué incluye cada plan</h3>
+    <div class="tabla-envoltura">
+      <table class="comparativa">
+        <thead>
+          <tr>
+            <th>Función</th>
+            <th>Individual<span>$399/mes</span></th>
+            <th class="col-destacada">Consultorio<span>$899/mes</span></th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr class="grupo"><td colspan="3">Tu consulta</td></tr>
+          <tr><td>Pacientes y sesiones</td><td>Ilimitados</td><td class="col-destacada">Ilimitados</td></tr>
+          <tr><td>Expediente clínico de 15 secciones</td><td>✓</td><td class="col-destacada">✓</td></tr>
+          <tr><td>Notas de sesión privadas</td><td>✓</td><td class="col-destacada">✓</td></tr>
+          <tr><td>Evaluaciones y pruebas aplicadas</td><td>✓</td><td class="col-destacada">✓</td></tr>
+          <tr><td>Valoración de riesgo documentada</td><td>✓</td><td class="col-destacada">✓</td></tr>
+          <tr><td>Expediente en PDF, en tres formatos</td><td>✓</td><td class="col-destacada">✓</td></tr>
+
+          <tr class="grupo"><td colspan="3">Agenda y sesiones</td></tr>
+          <tr><td>Agenda con tus reglas y disponibilidad</td><td>✓</td><td class="col-destacada">✓</td></tr>
+          <tr><td>Google Calendar con tu propia cuenta</td><td>✓</td><td class="col-destacada">✓</td></tr>
+          <tr><td>Videollamada con Google Meet</td><td>✓</td><td class="col-destacada">✓</td></tr>
+          <tr><td>El paciente propone horario y tú apruebas</td><td>✓</td><td class="col-destacada">✓</td></tr>
+
+          <tr class="grupo"><td colspan="3">Documentos y cobros</td></tr>
+          <tr><td>Constancias, informes y canalizaciones</td><td>✓</td><td class="col-destacada">✓</td></tr>
+          <tr><td>Registro de pagos y adeudos</td><td>✓</td><td class="col-destacada">✓</td></tr>
+
+          <tr class="grupo"><td colspan="3">Tu paciente</td></tr>
+          <tr><td>Portal con sus citas y documentos</td><td>✓</td><td class="col-destacada">✓</td></tr>
+          <tr><td>Pacientes sin cuenta obligatoria</td><td>✓</td><td class="col-destacada">✓</td></tr>
+          <tr><td>Menores de edad con tutor legal</td><td>✓</td><td class="col-destacada">✓</td></tr>
+
+          <tr class="grupo"><td colspan="3">Equipo</td></tr>
+          <tr><td>Psicólogos en el consultorio</td><td>Solo tú</td><td class="col-destacada">Ilimitados</td></tr>
+          <tr><td>Organigrama por especialidad</td><td class="no">—</td><td class="col-destacada">✓</td></tr>
+          <tr><td>Sesiones e ingresos de cada psicólogo</td><td class="no">—</td><td class="col-destacada">✓</td></tr>
+          <tr><td>Alta de psicólogos con liga de invitación</td><td class="no">—</td><td class="col-destacada">✓</td></tr>
+          <tr><td>Permiso de expedientes que decide cada quien</td><td class="no">—</td><td class="col-destacada">✓</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p class="nota-codigo">
+      Los dos planes incluyen todo lo clínico. Lo que cambia es si trabajas solo o con equipo.
+      No cobramos comisión por tus sesiones: lo que le cobras a tus pacientes es tuyo.
     </p>
   </div>
 </section>
