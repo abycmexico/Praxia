@@ -36,6 +36,8 @@
   .separador::before,.separador::after{content:"";flex:1;height:1px;background:var(--line);}
   .btn-google{width:100%;display:flex;align-items:center;justify-content:center;gap:10px;padding:13px;border:1.5px solid var(--line);border-radius:30px;background:#fff;font-weight:700;font-size:14px;cursor:pointer;font-family:inherit;color:var(--ink);}
   .btn-google:hover{border-color:var(--primario);}
+  .opcional{color:var(--gray);font-weight:600;}
+  .pista{font-size:11.5px;color:var(--gray);font-weight:600;margin-top:5px;line-height:1.5;}
   .foot a{color:var(--ink);font-weight:700;border-bottom:1.5px solid var(--primario);}
 
   .marca-pie{display:flex;justify-content:center;padding:24px 0 8px;opacity:.35;}
@@ -64,6 +66,10 @@
 
       <label for="password">Contraseña</label>
       <input type="password" id="password" minlength="8" required>
+
+      <label for="codigo">Código de invitación <span class="opcional">(si tienes uno)</span></label>
+      <input type="text" id="codigo" placeholder="Déjalo vacío si vas a contratar un plan" autocomplete="off">
+      <p class="pista">Con código entras sin pagar. Sin código, eliges tu plan al entrar.</p>
 
       <button type="submit" id="btnRegistrar">Crear cuenta</button>
       <p class="msg" id="msg"></p>
@@ -137,7 +143,17 @@
       return;
     }
 
-    msg.textContent = 'Cuenta creada. Queda pendiente de aprobación, te avisamos por correo.';
+    // El código no se puede canjear todavía: la función necesita una sesión
+    // y, si el correo requiere confirmación, aún no la hay. Se guarda para
+    // aplicarlo en cuanto entre al panel.
+    const codigo = document.getElementById('codigo').value.trim();
+    if(codigo){
+      try{ sessionStorage.setItem('praxia_codigo', codigo); }catch(e){}
+    }
+
+    msg.textContent = codigo
+      ? 'Cuenta creada. Tu código se aplicará al entrar. Queda pendiente de aprobación, te avisamos por correo.'
+      : 'Cuenta creada. Queda pendiente de aprobación, te avisamos por correo.';
     msg.className = 'msg ok';
     form.reset();
     btn.disabled = false;

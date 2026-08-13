@@ -69,6 +69,10 @@
   .plan-precio span{font-size:12px;color:var(--gray);font-weight:700;}
   .plan-desc{font-size:11.5px;color:var(--gray);font-weight:600;line-height:1.55;margin:10px 0 16px;flex:1;}
   .plan-actual-etq{font-size:11px;font-weight:800;color:var(--primario);text-transform:uppercase;letter-spacing:.4px;}
+  .canje-caja{border:1.5px dashed var(--line);border-radius:12px;padding:15px 17px;margin-top:16px;}
+  .canje-titulo{font-size:12.5px;font-weight:800;margin-bottom:9px;}
+  .canje-fila{display:flex;gap:8px;flex-wrap:wrap;}
+  .canje-fila input{flex:1;min-width:180px;}
   @media(max-width:700px){ .planes-rejilla{grid-template-columns:1fr;} }
 
   /* organigrama y KPIs del consultorio */
@@ -1364,15 +1368,63 @@ async function cargarPlan(){
     </div>`;
   }
 
-  cont.innerHTML = aviso + opciones +
+  // Canjear código: solo tiene sentido para quien administra su propio plan.
+  const canje = s.soy_titular ? `
+    <div class="canje-caja">
+      <div class="canje-titulo">¿Tienes un código de invitación?</div>
+      <div class="canje-fila">
+        <input type="text" id="campoCodigo" placeholder="Escribe tu código" autocomplete="off">
+        <button type="button" class="btn btn-secundario" id="btnCanjear" style="width:auto;">Canjear</button>
+      </div>
+    </div>` : '';
+
+  cont.innerHTML = aviso + opciones + canje +
     (acciones ? `<div style="margin-top:16px;">${acciones}</div>` : '') +
     '<p class="msg" id="msgPlan"></p>';
+
+  document.getElementById('btnCanjear')?.addEventListener('click', ()=>
+    canjearCodigo(document.getElementById('campoCodigo').value));
 
   cont.querySelectorAll('.btn-contratar').forEach(b=>{
     b.addEventListener('click', ()=> contratarPlan(b.dataset.plan, b));
   });
   document.getElementById('btnCancelarPlan')?.addEventListener('click', cancelarPlan);
   document.getElementById('btnReactivar')?.addEventListener('click', reactivarPlan);
+}
+
+async function canjearCodigo(codigo, silencioso = false){
+  const msg = document.getElementById('msgPlan');
+  const texto = String(codigo || '').trim();
+  if(!texto){
+    if(msg){ msg.textContent = 'Escribe tu código.'; msg.className = 'msg err'; }
+    return false;
+  }
+
+  const { data, error } = await sb.rpc('canjear_codigo_acceso', { p_codigo: texto });
+  const r = Array.isArray(data) ? data[0] : data;
+
+  if(error || !r || !r.ok){
+    // En el canje automático no se molesta con errores: si el código venía
+    // mal, ya lo verá al intentarlo a mano.
+    if(!silencioso && msg){
+      msg.textContent = error?.message || r?.mensaje || 'No se pudo canjear.';
+      msg.className = 'msg err';
+    }
+    return false;
+  }
+
+  if(!silencioso) alert(r.mensaje);
+  cargarPlan();
+  return true;
+}
+
+// Código escrito al registrarse: se aplica en cuanto hay sesión.
+async function aplicarCodigoPendiente(){
+  let guardado = null;
+  try{ guardado = sessionStorage.getItem('praxia_codigo'); }catch(e){}
+  if(!guardado) return;
+  try{ sessionStorage.removeItem('praxia_codigo'); }catch(e){}
+  await canjearCodigo(guardado, true);
 }
 
 async function contratarPlan(planId, boton){
@@ -1885,6 +1937,7 @@ async function iniciar(){
 
   await procesarInvitacionPendiente();
   cargarEquipo();
+  await aplicarCodigoPendiente();
   cargarPlan();
   avisarRegresoDeStripe();
   mostrarAtajoAdmin(session.user.email);
