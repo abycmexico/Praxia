@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow">
+<title>Psicólogo del consultorio | Praxia</title>
+<link rel="icon" type="image/png" href="./assets/praxia-isotipo.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,400;1,600&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  :root{--primario:#2E7D32;--primario-claro:#7BC043;--primario-suave:#A8C99B;--bg:#F7F9F6;--ink:#1A1A1A;--gray:#7a7a7a;--line:#ececec;--err:#c62828;--ok:#2e7d32;}
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{background:var(--bg);color:var(--ink);font-family:'Montserrat',Arial,sans-serif;font-weight:500;}
+  a{color:inherit;text-decoration:none;}
+  header{display:flex;align-items:center;justify-content:space-between;padding:18px 32px;border-bottom:1.5px solid var(--line);background:#fff;}
+  header img{height:24px;}
+  main{max-width:980px;margin:0 auto;padding:28px 24px 60px;}
+  .volver{display:inline-block;font-size:13px;font-weight:700;color:var(--gray);margin-bottom:20px;}
+  .volver:hover{color:var(--primario);}
+
+  .perfil{display:flex;gap:18px;align-items:center;background:#fff;border:1.5px solid var(--line);border-radius:18px;padding:24px 26px;margin-bottom:16px;}
+  .perfil-avatar{width:64px;height:64px;border-radius:50%;background:#EDF6EC;color:var(--primario);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:22px;flex-shrink:0;}
+  .perfil-nombre{font-size:22px;font-weight:800;line-height:1.2;}
+  .perfil-esp{font-size:13px;color:var(--primario);font-weight:700;margin-top:3px;}
+  .perfil-meta{font-size:12px;color:var(--gray);font-weight:600;margin-top:6px;line-height:1.6;}
+
+  .kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:16px;}
+  .kpi{background:#fff;border:1.5px solid var(--line);border-radius:14px;padding:16px;text-align:center;}
+  .kpi-num{font-size:22px;font-weight:800;color:var(--primario);line-height:1.2;}
+  .kpi-etq{font-size:10.5px;color:var(--gray);font-weight:700;margin-top:4px;}
+
+  .bloque{background:#fff;border:1.5px solid var(--line);border-radius:16px;padding:22px 24px;margin-bottom:16px;}
+  .bloque h2{font-size:15px;margin-bottom:3px;}
+  .bloque .sub{font-size:12px;color:var(--gray);font-weight:600;margin-bottom:16px;line-height:1.55;}
+
+  .aviso{background:#FFF6E5;border:1.5px solid #F0D9A8;border-radius:12px;padding:14px 16px;font-size:12.5px;font-weight:600;color:#7a5600;line-height:1.6;}
+  .aviso strong{display:block;margin-bottom:4px;}
+
+  .pac{display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid var(--line);}
+  .pac:last-child{border-bottom:none;}
+  .pac-avatar{width:34px;height:34px;border-radius:50%;background:#F2F6F1;color:var(--primario);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:12px;flex-shrink:0;}
+  .pac-datos{flex:1;min-width:0;}
+  .pac-nombre{font-size:13.5px;font-weight:700;}
+  .pac-meta{font-size:11.5px;color:var(--gray);font-weight:600;}
+  .pac-estado{font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.3px;padding:3px 9px;border-radius:20px;background:#F2F6F1;color:var(--primario);white-space:nowrap;}
+  .pac-estado.pausado{background:#FFF6E5;color:#9a6a00;}
+  .pac-estado.alta,.pac-estado.archivado{background:#F4F4F4;color:var(--gray);}
+  .btn-ver{background:none;border:1.5px solid var(--line);border-radius:20px;padding:6px 13px;font-size:11px;font-weight:700;font-family:inherit;color:var(--ink);cursor:pointer;white-space:nowrap;}
+  .btn-ver:hover{border-color:var(--primario);color:var(--primario);}
+
+  .modal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:50;align-items:center;justify-content:center;padding:20px;}
+  .modal-bg.show{display:flex;}
+  .modal{background:#fff;border-radius:18px;padding:28px;max-width:660px;width:100%;max-height:88vh;overflow:auto;}
+  .modal h3{font-size:19px;margin-bottom:3px;}
+  .modal-sub{font-size:12.5px;color:var(--gray);margin-bottom:20px;font-weight:600;}
+  .campo-ro{margin-bottom:16px;}
+  .campo-ro-etq{font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.4px;color:var(--gray);margin-bottom:5px;}
+  .campo-ro-val{font-size:13px;line-height:1.65;white-space:pre-line;}
+  .campo-ro-val.vacio{color:var(--gray);font-style:italic;}
+  .solo-lectura{background:#F7FAF6;border:1.5px solid var(--primario-suave);border-radius:10px;padding:10px 12px;font-size:11.5px;color:var(--primario);font-weight:700;margin-bottom:18px;}
+  .modal-actions{display:flex;justify-content:flex-end;margin-top:18px;}
+  .btn{padding:11px 20px;border-radius:24px;font-size:13px;font-weight:700;border:none;cursor:pointer;font-family:inherit;}
+  .btn-primario{background:var(--primario);color:#fff;}
+  .empty{font-size:13px;color:var(--gray);text-align:center;padding:26px;font-weight:600;}
+  @media(max-width:760px){ .kpis{grid-template-columns:repeat(2,1fr);} .perfil{flex-direction:column;text-align:center;} }
+</style>
+</head>
+<body>
+
+<header>
+  <a href="./panel-psicologo.html"><img src="./assets/praxia-logo-completo.png" alt="Praxia"></a>
+</header>
+
+<main>
+  <a class="volver" href="./panel-psicologo.html">← Volver a mi consultorio</a>
+  <div id="contenido"><p class="empty">Cargando...</p></div>
+</main>
+
+<div class="modal-bg" id="modalExpediente">
+  <div class="modal">
+    <h3 id="expNombre"></h3>
+    <p class="modal-sub" id="expSub"></p>
+    <div class="solo-lectura">Consulta de supervisión. El expediente es responsabilidad de su psicólogo tratante: aquí no se edita.</div>
+    <div id="expCuerpo"></div>
+    <div class="modal-actions"><button class="btn btn-primario" id="btnCerrarExp">Cerrar</button></div>
+  </div>
+</div>
+
+<script>
+const SUPABASE_URL = 'https://uxbpfyeahqpertamhdxt.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_xaaA4lYAQZjdcMFRhMGtuQ_fvIeJKv7';
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+const psicologoId = new URLSearchParams(location.search).get('id');
+let psicologo = null;
+let comparte = false;
+
+function escapar(t){
+  return String(t == null ? '' : t).replace(/[&<>"']/g, c => (
+    {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]
+  ));
+}
+function iniciales(nombre){
+  return String(nombre||'?').trim().split(/\s+/).slice(0,2).map(p=>p[0]||'').join('').toUpperCase();
+}
+function dinero(n){ return '$' + Number(n||0).toLocaleString('es-MX'); }
+function fecha(iso){
+  if(!iso) return '';
+  return new Date(String(iso).length <= 10 ? iso+'T12:00:00' : iso).toLocaleDateString('es-MX');
+}
+
+async function iniciar(){
+  const cont = document.getElementById('contenido');
+
+  const { data: { session } } = await sb.auth.getSession();
+  if(!session){ location.href = './login.html'; return; }
+  if(!psicologoId){ cont.innerHTML = '<p class="empty">No se indicó de qué psicólogo.</p>'; return; }
+
+  // RLS decide: solo el responsable del consultorio ve a los suyos.
+  const { data: psi, error } = await sb.from('psicologos')
+    .select('id, nombre, correo, telefono, especialidad, cedula_profesional, rol_consultorio, comparte_expedientes, creado_en')
+    .eq('id', psicologoId).maybeSingle();
+
+  if(error || !psi){
+    cont.innerHTML = '<p class="empty">No encontramos a ese psicólogo, o no pertenece a tu consultorio.</p>';
+    return;
+  }
+
+  psicologo = psi;
+  comparte = !!psi.comparte_expedientes;
+  await pintar();
+}
+
+async function pintar(){
+  const cont = document.getElementById('contenido');
+
+  const inicioMes = new Date();
+  inicioMes.setDate(1); inicioMes.setHours(0,0,0,0);
+
+  const { data: citas } = await sb.from('citas')
+    .select('estado, precio, fecha_hora')
+    .eq('psicologo_id', psicologo.id).gte('fecha_hora', inicioMes.toISOString());
+
+  // La vista administrativa siempre está disponible para el responsable.
+  const { data: pacientes } = await sb.from('equipo_pacientes')
+    .select('id, nombre, estado, modalidad_atencion, correo, telefono, creado_en')
+    .eq('psicologo_id', psicologo.id).order('nombre');
+
+  const sesiones = (citas||[]).filter(c=>c.estado !== 'cancelada').length;
+  const ingresos = (citas||[]).filter(c=>c.estado === 'completada').reduce((a,c)=>a+Number(c.precio||0),0);
+  const activos = (pacientes||[]).filter(p=>p.estado === 'activo').length;
+
+  const filas = (pacientes||[]).map(p=>`
+    <div class="pac">
+      <div class="pac-avatar">${escapar(iniciales(p.nombre))}</div>
+      <div class="pac-datos">
+        <div class="pac-nombre">${escapar(p.nombre)}</div>
+        <div class="pac-meta">${escapar(p.modalidad_atencion || 'Sin modalidad')}${p.correo ? ' · ' + escapar(p.correo) : ''}</div>
+      </div>
+      <span class="pac-estado ${escapar(p.estado || '')}">${escapar(p.estado || '—')}</span>
+      ${comparte ? `<button class="btn-ver" data-id="${escapar(p.id)}" data-nombre="${escapar(p.nombre)}">Ver expediente</button>` : ''}
+    </div>`).join('');
+
+  cont.innerHTML = `
+    <div class="perfil">
+      <div class="perfil-avatar">${escapar(iniciales(psicologo.nombre))}</div>
+      <div>
+        <div class="perfil-nombre">${escapar(psicologo.nombre)}</div>
+        <div class="perfil-esp">${escapar(psicologo.especialidad || 'Sin especialidad definida')}</div>
+        <div class="perfil-meta">
+          ${escapar(psicologo.correo)}${psicologo.telefono ? ' · ' + escapar(psicologo.telefono) : ''}<br>
+          Cédula profesional ${escapar(psicologo.cedula_profesional || 'no registrada')} ·
+          ${psicologo.rol_consultorio === 'dueno' ? 'Responsable del consultorio' : 'Colaborador'}
+        </div>
+      </div>
+    </div>
+
+    <div class="kpis">
+      <div class="kpi"><div class="kpi-num">${activos}</div><div class="kpi-etq">Pacientes activos</div></div>
+      <div class="kpi"><div class="kpi-num">${(pacientes||[]).length}</div><div class="kpi-etq">Pacientes en total</div></div>
+      <div class="kpi"><div class="kpi-num">${sesiones}</div><div class="kpi-etq">Sesiones este mes</div></div>
+      <div class="kpi"><div class="kpi-num">${dinero(ingresos)}</div><div class="kpi-etq">Cobrado este mes</div></div>
+    </div>
+
+    <div class="bloque">
+      <h2>Pacientes de ${escapar(psicologo.nombre.split(' ')[0])}</h2>
+      <p class="sub">Estos pacientes son suyos, no tuyos: no aparecen mezclados con los de tu propia consulta.</p>
+      ${comparte ? '' : `
+        <div class="aviso">
+          <strong>No te ha compartido sus expedientes</strong>
+          Ves quiénes son sus pacientes y su estado, pero no el contenido clínico. Puedes pedirle acceso desde tu consultorio; la decisión es suya.
+        </div>`}
+      <div style="margin-top:16px;">${filas || '<p class="empty">Todavía no tiene pacientes.</p>'}</div>
+    </div>`;
+
+  cont.querySelectorAll('.btn-ver').forEach(b=>{
+    b.addEventListener('click', ()=> verExpediente(b.dataset.id, b.dataset.nombre));
+  });
+}
+
+async function verExpediente(id, nombre){
+  const cuerpo = document.getElementById('expCuerpo');
+  document.getElementById('expNombre').textContent = nombre;
+  document.getElementById('expSub').textContent = `Paciente de ${psicologo.nombre}`;
+  cuerpo.innerHTML = '<p class="empty">Cargando expediente...</p>';
+  document.getElementById('modalExpediente').classList.add('show');
+
+  // Esto solo devuelve datos si el psicólogo compartió el acceso: lo decide
+  // la política de la base, no esta pantalla.
+  const { data: pac, error } = await sb.from('pacientes').select('*').eq('id', id).maybeSingle();
+
+  if(error || !pac){
+    cuerpo.innerHTML = `<p class="empty">No se pudo abrir el expediente${error ? ': ' + escapar(error.message) : ''}.</p>`;
+    return;
+  }
+
+  // Las notas cuelgan de la cita, no del paciente: hay que pasar por sus
+  // citas. Filtrar solo por psicologo traeria notas de otros pacientes.
+  const { data: citasPaciente } = await sb.from('citas').select('id').eq('paciente_id', id);
+  const idsCitas = (citasPaciente || []).map(c => c.id);
+
+  let notas = [];
+  if(idsCitas.length){
+    const { data } = await sb.from('notas_sesion')
+      .select('creado_en, observaciones, evolucion')
+      .in('cita_id', idsCitas)
+      .order('creado_en', { ascending:false }).limit(5);
+    notas = data || [];
+  }
+
+  const campo = (etq, val) => `
+    <div class="campo-ro">
+      <div class="campo-ro-etq">${escapar(etq)}</div>
+      <div class="campo-ro-val ${val ? '' : 'vacio'}">${escapar(val || 'Sin información')}</div>
+    </div>`;
+
+  const listaNotas = (notas||[]).length
+    ? (notas||[]).map(n=>`
+        <div class="campo-ro">
+          <div class="campo-ro-etq">${escapar(fecha(n.creado_en))}</div>
+          <div class="campo-ro-val">${escapar(n.observaciones || n.evolucion || 'Sin contenido')}</div>
+        </div>`).join('')
+    : '<div class="campo-ro-val vacio">Sin notas registradas.</div>';
+
+  cuerpo.innerHTML = `
+    ${campo('Motivo de consulta', pac.motivo_consulta)}
+    ${campo('Impresión clínica', pac.impresion_clinica)}
+    ${campo('Diagnóstico', pac.diagnostico)}
+    ${campo('Plan de tratamiento', pac.plan_enfoque)}
+    ${pac.riesgo_nivel || pac.riesgo_actual ? campo('Riesgo registrado', [pac.riesgo_nivel, pac.riesgo_actual].filter(Boolean).join(' · ')) : ''}
+    <div class="campo-ro-etq" style="margin-top:22px;margin-bottom:10px;">Últimas notas de sesión</div>
+    ${listaNotas}`;
+}
+
+document.getElementById('btnCerrarExp').addEventListener('click', ()=>{
+  document.getElementById('modalExpediente').classList.remove('show');
+});
+
+iniciar();
+</script>
+
+</body>
+</html>

@@ -37,6 +37,9 @@
   .sidebar-user-rol{font-size:10.5px;color:var(--gray);}
   /* equipo del consultorio */
   .eq-miembro{display:flex;align-items:center;gap:13px;padding:13px 0;border-bottom:1px solid var(--line);}
+  .eq-perfil-link{display:flex;align-items:center;gap:13px;flex:1;min-width:0;border-radius:12px;padding:6px 8px;margin:-6px -8px;transition:background .15s;}
+  .eq-perfil-link:hover{background:#F7FAF6;}
+  .eq-perfil-link:hover .eq-nombre{color:var(--primario);}
   .eq-miembro:last-child{border-bottom:none;}
   .eq-avatar{width:38px;height:38px;border-radius:50%;background:#EDF6EC;color:var(--primario);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:13px;flex-shrink:0;}
   .eq-datos{flex:1;min-width:0;}
@@ -1374,16 +1377,18 @@ async function pintarEquipoDueno(cont){
 
   const tarjetaMiembro = p => `
     <div class="eq-miembro">
-      <div class="eq-avatar">${escapar(iniciales(p.nombre))}</div>
-      <div class="eq-datos">
-        <div class="eq-nombre">${escapar(p.nombre)}${p.id === yo.id ? ' (tú)' : ''}</div>
-        <div class="eq-correo">${escapar(p.correo)}</div>
-        <div class="eq-kpis">
-          <span><strong>${pacientesPor[p.id] || 0}</strong> pacientes</span>
-          <span><strong>${sesionesPor[p.id] || 0}</strong> sesiones</span>
-          <span><strong>${dinero(ingresosPor[p.id])}</strong> cobrado</span>
+      <a class="eq-perfil-link" href="./psicologo-consultorio.html?id=${escapar(p.id)}" title="Ver perfil de ${escapar(p.nombre)}">
+        <div class="eq-avatar">${escapar(iniciales(p.nombre))}</div>
+        <div class="eq-datos">
+          <div class="eq-nombre">${escapar(p.nombre)}${p.id === yo.id ? ' (tú)' : ''}</div>
+          <div class="eq-correo">${escapar(p.correo)}</div>
+          <div class="eq-kpis">
+            <span><strong>${pacientesPor[p.id] || 0}</strong> pacientes</span>
+            <span><strong>${sesionesPor[p.id] || 0}</strong> sesiones</span>
+            <span><strong>${dinero(ingresosPor[p.id])}</strong> cobrado</span>
+          </div>
         </div>
-      </div>
+      </a>
       <div class="eq-acciones">
         <span class="eq-rol ${p.rol_consultorio === 'dueno' ? '' : 'colaborador'}">${p.rol_consultorio === 'dueno' ? 'Responsable' : 'Colaborador'}</span>
         ${p.rol_consultorio === 'dueno' ? '' : (
