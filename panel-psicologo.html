@@ -102,6 +102,22 @@
   .eq-pedir{background:none;border:1.5px solid var(--primario-suave);border-radius:20px;padding:5px 12px;font-size:11px;font-weight:700;font-family:inherit;color:var(--primario);cursor:pointer;white-space:nowrap;}
   .eq-pedir:hover{background:var(--primario);color:#fff;border-color:var(--primario);}
 
+  /* muro cuando no hay plan vigente */
+  .muro{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px 24px;background:var(--bg);}
+  .muro-logo{height:30px;margin-bottom:30px;}
+  .muro-caja{background:#fff;border:1.5px solid var(--line);border-radius:20px;padding:36px 38px;max-width:720px;width:100%;box-shadow:0 2px 20px rgba(0,0,0,.05);}
+  .muro-caja h1{font-size:24px;margin-bottom:10px;line-height:1.3;}
+  .muro-sub{font-size:14px;color:var(--gray);line-height:1.65;font-weight:600;margin-bottom:26px;}
+  .muro-planes{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+  .muro-plan{border:1.5px solid var(--line);border-radius:14px;padding:20px;display:flex;flex-direction:column;}
+  .muro-plan-nombre{font-size:14.5px;font-weight:800;margin-bottom:6px;}
+  .muro-plan-precio{font-size:25px;font-weight:800;color:var(--primario);line-height:1.1;}
+  .muro-plan-precio span{font-size:11.5px;color:var(--gray);font-weight:700;}
+  .muro-plan-desc{font-size:11.5px;color:var(--gray);font-weight:600;line-height:1.55;margin:10px 0 16px;flex:1;}
+  .muro-codigo{border-top:1px solid var(--line);margin-top:24px;padding-top:20px;}
+  .muro-codigo-titulo{font-size:12.5px;font-weight:800;margin-bottom:9px;}
+  @media(max-width:700px){ .muro-planes{grid-template-columns:1fr;} }
+
   /* pantalla de baja del consultorio */
   .baja-pantalla{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px 24px;background:var(--bg);}
   .baja-logo{height:28px;margin-bottom:28px;}
@@ -1286,6 +1302,77 @@ let chartIngresos = null;
 let chartPacientes = null;
 let rangoHistorialActual = 'semana';
 
+/* ---------- muro cuando no hay plan vigente ---------- */
+/* No se bloquea el login sino el uso: si no pudiera entrar, tampoco tendria
+   donde pagar. Quien ya usaba Praxia antes de que se cobrara queda en
+   cortesia y nunca ve esta pantalla. */
+
+async function pintarMuroSinPlan(s){
+  const esTitular = s.soy_titular;
+  const { data: planes } = await sb.from('planes').select('*').eq('activo', true).order('orden');
+
+  document.body.innerHTML = `
+    <div class="muro">
+      <img src="./assets/praxia-logo-completo.png" alt="Praxia" class="muro-logo">
+      <div class="muro-caja">
+        <h1>${esTitular ? 'Elige tu plan para continuar' : 'Tu consultorio necesita renovar el plan'}</h1>
+        <p class="muro-sub">
+          ${esTitular
+            ? 'Tu cuenta está lista. Para empezar a usar Praxia contrata un plan o canjea tu código de invitación.'
+            : 'El responsable de tu consultorio debe renovar la suscripción para que el equipo pueda seguir trabajando.'}
+        </p>
+
+        ${esTitular ? `
+          <div class="muro-planes">
+            ${(planes||[]).map(p=>`
+              <div class="muro-plan">
+                <div class="muro-plan-nombre">${escapar(p.nombre)}</div>
+                <div class="muro-plan-precio">$${Number(p.precio_mensual).toLocaleString('es-MX')}<span> MXN/mes</span></div>
+                <div class="muro-plan-desc">${escapar(p.descripcion || '')}</div>
+                <button type="button" class="btn btn-primary muro-contratar" data-plan="${escapar(p.id)}">Contratar</button>
+              </div>`).join('')}
+          </div>
+
+          <div class="muro-codigo">
+            <div class="muro-codigo-titulo">¿Tienes un código de invitación?</div>
+            <div class="canje-fila">
+              <input type="text" id="muroCodigo" placeholder="Escribe tu código" autocomplete="off">
+              <button type="button" class="btn btn-secundario" id="muroCanjear" style="width:auto;">Canjear</button>
+            </div>
+          </div>
+        ` : ''}
+
+        <p class="msg" id="msgPlan"></p>
+        <button type="button" class="btn btn-ghost" id="muroSalir" style="width:auto;margin-top:18px;">Cerrar sesión</button>
+      </div>
+    </div>`;
+
+  document.querySelectorAll('.muro-contratar').forEach(b=>{
+    b.addEventListener('click', ()=> contratarPlan(b.dataset.plan, b));
+  });
+  document.getElementById('muroCanjear')?.addEventListener('click', async ()=>{
+    const ok = await canjearCodigo(document.getElementById('muroCodigo').value);
+    if(ok) location.reload();
+  });
+  document.getElementById('muroSalir').addEventListener('click', async ()=>{
+    await sb.auth.signOut();
+    location.href = './login.html';
+  });
+}
+
+// Devuelve true si puede seguir usando el panel.
+async function verificarAcceso(){
+  const { data } = await sb.rpc('mi_suscripcion');
+  const s = Array.isArray(data) ? data[0] : data;
+
+  // Sin fila de suscripción se deja pasar: es una cuenta anterior al cobro y
+  // negarle el acceso por un dato que falta seria peor que el problema.
+  if(!s || s.vigente) return true;
+
+  await pintarMuroSinPlan(s);
+  return false;
+}
+
 /* ---------- mi plan ---------- */
 /* Lo que manda es fin_periodo, no el estado: una suscripcion cancelada
    sigue dando acceso hasta que cierre el mes que ya se pago. */
@@ -1936,8 +2023,12 @@ async function iniciar(){
   if(psi.baja_consultorio_en){ pintarBajaConsultorio(psi); return; }
 
   await procesarInvitacionPendiente();
-  cargarEquipo();
+  // El código se aplica antes de revisar el acceso: si trae uno válido, no
+  // tiene por qué toparse con el muro.
   await aplicarCodigoPendiente();
+  if(!(await verificarAcceso())) return;
+
+  cargarEquipo();
   cargarPlan();
   avisarRegresoDeStripe();
   mostrarAtajoAdmin(session.user.email);

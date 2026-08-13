@@ -977,6 +977,24 @@ async function iniciar(){
   }
   yo = psi;
 
+  // El expediente se abre por URL directa, asi que el plan tambien se
+  // revisa aqui: bloquear solo el panel dejaria la puerta de al lado abierta.
+  const { data: susc } = await sb.rpc('mi_suscripcion');
+  const s = Array.isArray(susc) ? susc[0] : susc;
+  if(s && !s.vigente){
+    document.body.innerHTML = `
+      <div style="min-height:100vh;display:flex;align-items:center;justify-content:center;padding:40px 24px;background:#F7F9F6;font-family:'Montserrat',Arial,sans-serif;">
+        <div style="background:#fff;border:1.5px solid #ececec;border-radius:18px;padding:34px;max-width:460px;text-align:center;">
+          <h1 style="font-size:21px;margin-bottom:10px;">Tu plan no está activo</h1>
+          <p style="font-size:13.5px;color:#7a7a7a;line-height:1.65;font-weight:600;margin-bottom:22px;">
+            Los expedientes de tus pacientes están a salvo. Para volver a consultarlos, activa tu plan desde tu panel.
+          </p>
+          <a href="./panel-psicologo.html" style="display:inline-block;background:#2E7D32;color:#fff;padding:12px 24px;border-radius:24px;font-weight:700;font-size:13.5px;text-decoration:none;">Ir a mi panel</a>
+        </div>
+      </div>`;
+    return;
+  }
+
   if(!pacienteId){
     document.getElementById('cargando').innerHTML =
       '<p class="empty">No se indicó qué expediente abrir.</p>';
