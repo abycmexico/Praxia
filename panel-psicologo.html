@@ -62,6 +62,21 @@
   .eq-kpis strong{color:var(--ink);font-weight:800;}
   @media(max-width:700px){ .eq-totales{grid-template-columns:repeat(2,1fr);} }
 
+  /* permiso de expedientes: interruptor del colaborador */
+  .permiso-caja{display:flex;align-items:center;gap:16px;justify-content:space-between;background:#fff;border:1.5px solid var(--line);border-radius:14px;padding:16px 18px;margin-top:16px;}
+  .permiso-caja.activo{border-color:var(--primario-suave);background:#F7FAF6;}
+  .permiso-titulo{font-size:13px;font-weight:800;margin-bottom:4px;}
+  .permiso-desc{font-size:11.5px;color:var(--gray);font-weight:600;line-height:1.55;}
+  .switch{width:46px;height:26px;border-radius:20px;border:none;background:#D8D8D8;position:relative;cursor:pointer;flex-shrink:0;padding:0;transition:background .2s;}
+  .switch.on{background:var(--primario);}
+  .switch-bolita{position:absolute;top:3px;left:3px;width:20px;height:20px;border-radius:50%;background:#fff;transition:left .2s;box-shadow:0 1px 3px rgba(0,0,0,.2);}
+  .switch.on .switch-bolita{left:23px;}
+  .eq-acciones{display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:flex-end;}
+  .eq-acceso{font-size:10px;font-weight:800;letter-spacing:.3px;text-transform:uppercase;padding:3px 9px;border-radius:20px;white-space:nowrap;}
+  .eq-acceso.si{background:#EDF6EC;color:var(--primario);}
+  .eq-pedir{background:none;border:1.5px solid var(--primario-suave);border-radius:20px;padding:5px 12px;font-size:11px;font-weight:700;font-family:inherit;color:var(--primario);cursor:pointer;white-space:nowrap;}
+  .eq-pedir:hover{background:var(--primario);color:#fff;border-color:var(--primario);}
+
   /* pantalla de baja del consultorio */
   .baja-pantalla{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px 24px;background:var(--bg);}
   .baja-logo{height:28px;margin-bottom:28px;}
@@ -1325,7 +1340,7 @@ async function crearConsultorio(){
 
 async function pintarEquipoDueno(cont){
   const { data: equipo, error } = await sb.from('psicologos')
-    .select('id, nombre, correo, estado, rol_consultorio, especialidad')
+    .select('id, nombre, correo, estado, rol_consultorio, especialidad, comparte_expedientes')
     .eq('consultorio_id', yo.consultorio_id);
 
   if(error){ cont.innerHTML = `<p class="empty">No se pudo cargar el equipo: ${escapar(error.message)}</p>`; return; }
@@ -1369,8 +1384,15 @@ async function pintarEquipoDueno(cont){
           <span><strong>${dinero(ingresosPor[p.id])}</strong> cobrado</span>
         </div>
       </div>
-      <span class="eq-rol ${p.rol_consultorio === 'dueno' ? '' : 'colaborador'}">${p.rol_consultorio === 'dueno' ? 'Responsable' : 'Colaborador'}</span>
-      ${p.rol_consultorio === 'dueno' ? '' : `<button type="button" class="eq-quitar" data-id="${escapar(p.id)}" data-nombre="${escapar(p.nombre)}">Retirar</button>`}
+      <div class="eq-acciones">
+        <span class="eq-rol ${p.rol_consultorio === 'dueno' ? '' : 'colaborador'}">${p.rol_consultorio === 'dueno' ? 'Responsable' : 'Colaborador'}</span>
+        ${p.rol_consultorio === 'dueno' ? '' : (
+          p.comparte_expedientes
+            ? '<span class="eq-acceso si">Comparte expedientes</span>'
+            : `<button type="button" class="eq-pedir" data-id="${escapar(p.id)}" data-nombre="${escapar(p.nombre)}">Pedir acceso a expedientes</button>`
+        )}
+        ${p.rol_consultorio === 'dueno' ? '' : `<button type="button" class="eq-quitar" data-id="${escapar(p.id)}" data-nombre="${escapar(p.nombre)}">Retirar</button>`}
+      </div>
     </div>`;
 
   // Organigrama: agrupado por especialidad, con el responsable al frente.
@@ -1438,6 +1460,9 @@ async function pintarEquipoDueno(cont){
   cont.querySelectorAll('.eq-quitar').forEach(btn=>{
     btn.addEventListener('click', ()=> retirarDelConsultorio(btn.dataset.id, btn.dataset.nombre));
   });
+  cont.querySelectorAll('.eq-pedir').forEach(btn=>{
+    btn.addEventListener('click', ()=> pedirAccesoExpedientes(btn.dataset.id, btn.dataset.nombre));
+  });
 
   document.getElementById('btnMostrarAlta').addEventListener('click', ()=>{
     document.getElementById('formAlta').style.display = 'block';
@@ -1448,14 +1473,75 @@ async function pintarEquipoDueno(cont){
 }
 
 function pintarEquipoColaborador(cont){
+  const comparte = !!yo.comparte_expedientes;
+  const nombreC = escapar(miConsultorio?.nombre || 'un consultorio');
+
   cont.innerHTML = `
     <div class="eq-caja">
-      <div class="eq-caja-titulo">Perteneces a ${escapar(miConsultorio?.nombre || 'un consultorio')}</div>
+      <div class="eq-caja-titulo">Perteneces a ${nombreC}</div>
       <div class="eq-caja-texto">
-        Tus pacientes y sus expedientes son tuyos: nadie más los ve. El responsable del consultorio
-        solo ve tu agenda y cuántas sesiones das.
+        El responsable del consultorio ve tu agenda y cuántas sesiones das. Los expedientes de tus
+        pacientes solo los ve si tú se lo permites aquí abajo.
       </div>
-    </div>`;
+    </div>
+
+    <div class="permiso-caja ${comparte ? 'activo' : ''}">
+      <div class="permiso-texto">
+        <div class="permiso-titulo">Compartir mis expedientes con ${nombreC}</div>
+        <div class="permiso-desc">
+          ${comparte
+            ? 'El responsable puede consultar los expedientes de tus pacientes. Puedes apagarlo cuando quieras.'
+            : 'Apagado. Nadie más que tú ve las notas de sesión ni los expedientes de tus pacientes.'}
+        </div>
+      </div>
+      <button type="button" class="switch ${comparte ? 'on' : ''}" id="switchExpedientes"
+              role="switch" aria-checked="${comparte}" aria-label="Compartir mis expedientes">
+        <span class="switch-bolita"></span>
+      </button>
+    </div>
+
+    <p class="eq-aviso-privacidad">
+      Tú eres el responsable de los datos de tus pacientes. Si compartes el acceso, considera que
+      ellos aceptaron un aviso de privacidad donde su psicólogo tratante es quien maneja su
+      información: conviene informarles.
+    </p>
+    <p class="msg" id="msgEquipo"></p>`;
+
+  document.getElementById('switchExpedientes').addEventListener('click', ()=> cambiarPermisoExpedientes(!comparte));
+}
+
+async function cambiarPermisoExpedientes(activar){
+  const msg = document.getElementById('msgEquipo');
+
+  if(activar){
+    const aviso = '¿Compartir tus expedientes con el responsable del consultorio?\n\n' +
+      'Podrá leer las notas de sesión y los expedientes de tus pacientes.\n\n' +
+      'Tú sigues siendo el responsable de esa información, y puedes apagarlo cuando quieras.';
+    if(!confirm(aviso)) return;
+  }
+
+  const { data, error } = await sb.rpc('definir_acceso_expedientes', { p_compartir: activar });
+  const r = Array.isArray(data) ? data[0] : data;
+
+  if(error || !r || !r.ok){
+    msg.textContent = error?.message || r?.mensaje || 'No se pudo cambiar el permiso.';
+    msg.className = 'msg err';
+    return;
+  }
+
+  yo.comparte_expedientes = activar;
+  cargarEquipo();
+}
+
+async function pedirAccesoExpedientes(id, nombre){
+  const msg = document.getElementById('msgEquipo');
+  if(!confirm(`¿Pedirle a ${nombre} acceso a los expedientes de sus pacientes?\n\nLe llega una notificación y decide ella. Tú no puedes activarlo por tu cuenta.`)) return;
+
+  const { data, error } = await sb.rpc('solicitar_acceso_expedientes', { p_psicologo_id: id });
+  const r = Array.isArray(data) ? data[0] : data;
+
+  msg.textContent = error?.message || r?.mensaje || 'No se pudo enviar la solicitud.';
+  msg.className = (r && r.ok) ? 'msg ok' : 'msg err';
 }
 
 async function retirarDelConsultorio(id, nombre){
