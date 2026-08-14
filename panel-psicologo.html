@@ -1540,33 +1540,117 @@ async function cargarMensualidades(){
   });
 }
 
-// Solo se ofrecen pacientes activos que aún no tienen mensualidad: asignar
-// una segunda al mismo paciente chocaría con la restricción de la base.
+// Se ofrecen los pacientes en seguimiento, no solo los que estén en
+// 'activo': alguien en pausa también puede tener mensualidad. Solo se
+// excluyen los archivados y quienes ya tienen una, porque asignar una
+// segunda al mismo paciente choca con la restricción de la base.
 async function cargarSelectoresAsignar(){
   const selPac = document.getElementById('asignarPaciente');
   const selPlan = document.getElementById('asignarPlan');
-  if(!selPac || !selPlan) return;
+  const caja = document.getElementById('asignarCaja');
+  if(!selPac || !selPlan || !caja) return;
 
   const { data: pacientes } = await sb.from('pacientes')
-    .select('id, nombre').eq('psicologo_id', yo.id).eq('estado', 'activo').order('nombre');
+    .select('id, nombre, estado').eq('psicologo_id', yo.id)
+    .neq('estado', 'archivado').order('nombre');
   const { data: conPlan } = await sb.from('suscripciones_paciente')
     .select('paciente_id').eq('psicologo_id', yo.id);
   const yaTienen = new Set((conPlan||[]).map(s=> s.paciente_id));
 
   const disponibles = (pacientes||[]).filter(p=> !yaTienen.has(p.id));
-  selPac.innerHTML = '<option value="">Elige un paciente</option>' +
-    disponibles.map(p=>`<option value="${escapar(p.id)}">${escapar(p.nombre)}</option>`).join('');
-
   const { data: planes } = await sb.from('planes_paciente')
     .select('id, nombre, precio').eq('psicologo_id', yo.id).eq('activo', true).order('creado_en');
-  selPlan.innerHTML = '<option value="">Elige un plan</option>' +
-    (planes||[]).map(p=>`<option value="${escapar(p.id)}">${escapar(p.nombre)} — ${pesos(p.precio)}</option>`).join('');
 
-  // Sin planes activos no hay nada que asignar: se dice en vez de dejar
-  // dos listas vacías sin explicación.
-  document.getElementById('asignarCaja').style.display =
-    (planes && planes.length && disponibles.length) ? 'block' : 'none';
+  // La caja siempre se ve: si falta algo se dice cuál, en vez de
+  // desaparecer y dejar al psicólogo sin saber por qué no puede asignar.
+  caja.style.display = 'block';
+
+  if(!planes || !planes.length){
+    caja.innerHTML = `<div class="asignar-titulo">Poner a un paciente en mensualidad</div>
+      <p class="empty" style="border:none;padding:10px 0;">Primero crea un plan mensual arriba.</p>`;
+    return;
+  }
+  if(!disponibles.length){
+    caja.innerHTML = `<div class="asignar-titulo">Poner a un paciente en mensualidad</div>
+      <p class="empty" style="border:none;padding:10px 0;">
+        ${(pacientes||[]).length ? 'Todos tus pacientes ya tienen mensualidad.' : 'Todavía no tienes pacientes a quienes asignarles una.'}
+      </p>`;
+    return;
+  }
+
+  caja.innerHTML = `
+    <div class="asignar-titulo">Poner a un paciente en mensualidad</div>
+    <div class="asignar-fila">
+      <select id="asignarPaciente">
+        <option value="">Elige un paciente</option>
+        ${disponibles.map(p=>`<option value="${escapar(p.id)}">${escapar(p.nombre)}${p.estado !== 'activo' ? ' (' + escapar(p.estado) + ')' : ''}</option>`).join('')}
+      </select>
+      <select id="asignarPlan">
+        <option value="">Elige un plan</option>
+        ${planes.map(p=>`<option value="${escapar(p.id)}">${escapar(p.nombre)} — ${pesos(p.precio)}</option>`).join('')}
+      </select>
+      <button class="btn btn-primary" id="btnAsignarPlan" style="width:auto;">Asignar</button>
+    </div>`;
+
+  document.getElementById('btnAsignarPlan').addEventListener('click', asignarMensualidad);
 }
+
+// Asignar o quitar la mensualidad desde la tarjeta del paciente, que es
+// donde el psicólogo lo tiene enfrente.
+async function abrirMensualidadPaciente(pacienteId, nombre){
+  const { data: actual } = await sb.from('suscripciones_paciente')
+    .select('*, planes_paciente(nombre, sesiones_incluidas, precio)')
+    .eq('paciente_id', pacienteId).maybeSingle();
+
+  if(actual){
+    const plan = actual.planes_paciente || {};
+    const restantes = Math.max(0, (plan.sesiones_incluidas || 0) - actual.sesiones_usadas);
+    const quitar = confirm(
+      `${nombre} ya tiene mensualidad.\n\n` +
+      `Plan: ${plan.nombre} — ${pesos(plan.precio)}/mes\n` +
+      `Sesiones: ${actual.sesiones_usadas} usadas, le quedan ${restantes}\n` +
+      `Periodo hasta: ${new Date(actual.periodo_fin).toLocaleDateString('es-MX')}\n\n` +
+      `¿Quitarle la mensualidad? Volvería a cobrarse por sesión.`
+    );
+    if(!quitar) return;
+
+    const { error } = await sb.from('suscripciones_paciente').delete().eq('id', actual.id);
+    if(error){ alert('No se pudo quitar: ' + error.message); return; }
+    alert('Se le quitó la mensualidad. A partir de ahora se le cobra por sesión.');
+    cargarPacientes();
+    cargarCobros();
+    return;
+  }
+
+  const { data: planes } = await sb.from('planes_paciente')
+    .select('id, nombre, precio, sesiones_incluidas').eq('psicologo_id', yo.id).eq('activo', true).order('creado_en');
+
+  if(!planes || !planes.length){
+    alert('Todavía no tienes planes mensuales.\n\nCrea uno en la sección Cobros y podrás asignarlo aquí.');
+    return;
+  }
+
+  const opciones = planes.map((p,i)=> `${i+1}. ${p.nombre} — ${pesos(p.precio)}/mes, ${p.sesiones_incluidas} sesiones`).join('\n');
+  const elegido = prompt(`Mensualidad para ${nombre}\n\n${opciones}\n\nEscribe el número del plan:`);
+  if(elegido === null) return;
+
+  const plan = planes[Number(elegido) - 1];
+  if(!plan){ alert('No reconocí ese número.'); return; }
+
+  const fin = new Date();
+  fin.setMonth(fin.getMonth() + 1);
+
+  const { error } = await sb.from('suscripciones_paciente').insert({
+    paciente_id: pacienteId, psicologo_id: yo.id, plan_id: plan.id, periodo_fin: fin.toISOString()
+  });
+
+  if(error){ alert('No se pudo asignar: ' + error.message); return; }
+
+  alert(`Listo. ${nombre} queda en ${plan.nombre}, con ${plan.sesiones_incluidas} sesiones hasta el ${fin.toLocaleDateString('es-MX')}.`);
+  cargarPacientes();
+  cargarCobros();
+}
+window.abrirMensualidadPaciente = abrirMensualidadPaciente;
 
 async function asignarMensualidad(){
   const msg = document.getElementById('msgMensualidad');
@@ -2369,7 +2453,6 @@ async function iniciar(){
 
   document.getElementById('btnGuardarPrecio')?.addEventListener('click', guardarPrecioSesion);
   document.getElementById('btnGuardarPlan')?.addEventListener('click', guardarPlanNuevo);
-  document.getElementById('btnAsignarPlan')?.addEventListener('click', asignarMensualidad);
   document.getElementById('btnNuevoPlan')?.addEventListener('click', ()=>{
     document.getElementById('formPlanNuevo').style.display = 'block';
     document.getElementById('btnNuevoPlan').style.display = 'none';
@@ -3049,6 +3132,7 @@ function pintarPacientes(){
         <div class="pac-acciones">
           <a class="pac-btn" href="./expediente.html?id=${p.id}">Expediente</a>
           ${!p.auth_user_id ? `<button class="pac-btn" onclick="darAccesoPaciente('${p.id}')">Dar acceso</button>` : ''}
+          <button class="pac-btn" onclick="abrirMensualidadPaciente('${p.id}', '${escapar(p.nombre).replace(/'/g, "\\'")}')">Mensualidad</button>
           ${botonesEstado(p)}
         </div>
       </div>`;
