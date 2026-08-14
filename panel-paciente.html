@@ -582,15 +582,41 @@ function pesosPac(n){ return '$' + Number(n || 0).toLocaleString('es-MX'); }
 async function cargarMisPagos(){
   const cont = document.getElementById('pagosContenido');
   if(!cont || !yo) return;
+  try{
+    await pintarMisPagos(cont);
+  }catch(e){
+    // Nunca dejar la sección en "Cargando...": si algo truena, se dice.
+    cont.innerHTML = `<div class="pg-caja"><div class="pg-etiqueta">No pudimos cargar tus pagos</div>
+      <div class="pg-plan-desc">${escapar(e.message)}. Puedes preguntarle a tu psicólogo por tu estado de cuenta.</div></div>`;
+  }
+}
 
-  const [{ data: susc }, { data: cuenta }, { data: pagos }] = await Promise.all([
-    sb.from('suscripciones_paciente')
-      .select('*, planes_paciente(nombre, sesiones_incluidas, precio, descripcion)')
-      .eq('paciente_id', yo.id).maybeSingle(),
-    sb.from('estado_cuenta_pacientes').select('*').eq('paciente_id', yo.id).maybeSingle(),
-    sb.from('pagos').select('monto, metodo, fecha_pago').eq('paciente_id', yo.id)
-      .order('fecha_pago', { ascending: false }).limit(8)
-  ]);
+async function pintarMisPagos(cont){
+
+  // Cada consulta va por separado y tolera su propio fallo: si una se cae,
+  // el resto de la pantalla igual se pinta. Antes, un error en cualquiera
+  // dejaba la sección en "Cargando..." para siempre, sin decir por qué.
+  const pedir = async (fn, etiqueta) => {
+    try{
+      const { data, error } = await fn();
+      if(error){ console.warn('Mis pagos —', etiqueta + ':', error.message); return null; }
+      return data;
+    }catch(e){
+      console.warn('Mis pagos —', etiqueta + ':', e.message);
+      return null;
+    }
+  };
+
+  const susc = await pedir(()=> sb.from('suscripciones_paciente')
+    .select('*, planes_paciente(nombre, sesiones_incluidas, precio, descripcion)')
+    .eq('paciente_id', yo.id).maybeSingle(), 'mensualidad');
+
+  const cuenta = await pedir(()=> sb.from('estado_cuenta_pacientes')
+    .select('*').eq('paciente_id', yo.id).maybeSingle(), 'estado de cuenta');
+
+  const pagos = await pedir(()=> sb.from('pagos')
+    .select('monto, metodo, fecha_pago').eq('paciente_id', yo.id)
+    .order('fecha_pago', { ascending: false }).limit(8), 'pagos');
 
   let bloques = '';
 

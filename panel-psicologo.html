@@ -53,6 +53,10 @@
   .eq-caja{background:#F7FAF6;border:1.5px solid var(--primario-suave);border-radius:12px;padding:15px 17px;margin-top:16px;}
   .eq-caja-titulo{font-size:12.5px;font-weight:800;margin-bottom:5px;}
   .eq-caja-texto{font-size:11.5px;color:var(--gray);font-weight:600;line-height:1.55;}
+  .pp-total{background:#F7FAF6;border:1.5px solid var(--primario-suave);border-radius:12px;padding:15px 18px;margin-top:16px;font-size:14px;font-weight:700;color:var(--ink);}
+  .pp-total strong{font-size:20px;color:var(--primario);}
+  .pp-total span{display:block;font-size:11.5px;color:var(--gray);font-weight:600;margin-top:4px;}
+
   /* conectar cobros */
   .conectar-caja{display:flex;align-items:center;gap:18px;justify-content:space-between;background:#fff;border:1.5px solid var(--primario-suave);border-radius:16px;padding:20px 22px;margin-bottom:18px;flex-wrap:wrap;}
   .conectar-caja.lista{background:#F7FAF6;}
@@ -1796,33 +1800,108 @@ async function abrirMensualidadPaciente(pacienteId, nombre){
     return;
   }
 
-  const { data: planes } = await sb.from('planes_paciente')
-    .select('id, nombre, precio, sesiones_incluidas').eq('psicologo_id', yo.id).eq('activo', true).order('creado_en');
+  abrirModalPlanPaciente(pacienteId, nombre);
+}
 
-  if(!planes || !planes.length){
-    alert('Todavía no tienes planes mensuales.\n\nCrea uno en la sección Cobros y podrás asignarlo aquí.');
-    return;
+// Se arma el plan con lo que el psicólogo ya acordó con su paciente:
+// cuánto cobra la sesión, cuántas al mes y si le hace descuento. El total
+// se calcula solo, para que no tenga que sacar la cuenta ni equivocarse.
+function abrirModalPlanPaciente(pacienteId, nombre){
+  let caja = document.getElementById('modalPlanPaciente');
+  if(!caja){
+    caja = document.createElement('div');
+    caja.id = 'modalPlanPaciente';
+    caja.className = 'modal-bg';
+    document.body.appendChild(caja);
   }
 
-  const opciones = planes.map((p,i)=> `${i+1}. ${p.nombre} — ${pesos(p.precio)}/mes, ${p.sesiones_incluidas} sesiones`).join('\n');
-  const elegido = prompt(`Mensualidad para ${nombre}\n\n${opciones}\n\nEscribe el número del plan:`);
-  if(elegido === null) return;
+  caja.innerHTML = `
+    <div class="modal">
+      <h3>Plan de pago de ${escapar(nombre)}</h3>
+      <p class="modal-sub">Define cuánto le vas a cobrar al mes. Puedes darle un descuento si lo acordaron así.</p>
 
-  const plan = planes[Number(elegido) - 1];
-  if(!plan){ alert('No reconocí ese número.'); return; }
+      <div class="rejilla-plan">
+        <div>
+          <label for="ppPrecio">Precio por sesión</label>
+          <input type="number" id="ppPrecio" min="1" step="50" placeholder="300">
+        </div>
+        <div>
+          <label for="ppSesiones">Sesiones al mes</label>
+          <input type="number" id="ppSesiones" min="1" step="1" placeholder="4">
+        </div>
+        <div>
+          <label for="ppDescuento">Descuento (%)</label>
+          <input type="number" id="ppDescuento" min="0" max="100" step="1" value="0">
+        </div>
+        <div>
+          <label for="ppNombre">Nombre del plan</label>
+          <input type="text" id="ppNombre" placeholder="Plan de ${escapar(nombre)}">
+        </div>
+      </div>
 
-  const fin = new Date();
-  fin.setMonth(fin.getMonth() + 1);
+      <div class="pp-total" id="ppTotal">Paga <strong>$0</strong> al mes</div>
 
-  const { error } = await sb.from('suscripciones_paciente').insert({
-    paciente_id: pacienteId, psicologo_id: yo.id, plan_id: plan.id, periodo_fin: fin.toISOString()
+      <div class="modal-actions">
+        <button type="button" class="btn btn-ghost" id="ppCancelar">Cancelar</button>
+        <button type="button" class="btn btn-primary" id="ppGuardar">Crear plan</button>
+      </div>
+      <p class="msg" id="ppMsg"></p>
+    </div>`;
+
+  caja.classList.add('show');
+
+  const calcular = ()=>{
+    const precio = Number(document.getElementById('ppPrecio').value) || 0;
+    const sesiones = Number(document.getElementById('ppSesiones').value) || 0;
+    const desc = Number(document.getElementById('ppDescuento').value) || 0;
+    const bruto = precio * sesiones;
+    const total = Math.round(bruto * (1 - desc/100) * 100) / 100;
+
+    document.getElementById('ppTotal').innerHTML = desc > 0 && bruto > 0
+      ? `Paga <strong>${pesos(total)}</strong> al mes <span>en vez de ${pesos(bruto)} — ahorra ${pesos(bruto - total)}</span>`
+      : `Paga <strong>${pesos(total)}</strong> al mes`;
+  };
+
+  ['ppPrecio','ppSesiones','ppDescuento'].forEach(id=>
+    document.getElementById(id).addEventListener('input', calcular));
+
+  document.getElementById('ppCancelar').addEventListener('click', ()=> caja.classList.remove('show'));
+
+  document.getElementById('ppGuardar').addEventListener('click', async ()=>{
+    const msg = document.getElementById('ppMsg');
+    const btn = document.getElementById('ppGuardar');
+    btn.disabled = true;
+
+    const { data, error } = await sb.rpc('crear_plan_de_paciente', {
+      p_paciente_id: pacienteId,
+      p_precio_sesion: Number(document.getElementById('ppPrecio').value),
+      p_sesiones: Number(document.getElementById('ppSesiones').value),
+      p_descuento: Number(document.getElementById('ppDescuento').value) || 0,
+      p_nombre: document.getElementById('ppNombre').value.trim() || null
+    });
+    const r = Array.isArray(data) ? data[0] : data;
+
+    if(error || !r || !r.ok){
+      msg.textContent = error?.message || r?.mensaje || 'No se pudo crear el plan.';
+      msg.className = 'msg err';
+      btn.disabled = false;
+      return;
+    }
+
+    caja.classList.remove('show');
+    alert(r.mensaje);
+    cargarPacientes();
+    cargarCobros();
   });
 
-  if(error){ alert('No se pudo asignar: ' + error.message); return; }
-
-  alert(`Listo. ${nombre} queda en ${plan.nombre}, con ${plan.sesiones_incluidas} sesiones hasta el ${fin.toLocaleDateString('es-MX')}.`);
-  cargarPacientes();
-  cargarCobros();
+  // Se arranca con el precio por sesión que ya tiene configurado.
+  sb.from('configuracion').select('precio_sesion').eq('psicologo_id', yo.id).maybeSingle()
+    .then(({ data })=>{
+      if(data?.precio_sesion > 0){
+        document.getElementById('ppPrecio').value = data.precio_sesion;
+        calcular();
+      }
+    });
 }
 window.abrirMensualidadPaciente = abrirMensualidadPaciente;
 
