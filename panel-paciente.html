@@ -570,6 +570,7 @@ async function iniciar(){
   pintarDias();
   cargarDocumentosPaciente();
   cargarMisPagos();
+  avisarRegresoDePago();
 }
 
 /* ---------- mis pagos ---------- */
@@ -629,6 +630,8 @@ async function pintarMisPagos(cont){
     .select('monto, metodo, fecha_pago').eq('paciente_id', yo.id)
     .order('fecha_pago', { ascending: false }).limit(8), 'pagos');
 
+  const enLinea = await pedir(()=> sb.rpc('mi_psicologo_cobra_en_linea'), 'cobro en línea');
+
   let bloques = '';
 
   if(susc && susc.planes_paciente){
@@ -654,6 +657,11 @@ async function pintarMisPagos(cont){
         ${restantes === 0 && !vencido
           ? '<div class="pg-aviso">Ya usaste las sesiones de este mes. Las siguientes se cobran por separado hasta que renueves.</div>'
           : ''}
+        ${enLinea
+          ? `<button class="btn btn-primary btn-pagar-linea" data-concepto="mensualidad" style="margin-top:16px;">
+               ${vencido ? 'Pagar mi mes' : 'Pagar por adelantado'} · ${pesosPac(plan.precio)}
+             </button>`
+          : ''}
       </div>`;
   } else {
     bloques += `
@@ -675,14 +683,20 @@ async function pintarMisPagos(cont){
           ? 'Es lo que queda pendiente por las sesiones que ya tuviste. Las citas futuras todavía no se cobran.'
           : 'No tienes nada pendiente. Todas tus sesiones están pagadas.'}
       </div>
+      ${saldo > 0 && enLinea
+        ? `<button class="btn btn-primary btn-pagar-linea" data-concepto="saldo" style="margin-top:14px;">
+             Pagar ${pesosPac(saldo)} con tarjeta
+           </button>`
+        : ''}
     </div>`;
 
   bloques += `
     <div class="pg-caja">
       <div class="pg-etiqueta">Cómo pagar</div>
       <div class="pg-plan-desc">
-        Por ahora los pagos se hacen directamente con tu psicólogo, por transferencia o en la consulta.
-        Él los registra aquí para que siempre veas tu cuenta al día.
+        ${enLinea
+          ? 'Puedes pagar con tarjeta desde aquí. El cobro lo procesa Stripe y el dinero va directo a tu psicólogo: Praxia no guarda los datos de tu tarjeta. También puedes pagarle en la consulta si lo prefieres.'
+          : 'Los pagos se hacen directamente con tu psicólogo, por transferencia o en la consulta. Él los registra aquí para que siempre veas tu cuenta al día.'}
       </div>
     </div>`;
 
@@ -700,6 +714,49 @@ async function pintarMisPagos(cont){
   }
 
   cont.innerHTML = bloques;
+
+  cont.querySelectorAll('.btn-pagar-linea').forEach(b=>{
+    b.addEventListener('click', ()=> pagarEnLinea(b.dataset.concepto, b));
+  });
+}
+
+async function pagarEnLinea(concepto, boton){
+  const textoPrevio = boton.textContent;
+  boton.disabled = true;
+  boton.textContent = 'Abriendo pago seguro...';
+
+  try{
+    const { data: { session } } = await sb.auth.getSession();
+    const base = `${location.origin}${location.pathname.replace(/[^/]+$/,'')}panel-paciente.html`;
+
+    const r = await fetch(`${SUPABASE_URL}/functions/v1/pagar-paciente`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` },
+      body: JSON.stringify({ concepto, url_retorno: base })
+    });
+    const datos = await r.json();
+
+    if(!r.ok || !datos.url){
+      alert('No se pudo abrir el pago: ' + (datos.error || 'error desconocido'));
+      boton.disabled = false; boton.textContent = textoPrevio;
+      return;
+    }
+    location.href = datos.url;
+  }catch(e){
+    alert('No se pudo abrir el pago: ' + e.message);
+    boton.disabled = false; boton.textContent = textoPrevio;
+  }
+}
+
+// Al volver de Stripe, el webhook puede tardar un momento en registrar.
+function avisarRegresoDePago(){
+  const estado = new URLSearchParams(location.search).get('pago');
+  if(!estado) return;
+  history.replaceState({}, '', location.pathname);
+  if(estado === 'ok'){
+    alert('¡Listo! Tu pago se está registrando. En unos segundos verás tu cuenta actualizada.');
+    setTimeout(cargarMisPagos, 2500);
+  }
 }
 
 function pintarAvatarSidebarPaciente(){

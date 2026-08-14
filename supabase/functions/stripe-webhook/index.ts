@@ -91,6 +91,41 @@ Deno.serve(async (req) => {
     switch (evento.type) {
       // Termino de pagar por primera vez.
       case 'checkout.session.completed': {
+        // Pago de un paciente a su psicologo: se registra como cualquier
+        // otro cobro, marcado como hecho en linea para poder distinguirlo
+        // de lo que se cobra en efectivo.
+        if (dato.metadata?.paciente_id && dato.metadata?.psicologo_id) {
+          const monto = Number(dato.amount_total || 0) / 100;
+          if (monto > 0) {
+            await sb.from('pagos').insert({
+              psicologo_id: dato.metadata.psicologo_id,
+              paciente_id: dato.metadata.paciente_id,
+              monto,
+              metodo: 'tarjeta',
+              origen: 'en_linea',
+              referencia: dato.payment_intent || dato.id,
+              notas: dato.metadata.concepto === 'mensualidad' ? 'Mensualidad' : 'Saldo pendiente',
+            });
+
+            // Si pago su mes, el periodo se recorre y las sesiones vuelven
+            // a estar disponibles.
+            if (dato.metadata.concepto === 'mensualidad') {
+              const fin = new Date();
+              fin.setMonth(fin.getMonth() + 1);
+              await sb.from('suscripciones_paciente')
+                .update({
+                  periodo_inicio: new Date().toISOString(),
+                  periodo_fin: fin.toISOString(),
+                  sesiones_usadas: 0,
+                  estado: 'activa',
+                  actualizado_en: new Date().toISOString(),
+                })
+                .eq('paciente_id', dato.metadata.paciente_id);
+            }
+          }
+          break;
+        }
+
         if (!titularId) break;
         const finPeriodo = new Date();
         finPeriodo.setMonth(finPeriodo.getMonth() + 1);
