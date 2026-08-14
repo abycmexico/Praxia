@@ -1,14 +1,17 @@
-// Alta del psicologo en Stripe Connect, para que pueda cobrarle a sus
-// pacientes.
+// Alta del psicologo en Stripe Connect con Accounts v2.
 //
 // La cuenta es suya, no de Praxia: el dinero de sus pacientes le llega
-// directo y Praxia solo toma su comision. Por eso Stripe le pide a el sus
-// datos fiscales y bancarios, en su propia pantalla, y esos datos nunca
-// pasan por aqui.
+// directo y Praxia solo toma su comision. Stripe le pide sus datos
+// fiscales y bancarios en su propia pantalla; nunca pasan por aqui.
 //
-// Devuelve una liga de alta que caduca: si la deja a medias, se pide otra.
+// Se usa Accounts v2 porque es lo que Stripe recomienda para integraciones
+// nuevas. Ojo: va con una version de API en preview, asi que si Stripe
+// cambia el contrato hay que actualizar aqui. La version se fija explicita
+// para que un cambio no llegue solo.
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+
+const VERSION_API = '2026-07-29.preview';
 
 const CORS = {
   'Access-Control-Allow-Origin': '*',
@@ -19,17 +22,22 @@ const CORS = {
 const responder = (cuerpo: unknown, status = 200) =>
   new Response(JSON.stringify(cuerpo), { status, headers: { ...CORS, 'Content-Type': 'application/json' } });
 
-async function stripe(ruta: string, clave: string, cuerpo?: URLSearchParams) {
-  const r = await fetch(`https://api.stripe.com/v1/${ruta}`, {
-    method: cuerpo ? 'POST' : 'GET',
+// Las rutas v2 hablan JSON, a diferencia de las v1 que van form-encoded.
+async function stripeV2(ruta: string, clave: string, cuerpo: unknown) {
+  const r = await fetch(`https://api.stripe.com/v2/${ruta}`, {
+    method: 'POST',
     headers: {
       Authorization: `Bearer ${clave}`,
-      'Content-Type': 'application/x-www-form-urlencoded',
+      'Content-Type': 'application/json',
+      'Stripe-Version': VERSION_API,
     },
-    body: cuerpo,
+    body: JSON.stringify(cuerpo),
   });
   const datos = await r.json();
-  if (!r.ok) throw new Error(datos?.error?.message || 'Stripe rechazó la solicitud.');
+  if (!r.ok) {
+    const detalle = datos?.error?.message || datos?.message || JSON.stringify(datos);
+    throw new Error(detalle);
+  }
   return datos;
 }
 
@@ -61,19 +69,40 @@ Deno.serve(async (req) => {
 
     let cuenta = psi.stripe_account_id;
 
-    // Se crea una sola vez. Si ya existe, se reusa: crear otra dejaria al
-    // psicologo con dos cuentas y el dinero repartido entre ambas.
+    // Se crea una sola vez. Crear otra dejaria al psicologo con dos cuentas
+    // y el dinero repartido entre ambas.
     if (!cuenta) {
-      const nueva = await stripe('accounts', CLAVE, new URLSearchParams({
-        type: 'express',
-        country: 'MX',
-        email: psi.correo ?? '',
-        'capabilities[card_payments][requested]': 'true',
-        'capabilities[transfers][requested]': 'true',
-        'business_type': 'individual',
-        'business_profile[product_description]': 'Servicios de psicología',
-        'metadata[psicologo_id]': psi.id,
-      }));
+      const nueva = await stripeV2('core/accounts', CLAVE, {
+        contact_email: psi.correo ?? undefined,
+        display_name: psi.nombre ?? undefined,
+        dashboard: 'express',
+        identity: {
+          country: 'mx',
+          entity_type: 'individual',
+        },
+        // merchant es la configuracion que permite recibir pagos.
+        configuration: {
+          merchant: {
+            capabilities: {
+              card_payments: { requested: true },
+            },
+          },
+        },
+        defaults: {
+          currency: 'mxn',
+          locales: ['es-419'],
+          // Las comisiones y las perdidas las asume la cuenta conectada:
+          // el servicio lo presta el psicologo, y asi un contracargo de su
+          // paciente no le pega al saldo de Praxia.
+          responsibilities: {
+            fees_collector: 'stripe',
+            losses_collector: 'stripe',
+          },
+        },
+        metadata: { psicologo_id: psi.id },
+        include: ['configuration.merchant', 'identity', 'requirements'],
+      });
+
       cuenta = nueva.id;
 
       const { error } = await sb.from('psicologos')
@@ -84,12 +113,17 @@ Deno.serve(async (req) => {
       if (error) return responder({ error: 'No se pudo guardar tu cuenta: ' + error.message }, 500);
     }
 
-    const liga = await stripe('account_links', CLAVE, new URLSearchParams({
-      account: cuenta!,
-      refresh_url: `${base}?cobros=reintentar`,
-      return_url: `${base}?cobros=listo`,
-      type: 'account_onboarding',
-    }));
+    const liga = await stripeV2('core/account_links', CLAVE, {
+      account: cuenta,
+      use_case: {
+        type: 'account_onboarding',
+        account_onboarding: {
+          configurations: ['merchant'],
+          refresh_url: `${base}?cobros=reintentar`,
+          return_url: `${base}?cobros=listo`,
+        },
+      },
+    });
 
     return responder({ url: liga.url });
   } catch (e) {

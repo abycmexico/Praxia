@@ -158,20 +158,50 @@ Deno.serve(async (req) => {
         break;
       }
 
-      // El psicologo avanzo en su alta de Connect. Stripe avisa varias veces
-      // durante el tramite; lo que importa es si ya puede cobrar.
-      case 'account.updated': {
+      // El psicologo avanzo en su alta de Connect.
+      //
+      // Se atienden los dos formatos: 'account.updated' de Accounts v1 y los
+      // 'v2.core.account...' de v2, cuyo cuerpo tiene otra forma. En vez de
+      // leer el estado del evento, se le pregunta a Stripe por la cuenta: el
+      // evento solo sirve de aviso de que algo cambio, y asi no se depende
+      // de la forma exacta del payload, que en v2 sigue en preview.
+      case 'account.updated':
+      case 'v2.core.account.updated':
+      case 'v2.core.account[configuration.merchant].capability_status_updated':
+      case 'v2.core.account[requirements].updated': {
+        const idCuenta = dato.id
+          || evento.related_object?.id
+          || dato.account
+          || dato.related_object?.id;
+        if (!idCuenta) break;
+
+        const CLAVE = Deno.env.get('STRIPE_SECRET_KEY');
+        let puedeCobrar = false;
+        let altaCompleta = false;
+
+        try {
+          // v1 responde charges_enabled/details_submitted directo.
+          const r = await fetch(`https://api.stripe.com/v1/accounts/${idCuenta}`, {
+            headers: { Authorization: `Bearer ${CLAVE}` },
+          });
+          const cuenta = await r.json();
+          if (r.ok) {
+            puedeCobrar = cuenta.charges_enabled === true;
+            altaCompleta = cuenta.details_submitted === true;
+          }
+        } catch (_) {
+          // Si no se puede consultar, se cae al dato del evento.
+          puedeCobrar = dato.charges_enabled === true;
+          altaCompleta = dato.details_submitted === true;
+        }
+
         const psicologoId = dato.metadata?.psicologo_id;
-        const filtro = psicologoId
-          ? { columna: 'id', valor: psicologoId }
-          : { columna: 'stripe_account_id', valor: dato.id };
+        const columna = psicologoId ? 'id' : 'stripe_account_id';
+        const valor = psicologoId || idCuenta;
 
         await sb.from('psicologos')
-          .update({
-            stripe_cobros_activos: dato.charges_enabled === true,
-            stripe_alta_completa: dato.details_submitted === true,
-          })
-          .eq(filtro.columna, filtro.valor);
+          .update({ stripe_cobros_activos: puedeCobrar, stripe_alta_completa: altaCompleta })
+          .eq(columna, valor);
         break;
       }
 
