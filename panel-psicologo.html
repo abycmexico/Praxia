@@ -1455,17 +1455,82 @@ async function cargarPlanesPaciente(){
         <div class="cob-plan-desc">${p.sesiones_incluidas} ${p.sesiones_incluidas === 1 ? 'sesión' : 'sesiones'} al mes${p.descripcion ? ' · ' + escapar(p.descripcion) : ''}</div>
       </div>
       <div class="cob-plan-precio">${pesos(p.precio)}<span>/mes</span></div>
+      <button type="button" class="btn-mini-cob" data-editar="${escapar(p.id)}">Editar</button>
       <button type="button" class="btn-mini-cob" data-id="${escapar(p.id)}" data-activo="${p.activo}">
         ${p.activo ? 'Desactivar' : 'Activar'}
       </button>
     </div>`).join('');
 
-  cont.querySelectorAll('.btn-mini-cob').forEach(b=>{
+  cont.querySelectorAll('[data-activo]').forEach(b=>{
     b.addEventListener('click', async ()=>{
       await sb.from('planes_paciente')
         .update({ activo: b.dataset.activo !== 'true' }).eq('id', b.dataset.id);
       cargarPlanesPaciente();
+      cargarSelectoresAsignar();
     });
+  });
+
+  cont.querySelectorAll('[data-editar]').forEach(b=>{
+    b.addEventListener('click', ()=> editarPlan(planes.find(p=> p.id === b.dataset.editar)));
+  });
+}
+
+// Se edita en la misma fila para no sacar al psicólogo de donde está.
+function editarPlan(plan){
+  if(!plan) return;
+  const fila = document.querySelector(`[data-editar="${plan.id}"]`)?.closest('.cob-plan');
+  if(!fila) return;
+
+  fila.innerHTML = `
+    <div style="flex:1;">
+      <div class="rejilla-plan">
+        <div><label>Nombre</label><input type="text" id="edNombre" value="${escapar(plan.nombre)}"></div>
+        <div><label>Precio mensual</label><input type="number" id="edPrecio" min="1" step="50" value="${plan.precio}"></div>
+        <div><label>Sesiones incluidas</label><input type="number" id="edSesiones" min="1" step="1" value="${plan.sesiones_incluidas}"></div>
+        <div><label>Descripción</label><input type="text" id="edDescripcion" value="${escapar(plan.descripcion || '')}"></div>
+      </div>
+      <div style="display:flex;gap:8px;margin-top:12px;">
+        <button class="btn btn-primary" id="edGuardar" style="width:auto;">Guardar cambios</button>
+        <button class="btn btn-ghost" id="edCancelar" style="width:auto;">Cancelar</button>
+      </div>
+      <p class="msg" id="edMsg"></p>
+    </div>`;
+
+  document.getElementById('edCancelar').addEventListener('click', cargarPlanesPaciente);
+  document.getElementById('edGuardar').addEventListener('click', async ()=>{
+    const msg = document.getElementById('edMsg');
+    const nombre = document.getElementById('edNombre').value.trim();
+    const precio = Number(document.getElementById('edPrecio').value);
+    const sesiones = Number(document.getElementById('edSesiones').value);
+
+    if(!nombre){ msg.textContent = 'El plan necesita un nombre.'; msg.className = 'msg err'; return; }
+    if(!(precio > 0)){ msg.textContent = 'El precio debe ser mayor a cero.'; msg.className = 'msg err'; return; }
+    if(!(sesiones > 0)){ msg.textContent = 'Indica cuántas sesiones incluye.'; msg.className = 'msg err'; return; }
+
+    // Si ya hay pacientes en este plan, el cambio les aplica: conviene
+    // decirlo antes y no que se enteren cuando les cambie el cobro.
+    const { count } = await sb.from('suscripciones_paciente')
+      .select('id', { count: 'exact', head: true }).eq('plan_id', plan.id);
+
+    if(count > 0){
+      const seguir = confirm(
+        `${count} paciente(s) tienen este plan.\n\n` +
+        `Al guardar, el cambio aplica también para ellos: el nuevo precio se cobra en su próxima renovación ` +
+        `y las sesiones incluidas cambian desde ya.\n\n¿Continuar?`
+      );
+      if(!seguir) return;
+    }
+
+    const { error } = await sb.from('planes_paciente').update({
+      nombre, precio, sesiones_incluidas: sesiones,
+      descripcion: document.getElementById('edDescripcion').value.trim() || null
+    }).eq('id', plan.id);
+
+    if(error){ msg.textContent = 'No se pudo guardar: ' + error.message; msg.className = 'msg err'; return; }
+
+    cargarPlanesPaciente();
+    cargarMensualidades();
+    cargarSelectoresAsignar();
   });
 }
 

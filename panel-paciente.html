@@ -165,6 +165,24 @@
   .barra-confirmar .resumen strong{display:block;font-size:15px;margin-top:2px;}
   @media(max-width:640px){header{padding:16px 20px;}}
 
+  .pg-caja{background:#fff;border:1.5px solid var(--line);border-radius:16px;padding:20px 22px;margin-bottom:14px;}
+  .pg-caja.ok{border-color:var(--primario-suave);background:#F7FAF6;}
+  .pg-caja.urge{border-color:#F0D9A8;background:#FFF9EE;}
+  .pg-etiqueta{font-size:10.5px;font-weight:800;text-transform:uppercase;letter-spacing:.8px;color:var(--gray);margin-bottom:8px;}
+  .pg-plan-nombre{font-size:18px;font-weight:800;}
+  .pg-plan-precio{font-size:14px;color:var(--primario);font-weight:800;margin-top:3px;}
+  .pg-plan-desc{font-size:12.5px;color:var(--gray);font-weight:600;line-height:1.6;margin-top:8px;}
+  .pg-sesiones{display:flex;align-items:center;gap:16px;margin-top:16px;padding-top:16px;border-top:1px solid var(--line);}
+  .pg-sesiones-num{font-size:38px;font-weight:800;color:var(--primario);line-height:1;}
+  .pg-sesiones-txt{font-size:13px;font-weight:700;line-height:1.5;}
+  .pg-sesiones-txt span{font-size:11.5px;color:var(--gray);font-weight:600;}
+  .pg-aviso{margin-top:14px;font-size:12px;color:#8a6300;font-weight:700;line-height:1.55;}
+  .pg-saldo{font-size:32px;font-weight:800;color:var(--ink);line-height:1.1;}
+  .pg-pago{display:flex;align-items:center;gap:12px;padding:9px 0;border-bottom:1px solid var(--line);font-size:12.5px;}
+  .pg-pago:last-child{border-bottom:none;}
+  .pg-pago span:first-child{flex:1;color:var(--gray);font-weight:600;}
+  .pg-pago-metodo{text-transform:capitalize;color:var(--gray);font-weight:600;}
+
   .marca-pie{display:flex;justify-content:center;padding:24px 0 8px;opacity:.35;}
   .marca-pie img{height:18px;width:auto;}
 </style>
@@ -193,6 +211,10 @@
       <button data-tab="psicologo">
         <svg class="icono-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
         Mi psicólogo
+      </button>
+      <button data-tab="pagos">
+        <svg class="icono-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"></rect><path d="M2 10h20"></path><path d="M6 15h4"></path></svg>
+        Mis pagos
       </button>
       <button data-tab="perfil">
         <svg class="icono-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"></circle><path d="M4 20c0-4.4 3.6-8 8-8s8 3.6 8 8"></path></svg>
@@ -316,6 +338,12 @@
       <p class="bh">Si tienes una preocupación sobre tu psicólogo o tu atención, puedes reportarlo aquí. Este reporte solo lo ve el equipo de Praxia, tu psicólogo no lo ve.</p>
       <button type="button" class="btn btn-ghost" id="btnAbrirReporte">Reportar algo inusual</button>
     </div>
+  </section>
+
+  <section id="tab-pagos">
+    <h2>Mis pagos</h2>
+    <p class="sub">Lo que llevas pagado y lo que queda pendiente con tu psicólogo.</p>
+    <div id="pagosContenido"><p class="empty">Cargando...</p></div>
   </section>
 
   <section id="tab-perfil">
@@ -541,6 +569,100 @@ async function iniciar(){
   await cargarCitas();
   pintarDias();
   cargarDocumentosPaciente();
+  cargarMisPagos();
+}
+
+/* ---------- mis pagos ---------- */
+/* El paciente tiene que poder ver qué le corresponde pagar sin preguntarle
+   a su psicólogo. Aquí no se cobra todavía: se le dice qué debe y cómo
+   pagarlo, que es lo que hoy se resuelve por fuera. */
+
+function pesosPac(n){ return '$' + Number(n || 0).toLocaleString('es-MX'); }
+
+async function cargarMisPagos(){
+  const cont = document.getElementById('pagosContenido');
+  if(!cont || !yo) return;
+
+  const [{ data: susc }, { data: cuenta }, { data: pagos }] = await Promise.all([
+    sb.from('suscripciones_paciente')
+      .select('*, planes_paciente(nombre, sesiones_incluidas, precio, descripcion)')
+      .eq('paciente_id', yo.id).maybeSingle(),
+    sb.from('estado_cuenta_pacientes').select('*').eq('paciente_id', yo.id).maybeSingle(),
+    sb.from('pagos').select('monto, metodo, fecha_pago').eq('paciente_id', yo.id)
+      .order('fecha_pago', { ascending: false }).limit(8)
+  ]);
+
+  let bloques = '';
+
+  if(susc && susc.planes_paciente){
+    const plan = susc.planes_paciente;
+    const restantes = Math.max(0, plan.sesiones_incluidas - susc.sesiones_usadas);
+    const vencido = new Date(susc.periodo_fin) < new Date();
+
+    bloques += `
+      <div class="pg-caja ${vencido ? 'urge' : 'ok'}">
+        <div class="pg-etiqueta">Tu plan mensual</div>
+        <div class="pg-plan-nombre">${escapar(plan.nombre)}</div>
+        <div class="pg-plan-precio">${pesosPac(plan.precio)} al mes</div>
+        ${plan.descripcion ? `<div class="pg-plan-desc">${escapar(plan.descripcion)}</div>` : ''}
+        <div class="pg-sesiones">
+          <div class="pg-sesiones-num">${restantes}</div>
+          <div class="pg-sesiones-txt">
+            ${restantes === 1 ? 'sesión disponible' : 'sesiones disponibles'} de ${plan.sesiones_incluidas}<br>
+            <span>${vencido
+              ? 'Tu periodo terminó. Habla con tu psicólogo para renovarlo.'
+              : 'Tu mes corre hasta el ' + new Date(susc.periodo_fin).toLocaleDateString('es-MX')}</span>
+          </div>
+        </div>
+        ${restantes === 0 && !vencido
+          ? '<div class="pg-aviso">Ya usaste las sesiones de este mes. Las siguientes se cobran por separado hasta que renueves.</div>'
+          : ''}
+      </div>`;
+  } else {
+    bloques += `
+      <div class="pg-caja">
+        <div class="pg-etiqueta">Cómo pagas</div>
+        <div class="pg-plan-nombre">Por sesión</div>
+        <div class="pg-plan-precio">${cfg.precio_sesion > 0 ? pesosPac(cfg.precio_sesion) + ' por sesión' : 'Pregúntale a tu psicólogo'}</div>
+        <div class="pg-plan-desc">Si prefieres una mensualidad con varias sesiones incluidas, pídesela a tu psicólogo.</div>
+      </div>`;
+  }
+
+  const saldo = Number(cuenta?.saldo || 0);
+  bloques += `
+    <div class="pg-caja ${saldo > 0 ? 'urge' : 'ok'}">
+      <div class="pg-etiqueta">Tu cuenta</div>
+      <div class="pg-saldo">${pesosPac(saldo)}</div>
+      <div class="pg-plan-desc">
+        ${saldo > 0
+          ? 'Es lo que queda pendiente por las sesiones que ya tuviste. Las citas futuras todavía no se cobran.'
+          : 'No tienes nada pendiente. Todas tus sesiones están pagadas.'}
+      </div>
+    </div>`;
+
+  bloques += `
+    <div class="pg-caja">
+      <div class="pg-etiqueta">Cómo pagar</div>
+      <div class="pg-plan-desc">
+        Por ahora los pagos se hacen directamente con tu psicólogo, por transferencia o en la consulta.
+        Él los registra aquí para que siempre veas tu cuenta al día.
+      </div>
+    </div>`;
+
+  if(pagos && pagos.length){
+    bloques += `
+      <div class="pg-caja">
+        <div class="pg-etiqueta">Tus últimos pagos</div>
+        ${pagos.map(p=>`
+          <div class="pg-pago">
+            <span>${new Date(p.fecha_pago + 'T12:00:00').toLocaleDateString('es-MX')}</span>
+            <span class="pg-pago-metodo">${escapar(p.metodo)}</span>
+            <strong>${pesosPac(p.monto)}</strong>
+          </div>`).join('')}
+      </div>`;
+  }
+
+  cont.innerHTML = bloques;
 }
 
 function pintarAvatarSidebarPaciente(){
