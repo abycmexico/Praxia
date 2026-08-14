@@ -54,16 +54,26 @@ async function firmaValida(cuerpo: string, encabezado: string, secreto: string):
 }
 
 Deno.serve(async (req) => {
-  const SECRETO = Deno.env.get('STRIPE_WEBHOOK_SECRET');
-  if (!SECRETO) return new Response('Falta STRIPE_WEBHOOK_SECRET', { status: 500 });
+  // Dos destinos distintos apuntan aqui y cada uno firma con su propio
+  // secreto: el de la cuenta de Praxia y el de las cuentas conectadas.
+  // Se prueban ambos y basta que uno valide.
+  const secretos = [
+    Deno.env.get('STRIPE_WEBHOOK_SECRET'),
+    Deno.env.get('STRIPE_WEBHOOK_SECRET_CONNECT'),
+  ].filter(Boolean) as string[];
+
+  if (!secretos.length) return new Response('Falta STRIPE_WEBHOOK_SECRET', { status: 500 });
 
   const encabezado = req.headers.get('stripe-signature');
   if (!encabezado) return new Response('Falta la firma', { status: 400 });
 
   const cuerpo = await req.text();
-  if (!(await firmaValida(cuerpo, encabezado, SECRETO))) {
-    return new Response('Firma no válida', { status: 400 });
+
+  let valida = false;
+  for (const secreto of secretos) {
+    if (await firmaValida(cuerpo, encabezado, secreto)) { valida = true; break; }
   }
+  if (!valida) return new Response('Firma no válida', { status: 400 });
 
   const evento = JSON.parse(cuerpo);
   const dato = evento.data?.object ?? {};
