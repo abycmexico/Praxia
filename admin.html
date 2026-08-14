@@ -162,7 +162,11 @@
         <p class="sub-bloque">Registrarse no es usarla. Esto muestra quién ya subió pacientes y quién tuvo movimiento esta semana.</p>
         <div class="grid-dashboard" id="gridAdopcion"></div>
 
-        <h3 class="titulo-bloque">Psicólogos y consultorios</h3>
+        <h3 class="titulo-bloque">Consultorios</h3>
+        <p class="sub-bloque">Los consultorios dados de alta, con su responsable y su equipo.</p>
+        <div id="listaConsultorios"><p class="empty">Cargando...</p></div>
+
+        <h3 class="titulo-bloque">Psicólogos</h3>
         <p class="sub-bloque">Todos los registrados, con lo que lleva cada uno.</p>
         <div class="tabla-scroll">
           <table class="tabla-admin" id="tablaPsicologos">
@@ -170,10 +174,10 @@
               <tr>
                 <th>Psicólogo</th><th>Consultorio</th><th>Estado</th>
                 <th>Pacientes</th><th>Citas</th><th>Notas</th><th>Cobrado</th>
-                <th>Última actividad</th><th>Plan</th>
+                <th>Última conexión</th><th>Última actividad</th><th>Plan</th>
               </tr>
             </thead>
-            <tbody><tr><td colspan="9" class="empty">Cargando...</td></tr></tbody>
+            <tbody><tr><td colspan="10" class="empty">Cargando...</td></tr></tbody>
           </table>
         </div>
       </section>
@@ -305,14 +309,35 @@ async function cargarPanorama(){
       <div class="card-dash"><div class="card-dash-num">${pesosAdmin(p.cobrado_total)}</div><div class="card-dash-label">Cobrado por los consultorios</div></div>`;
   }
 
+  const cont = document.getElementById('listaConsultorios');
+  const { data: cons, error: errCons } = await sb.rpc('consultorios_con_equipo');
+  if(cont){
+    if(errCons){
+      cont.innerHTML = `<p class="empty">No se pudo cargar: ${escapar(errCons.message)}</p>`;
+    } else if(!cons || !cons.length){
+      cont.innerHTML = '<p class="empty">Todavía no hay consultorios creados.</p>';
+    } else {
+      cont.innerHTML = `<div class="tabla-scroll"><table class="tabla-admin">
+        <thead><tr><th>Consultorio</th><th>Responsable</th><th>Psicólogos</th><th>Pacientes</th><th>Creado</th></tr></thead>
+        <tbody>${cons.map(c=>`
+          <tr>
+            <td><div class="ta-nombre">${escapar(c.nombre)}</div></td>
+            <td>${escapar(c.responsable)}<div class="ta-correo">${escapar(c.correo)}</div></td>
+            <td class="ta-num">${c.psicologos}</td>
+            <td class="ta-num">${c.pacientes}</td>
+            <td>${new Date(c.creado_en).toLocaleDateString('es-MX')}</td>
+          </tr>`).join('')}</tbody></table></div>`;
+    }
+  }
+
   const { data: lista, error: errLista } = await sb.rpc('psicologos_con_actividad');
 
   if(errLista){
-    cuerpo.innerHTML = `<tr><td colspan="9" class="empty">No se pudo cargar: ${escapar(errLista.message)}</td></tr>`;
+    cuerpo.innerHTML = `<tr><td colspan="10" class="empty">No se pudo cargar: ${escapar(errLista.message)}</td></tr>`;
     return;
   }
   if(!lista || !lista.length){
-    cuerpo.innerHTML = '<tr><td colspan="9" class="empty">Todavía no hay psicólogos registrados.</td></tr>';
+    cuerpo.innerHTML = '<tr><td colspan="10" class="empty">Todavía no hay psicólogos registrados.</td></tr>';
     return;
   }
 
@@ -331,6 +356,7 @@ async function cargarPanorama(){
         <td><span class="ta-etq ${escapar(p.estado)}">${escapar(p.estado)}</span></td>
         ${num(p.pacientes)}${num(p.citas)}${num(p.notas)}
         <td class="ta-num">${pesosAdmin(p.cobrado)}</td>
+        <td>${escapar(haceCuanto(p.ultima_conexion))}</td>
         <td>${escapar(haceCuanto(p.ultima_actividad))}</td>
         <td>${p.plan_suscripcion ? escapar(p.plan_suscripcion) + (p.estado_suscripcion ? ` (${escapar(p.estado_suscripcion)})` : '') : '—'}</td>
       </tr>`;
