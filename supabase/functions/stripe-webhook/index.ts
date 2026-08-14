@@ -148,6 +148,23 @@ Deno.serve(async (req) => {
         break;
       }
 
+      // El psicologo avanzo en su alta de Connect. Stripe avisa varias veces
+      // durante el tramite; lo que importa es si ya puede cobrar.
+      case 'account.updated': {
+        const psicologoId = dato.metadata?.psicologo_id;
+        const filtro = psicologoId
+          ? { columna: 'id', valor: psicologoId }
+          : { columna: 'stripe_account_id', valor: dato.id };
+
+        await sb.from('psicologos')
+          .update({
+            stripe_cobros_activos: dato.charges_enabled === true,
+            stripe_alta_completa: dato.details_submitted === true,
+          })
+          .eq(filtro.columna, filtro.valor);
+        break;
+      }
+
       // Se acabo de verdad: ya paso el periodo pagado.
       case 'customer.subscription.deleted': {
         await sb.from('suscripciones')

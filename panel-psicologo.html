@@ -53,6 +53,14 @@
   .eq-caja{background:#F7FAF6;border:1.5px solid var(--primario-suave);border-radius:12px;padding:15px 17px;margin-top:16px;}
   .eq-caja-titulo{font-size:12.5px;font-weight:800;margin-bottom:5px;}
   .eq-caja-texto{font-size:11.5px;color:var(--gray);font-weight:600;line-height:1.55;}
+  /* conectar cobros */
+  .conectar-caja{display:flex;align-items:center;gap:18px;justify-content:space-between;background:#fff;border:1.5px solid var(--primario-suave);border-radius:16px;padding:20px 22px;margin-bottom:18px;flex-wrap:wrap;}
+  .conectar-caja.lista{background:#F7FAF6;}
+  .conectar-titulo{font-size:14.5px;font-weight:800;margin-bottom:5px;}
+  .conectar-desc{font-size:12.5px;color:var(--gray);font-weight:600;line-height:1.6;max-width:520px;}
+  .conectar-nota{font-size:11px;color:var(--gray);font-weight:600;line-height:1.5;margin-top:8px;}
+  .conectar-etq{font-size:10.5px;font-weight:800;text-transform:uppercase;letter-spacing:.4px;background:#EDF6EC;color:var(--primario);padding:5px 12px;border-radius:20px;white-space:nowrap;}
+
   /* cobros */
   .cob-resumen{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:18px;}
   .cob-tarjeta{background:#fff;border:1.5px solid var(--line);border-radius:14px;padding:16px 18px;}
@@ -849,6 +857,7 @@
     <h2>Cobros</h2>
     <p class="sub">Lo que le cobras a tus pacientes. Tú pones los precios; Praxia solo lleva la cuenta.</p>
 
+    <div id="cobConectar"></div>
     <div class="cob-resumen" id="cobResumen"></div>
 
     <div class="bloque">
@@ -1404,8 +1413,93 @@ let rangoHistorialActual = 'semana';
 
 function pesos(n){ return '$' + Number(n || 0).toLocaleString('es-MX'); }
 
+// Cobro en línea: el estado real lo dice Stripe, no Praxia. Mientras no
+// termine su verificación, cobrar por la plataforma no está disponible y
+// se dice por qué, en vez de mostrar un botón que va a fallar.
+async function cargarEstadoCobros(){
+  const cont = document.getElementById('cobConectar');
+  if(!cont) return;
+
+  const { data } = await sb.rpc('mi_estado_cobros');
+  const e = Array.isArray(data) ? data[0] : data;
+  if(!e) return;
+
+  if(e.cobros_activos){
+    cont.innerHTML = `
+      <div class="conectar-caja lista">
+        <div>
+          <div class="conectar-titulo">Cobro en línea activo</div>
+          <div class="conectar-desc">Tus pacientes pueden pagarte con tarjeta. El dinero llega directo a tu cuenta.</div>
+        </div>
+        <span class="conectar-etq">Conectado</span>
+      </div>`;
+    return;
+  }
+
+  const aMedias = e.tiene_cuenta && !e.alta_completa;
+  cont.innerHTML = `
+    <div class="conectar-caja">
+      <div>
+        <div class="conectar-titulo">${aMedias ? 'Te falta terminar tu alta para cobrar en línea' : 'Cobra con tarjeta desde Praxia'}</div>
+        <div class="conectar-desc">
+          ${aMedias
+            ? 'Empezaste el registro con Stripe pero quedó incompleto. Retómalo para que tus pacientes puedan pagarte con tarjeta.'
+            : 'Conecta tu cuenta y tus pacientes podrán pagarte con tarjeta desde su panel. El dinero llega directo a ti; Praxia no lo retiene.'}
+        </div>
+        <div class="conectar-nota">Stripe te va a pedir tu RFC, una identificación y tu cuenta bancaria. Esos datos son suyos, no pasan por Praxia.</div>
+      </div>
+      <button class="btn btn-primary" id="btnConectarCobros" style="width:auto;">
+        ${aMedias ? 'Continuar mi alta' : 'Conectar mi cuenta'}
+      </button>
+    </div>`;
+
+  document.getElementById('btnConectarCobros').addEventListener('click', conectarCobros);
+}
+
+async function conectarCobros(){
+  const btn = document.getElementById('btnConectarCobros');
+  btn.disabled = true;
+  btn.textContent = 'Abriendo Stripe...';
+
+  try{
+    const { data: { session } } = await sb.auth.getSession();
+    const base = `${location.origin}${location.pathname.replace(/[^/]+$/,'')}panel-psicologo.html`;
+
+    const r = await fetch(`${SUPABASE_URL}/functions/v1/conectar-cobros`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` },
+      body: JSON.stringify({ url_retorno: base })
+    });
+    const datos = await r.json();
+
+    if(!r.ok || !datos.url){
+      alert('No se pudo iniciar el alta: ' + (datos.error || 'error desconocido'));
+      btn.disabled = false; btn.textContent = 'Conectar mi cuenta';
+      return;
+    }
+    location.href = datos.url;
+  }catch(e){
+    alert('No se pudo iniciar el alta: ' + e.message);
+    btn.disabled = false; btn.textContent = 'Conectar mi cuenta';
+  }
+}
+
+// Al volver de Stripe, el webhook puede tardar en avisar que ya quedó.
+function avisarRegresoDeCobros(){
+  const estado = new URLSearchParams(location.search).get('cobros');
+  if(!estado) return;
+  history.replaceState({}, '', location.pathname);
+  if(estado === 'listo'){
+    setTimeout(cargarEstadoCobros, 2500);
+    alert('Terminaste tu registro con Stripe. En cuanto lo validen, el cobro en línea queda activo aquí.');
+  } else {
+    alert('Tu alta quedó incompleta. Puedes retomarla cuando quieras desde Cobros.');
+  }
+}
+
 async function cargarCobros(){
   await Promise.all([
+    cargarEstadoCobros(),
     cargarPrecioSesion(),
     cargarPlanesPaciente(),
     cargarMensualidades(),
@@ -2515,6 +2609,7 @@ async function iniciar(){
   cargarPlan();
   cargarCobros();
   avisarRegresoDeStripe();
+  avisarRegresoDeCobros();
 
   document.getElementById('btnGuardarPrecio')?.addEventListener('click', guardarPrecioSesion);
   document.getElementById('btnGuardarPlan')?.addEventListener('click', guardarPlanNuevo);
