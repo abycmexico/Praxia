@@ -581,7 +581,18 @@ function pesosPac(n){ return '$' + Number(n || 0).toLocaleString('es-MX'); }
 
 async function cargarMisPagos(){
   const cont = document.getElementById('pagosContenido');
-  if(!cont || !yo) return;
+  if(!cont) return;
+
+  // Sin datos del paciente no hay nada que consultar, pero se dice: salir
+  // en silencio dejaba la sección en "Cargando..." sin explicación, que fue
+  // exactamente lo que pasó.
+  if(!yo){
+    cont.innerHTML = '<div class="pg-caja"><div class="pg-etiqueta">Un momento</div>' +
+      '<div class="pg-plan-desc">Todavía estamos cargando tus datos. Vuelve a entrar a esta sección en unos segundos.</div></div>';
+    return;
+  }
+
+  cont.innerHTML = '<p class="empty">Cargando...</p>';
   try{
     await pintarMisPagos(cont);
   }catch(e){
@@ -707,6 +718,9 @@ document.querySelectorAll('nav.tabs button').forEach(b=>{
     document.querySelectorAll('main section').forEach(s=>s.classList.remove('active'));
     b.classList.add('active');
     document.getElementById('tab-' + b.dataset.tab).classList.add('active');
+    // Los pagos se cargan al entrar a su pestaña: si algo falló al arrancar,
+    // el paciente puede reintentarlo con solo volver a entrar.
+    if(b.dataset.tab === 'pagos') cargarMisPagos();
   });
 });
 
