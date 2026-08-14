@@ -567,7 +567,10 @@ async function iniciar(){
 
   await cargarDisponibilidad();
   await cargarCitas();
-  pintarDias();
+  // Aquí había una llamada a pintarDias(), que no existe: solo existe
+  // pintarDiasRepro(), que es la de reprogramar. Esa línea reventaba el
+  // arranque y todo lo que venía después nunca corría — documentos y pagos
+  // incluidos. De ahí que "Mis pagos" se quedara cargando para siempre.
   cargarDocumentosPaciente();
   cargarMisPagos();
   avisarRegresoDePago();
@@ -1256,7 +1259,9 @@ document.getElementById('btnConfirmarCancelar').addEventListener('click', async 
   btn.disabled = false;
 
   await cargarCitas();
-  if(diaSel) pintarHoras();
+  // Aquí se llamaba a pintarHoras(), que tampoco existe. Reventaba justo
+  // después de cancelar o reprogramar, dejando el modal abierto aunque la
+  // operación sí se hubiera hecho.
   setTimeout(()=>cerrarModal('modalCancelar'), 1600);
 });
 
@@ -1383,7 +1388,9 @@ document.getElementById('btnConfirmarReprogramar').addEventListener('click', asy
   msg.className = 'msg ok';
 
   await cargarCitas();
-  if(diaSel) pintarHoras();
+  // Aquí se llamaba a pintarHoras(), que tampoco existe. Reventaba justo
+  // después de cancelar o reprogramar, dejando el modal abierto aunque la
+  // operación sí se hubiera hecho.
   setTimeout(()=>cerrarModal('modalReprogramar'), 1200);
 });
 
