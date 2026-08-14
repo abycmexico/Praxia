@@ -84,6 +84,22 @@
   .msg.err{color:var(--err);}
   .msg.ok{color:var(--ok);}
   @media(max-width:900px){.grid-dashboard{grid-template-columns:1fr 1fr;}.content-area{padding:24px 18px;}}
+  .titulo-bloque{font-size:16px;margin:34px 0 4px;}
+  .sub-bloque{font-size:12.5px;color:var(--gray);font-weight:600;margin-bottom:16px;line-height:1.55;}
+  .tabla-scroll{overflow-x:auto;border:1.5px solid var(--line);border-radius:14px;background:#fff;}
+  .tabla-admin{width:100%;border-collapse:collapse;font-size:12.5px;min-width:820px;}
+  .tabla-admin th{text-align:left;padding:12px 14px;font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.5px;color:var(--gray);border-bottom:1.5px solid var(--line);white-space:nowrap;}
+  .tabla-admin td{padding:11px 14px;border-bottom:1px solid var(--line);}
+  .tabla-admin tr:last-child td{border-bottom:none;}
+  .tabla-admin tr.sin-uso{background:#FFFBF5;}
+  .ta-nombre{font-weight:800;}
+  .ta-correo{font-size:11px;color:var(--gray);font-weight:600;}
+  .ta-etq{font-size:10px;font-weight:800;padding:2px 8px;border-radius:20px;text-transform:uppercase;letter-spacing:.3px;white-space:nowrap;}
+  .ta-etq.aprobado{background:#EDF6EC;color:#2e7d32;}
+  .ta-etq.pendiente{background:#FFF6E5;color:#9a6a00;}
+  .ta-etq.suspendido,.ta-etq.rechazado{background:#FDECEC;color:#c62828;}
+  .ta-num{text-align:right;font-weight:700;}
+  .ta-cero{color:#bbb;font-weight:600;}
 </style>
 </head>
 <body>
@@ -140,6 +156,25 @@
           <div class="card-dash"><div class="card-dash-num" id="dCitasConfirmadas">—</div><div class="card-dash-label">Citas confirmadas</div></div>
           <div class="card-dash"><div class="card-dash-num" id="dCitasCanceladas">—</div><div class="card-dash-label">Citas canceladas</div></div>
           <div class="card-dash"><div class="card-dash-num" id="dPsicologosSuspendidos">—</div><div class="card-dash-label">Psicólogos suspendidos</div></div>
+        </div>
+
+        <h3 class="titulo-bloque">Quién está usando Praxia</h3>
+        <p class="sub-bloque">Registrarse no es usarla. Esto muestra quién ya subió pacientes y quién tuvo movimiento esta semana.</p>
+        <div class="grid-dashboard" id="gridAdopcion"></div>
+
+        <h3 class="titulo-bloque">Psicólogos y consultorios</h3>
+        <p class="sub-bloque">Todos los registrados, con lo que lleva cada uno.</p>
+        <div class="tabla-scroll">
+          <table class="tabla-admin" id="tablaPsicologos">
+            <thead>
+              <tr>
+                <th>Psicólogo</th><th>Consultorio</th><th>Estado</th>
+                <th>Pacientes</th><th>Citas</th><th>Notas</th><th>Cobrado</th>
+                <th>Última actividad</th><th>Plan</th>
+              </tr>
+            </thead>
+            <tbody><tr><td colspan="9" class="empty">Cargando...</td></tr></tbody>
+          </table>
         </div>
       </section>
 
@@ -200,6 +235,7 @@ async function checkSession(){
     document.getElementById('gate').style.display = 'none';
     document.getElementById('app').style.display = 'block';
     cargarDashboard();
+    cargarPanorama();
     cargarPsicologos();
     cargarAuditoria();
     cargarPlataforma();
@@ -227,6 +263,79 @@ document.getElementById('btnLogout').addEventListener('click', async ()=>{
   await sb.auth.signOut();
   location.reload();
 });
+
+
+/* ---------- panorama de adopcion ---------- */
+/* Registrarse no es usar la plataforma. Estas cifras separan una cosa de
+   la otra: cuantos ya subieron pacientes y cuantos tuvieron movimiento
+   real esta semana. */
+
+function pesosAdmin(n){ return '$' + Number(n || 0).toLocaleString('es-MX'); }
+
+function haceCuanto(iso){
+  if(!iso) return 'Nunca';
+  const dias = Math.floor((Date.now() - new Date(iso)) / 86400000);
+  if(dias === 0) return 'Hoy';
+  if(dias === 1) return 'Ayer';
+  if(dias < 30) return `Hace ${dias} días`;
+  const meses = Math.floor(dias / 30);
+  return `Hace ${meses} ${meses === 1 ? 'mes' : 'meses'}`;
+}
+
+async function cargarPanorama(){
+  const grid = document.getElementById('gridAdopcion');
+  const cuerpo = document.querySelector('#tablaPsicologos tbody');
+  if(!grid || !cuerpo) return;
+
+  const { data, error } = await sb.rpc('panorama_praxia');
+  const p = Array.isArray(data) ? data[0] : data;
+
+  if(error){
+    grid.innerHTML = `<p class="empty">No se pudo cargar: ${escapar(error.message)}</p>`;
+  } else if(p){
+    const sinPacientes = Number(p.psicologos_total) - Number(p.psicologos_con_pacientes);
+    grid.innerHTML = `
+      <div class="card-dash"><div class="card-dash-num">${p.psicologos_activos_7d}</div><div class="card-dash-label">Con movimiento esta semana</div></div>
+      <div class="card-dash"><div class="card-dash-num">${p.psicologos_con_pacientes}</div><div class="card-dash-label">Ya subieron pacientes</div></div>
+      <div class="card-dash"><div class="card-dash-num">${sinPacientes}</div><div class="card-dash-label">Registrados sin usar</div></div>
+      <div class="card-dash"><div class="card-dash-num">${p.consultorios}</div><div class="card-dash-label">Consultorios creados</div></div>
+      <div class="card-dash"><div class="card-dash-num">${p.pacientes_activos}</div><div class="card-dash-label">Pacientes activos</div></div>
+      <div class="card-dash"><div class="card-dash-num">${p.citas_7d}</div><div class="card-dash-label">Citas creadas esta semana</div></div>
+      <div class="card-dash"><div class="card-dash-num">${p.notas_sesion}</div><div class="card-dash-label">Notas de sesión escritas</div></div>
+      <div class="card-dash"><div class="card-dash-num">${pesosAdmin(p.cobrado_total)}</div><div class="card-dash-label">Cobrado por los consultorios</div></div>`;
+  }
+
+  const { data: lista, error: errLista } = await sb.rpc('psicologos_con_actividad');
+
+  if(errLista){
+    cuerpo.innerHTML = `<tr><td colspan="9" class="empty">No se pudo cargar: ${escapar(errLista.message)}</td></tr>`;
+    return;
+  }
+  if(!lista || !lista.length){
+    cuerpo.innerHTML = '<tr><td colspan="9" class="empty">Todavía no hay psicólogos registrados.</td></tr>';
+    return;
+  }
+
+  cuerpo.innerHTML = lista.map(p=>{
+    const sinUso = Number(p.pacientes) === 0;
+    const num = v => Number(v) > 0
+      ? `<td class="ta-num">${v}</td>`
+      : '<td class="ta-num ta-cero">0</td>';
+    return `
+      <tr class="${sinUso ? 'sin-uso' : ''}">
+        <td>
+          <div class="ta-nombre">${escapar(p.nombre)}</div>
+          <div class="ta-correo">${escapar(p.correo)}${p.especialidad ? ' · ' + escapar(p.especialidad) : ''}</div>
+        </td>
+        <td>${p.consultorio ? escapar(p.consultorio) + (p.rol_consultorio === 'dueno' ? ' (responsable)' : '') : '—'}</td>
+        <td><span class="ta-etq ${escapar(p.estado)}">${escapar(p.estado)}</span></td>
+        ${num(p.pacientes)}${num(p.citas)}${num(p.notas)}
+        <td class="ta-num">${pesosAdmin(p.cobrado)}</td>
+        <td>${escapar(haceCuanto(p.ultima_actividad))}</td>
+        <td>${p.plan_suscripcion ? escapar(p.plan_suscripcion) + (p.estado_suscripcion ? ` (${escapar(p.estado_suscripcion)})` : '') : '—'}</td>
+      </tr>`;
+  }).join('');
+}
 
 /* ---------- pestañas ---------- */
 document.querySelectorAll('.sidebar-nav button[data-tab]').forEach(b=>{
