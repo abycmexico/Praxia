@@ -1420,11 +1420,26 @@ async function cargarEstadoCobros(){
   const cont = document.getElementById('cobConectar');
   if(!cont) return;
 
-  const { data } = await sb.rpc('mi_estado_cobros');
+  const { data, error } = await sb.rpc('mi_estado_cobros');
   const e = Array.isArray(data) ? data[0] : data;
-  if(!e) return;
 
-  if(e.cobros_activos){
+  // Fallar en silencio dejaría la sección sin el bloque y sin explicación,
+  // que es justo lo que parece un módulo que no existe.
+  if(error){
+    cont.innerHTML = `<div class="conectar-caja">
+      <div>
+        <div class="conectar-titulo">No pudimos leer tu estado de cobros</div>
+        <div class="conectar-desc">${escapar(error.message)}</div>
+      </div>
+    </div>`;
+    return;
+  }
+
+  // Sin fila es una cuenta que aún no termina de crearse: se ofrece
+  // conectar igual, que es lo que necesita hacer.
+  const estado = e || { tiene_cuenta: false, alta_completa: false, cobros_activos: false };
+
+  if(estado.cobros_activos){
     cont.innerHTML = `
       <div class="conectar-caja lista">
         <div>
@@ -1436,7 +1451,7 @@ async function cargarEstadoCobros(){
     return;
   }
 
-  const aMedias = e.tiene_cuenta && !e.alta_completa;
+  const aMedias = estado.tiene_cuenta && !estado.alta_completa;
   cont.innerHTML = `
     <div class="conectar-caja">
       <div>
