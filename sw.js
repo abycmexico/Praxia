@@ -61,3 +61,46 @@ self.addEventListener('fetch', (e) => {
       .catch(() => caches.match(e.request).then((r) => r || caches.match('./app.html'))),
   );
 });
+
+// ---------------------------------------------------------------------
+// Avisos push
+// ---------------------------------------------------------------------
+// El push llega sin contenido cifrado, así que el texto vive aquí. Es a
+// propósito: lo que se muestra aparece en la pantalla bloqueada del
+// teléfono, donde no debe ir nada de un paciente. El detalle se ve al
+// abrir la app, que es donde hay sesión iniciada.
+
+self.addEventListener('push', (e) => {
+  let datos = {};
+  try { datos = e.data ? e.data.json() : {}; } catch (_) {}
+
+  const titulo = datos.titulo || 'Tienes algo nuevo en Praxia';
+  const cuerpo = datos.cuerpo || 'Abre la app para verlo.';
+
+  e.waitUntil(
+    self.registration.showNotification(titulo, {
+      body: cuerpo,
+      icon: './assets/icono-192.png',
+      badge: './assets/icono-192.png',
+      lang: 'es-MX',
+      tag: 'praxia',           // los avisos se reemplazan, no se apilan
+      renotify: true,
+      data: { url: datos.url || './app.html' },
+    }),
+  );
+});
+
+self.addEventListener('notificationclick', (e) => {
+  e.notification.close();
+  const destino = (e.notification.data && e.notification.data.url) || './app.html';
+
+  // Si la app ya está abierta se enfoca esa ventana, en vez de abrir otra.
+  e.waitUntil(
+    self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((ventanas) => {
+      for (const v of ventanas) {
+        if (v.url.includes('app.html') && 'focus' in v) return v.focus();
+      }
+      return self.clients.openWindow(destino);
+    }),
+  );
+});

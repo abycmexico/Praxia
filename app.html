@@ -280,6 +280,7 @@ async function iniciar(){
   pintarHoy();
   pintarAgenda();
   cargarCobros();
+  pintarCajaAvisos();
 }
 
 function saludoSegunHora(){
@@ -308,7 +309,8 @@ function pintarHoy(){
   const proxima = citas.find(c=>
     new Date(c.fecha_hora).getTime() + (c.duracion_minutos || 50) * 60000 > ahora);
 
-  let html = `<h2>${esHoy(new Date()) ? 'Hoy' : ''}</h2>
+  let html = `<div id="avisosCaja"></div>
+    <h2>${esHoy(new Date()) ? 'Hoy' : ''}</h2>
     <p class="sub">${new Date().toLocaleDateString('es-MX', { weekday:'long', day:'numeric', month:'long' })}</p>`;
 
   if(proxima){
@@ -549,6 +551,102 @@ async function entrarSesion(citaId, boton){
   }catch(e){
     alert('No se pudo abrir la videollamada: ' + e.message);
     boton.disabled = false; boton.textContent = previo;
+  }
+}
+
+
+/* ---------- avisos en el telefono ---------- */
+/* Se pide el permiso cuando ya se vio la app funcionando, no al abrirla:
+   un navegador que pregunta antes de que sepas qué es recibe un "no". */
+
+const VAPID_PUBLICA = 'BG-8xIe76NtGmX_kPAizQX6edY79DFgSWEUxrrRHJ54y7-mKgA8SQwheEsIu866oG-d61d52US8vUt9McbJM_Hs';
+
+function b64aBytes(b64){
+  const s = (b64 + '='.repeat((4 - b64.length % 4) % 4)).replace(/-/g,'+').replace(/_/g,'/');
+  return Uint8Array.from(atob(s), c => c.charCodeAt(0));
+}
+
+function soportaAvisos(){
+  return 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window;
+}
+
+async function pintarCajaAvisos(){
+  const caja = document.getElementById('avisosCaja');
+  if(!caja) return;
+
+  if(!soportaAvisos()){
+    // En iPhone solo funciona si la app está instalada. Decirlo evita que
+    // parezca que Praxia no sirve, cuando es una regla del sistema.
+    const esIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+    const instalada = window.matchMedia('(display-mode: standalone)').matches || navigator.standalone;
+    if(esIOS && !instalada){
+      caja.innerHTML = `<div class="aviso">Para recibir avisos en iPhone, primero instala Praxia:
+        toca Compartir y luego <strong>Añadir a pantalla de inicio</strong>.</div>`;
+    }
+    return;
+  }
+
+  if(Notification.permission === 'denied'){
+    caja.innerHTML = `<div class="aviso">Tienes los avisos bloqueados para Praxia.
+      Se activan desde los ajustes de tu navegador, en los permisos de este sitio.</div>`;
+    return;
+  }
+
+  const reg = await navigator.serviceWorker.getRegistration();
+  const susc = reg && await reg.pushManager.getSubscription();
+  if(susc){ caja.innerHTML = ''; return; }
+
+  caja.innerHTML = `<div class="tarjeta" style="border-color:var(--suave);">
+      <div class="t-etq">Avisos</div>
+      <div class="t-titulo" style="font-size:15px;">Que te avise cuando pase algo</div>
+      <div class="t-detalle" style="color:var(--gris);">
+        Cuando un paciente pida sesión, cancele o te pague. Nada de datos clínicos en el aviso.
+      </div>
+      <button class="btn" id="btnActivarAvisos">Activar avisos</button>
+    </div>`;
+
+  document.getElementById('btnActivarAvisos').addEventListener('click', activarAvisos);
+}
+
+async function activarAvisos(){
+  const btn = document.getElementById('btnActivarAvisos');
+  btn.disabled = true; btn.textContent = 'Activando...';
+
+  try{
+    const permiso = await Notification.requestPermission();
+    if(permiso !== 'granted'){
+      btn.disabled = false; btn.textContent = 'Activar avisos';
+      alert('Sin permiso no podemos avisarte. Puedes activarlo después desde los ajustes del navegador.');
+      return;
+    }
+
+    const reg = await navigator.serviceWorker.ready;
+    const susc = await reg.pushManager.subscribe({
+      userVisibleOnly: true,
+      applicationServerKey: b64aBytes(VAPID_PUBLICA),
+    });
+
+    const datos = susc.toJSON();
+    const { data, error } = await sb.rpc('registrar_dispositivo_push', {
+      p_endpoint: datos.endpoint,
+      p_p256dh: datos.keys.p256dh,
+      p_auth: datos.keys.auth,
+      p_dispositivo: navigator.userAgent.slice(0, 120),
+    });
+    const r = Array.isArray(data) ? data[0] : data;
+
+    if(error || !r || !r.ok){
+      alert('No se pudo activar: ' + (error?.message || r?.mensaje || 'error'));
+      btn.disabled = false; btn.textContent = 'Activar avisos';
+      return;
+    }
+
+    document.getElementById('avisosCaja').innerHTML =
+      '<div class="aviso" style="background:#EDF6EC;border-color:var(--suave);color:var(--primario);">Listo, este dispositivo ya recibe avisos.</div>';
+    setTimeout(()=>{ const c = document.getElementById('avisosCaja'); if(c) c.innerHTML = ''; }, 4000);
+  }catch(e){
+    alert('No se pudo activar: ' + e.message);
+    btn.disabled = false; btn.textContent = 'Activar avisos';
   }
 }
 
