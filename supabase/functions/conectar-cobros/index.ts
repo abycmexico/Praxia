@@ -64,10 +64,47 @@ Deno.serve(async (req) => {
       .select('id, nombre, correo, stripe_account_id').eq('id', user.id).maybeSingle();
     if (!psi) return responder({ error: 'No encontramos tu perfil de psicólogo.' }, 404);
 
-    const { url_retorno } = await req.json().catch(() => ({}));
+    const { url_retorno, revisar } = await req.json().catch(() => ({}));
     const base = url_retorno || `${req.headers.get('origin')}/panel-psicologo.html`;
 
     let cuenta = psi.stripe_account_id;
+
+    // Consultar el estado a Stripe en vez de esperar el webhook.
+    //
+    // Antes esto dependia solo de 'account.updated': si ese aviso se perdia
+    // -o llegaba antes de que el webhook existiera- el psicologo quedaba con
+    // los cobros apagados para siempre y su paciente nunca veia como pagar,
+    // sin ningun error a la vista. Preguntar es barato y quita esa
+    // dependencia de un solo evento que puede no llegar.
+    //
+    // Se pregunta por la ruta v1: aunque la cuenta se crea con v2, v1 sigue
+    // respondiendo por el mismo acct_ y sus campos son estables, a
+    // diferencia de los de la version preview.
+    if (revisar) {
+      if (!cuenta) return responder({ tiene_cuenta: false, alta_completa: false, cobros_activos: false });
+
+      const r = await fetch(`https://api.stripe.com/v1/accounts/${cuenta}`, {
+        headers: { Authorization: `Bearer ${CLAVE}` },
+      });
+      const datos = await r.json();
+      if (!r.ok) return responder({ error: datos?.error?.message || 'Stripe no respondió.' }, 500);
+
+      const cobros = datos.charges_enabled === true;
+      const alta = datos.details_submitted === true;
+
+      await sb.from('psicologos')
+        .update({ stripe_cobros_activos: cobros, stripe_alta_completa: alta })
+        .eq('id', psi.id);
+
+      return responder({
+        tiene_cuenta: true,
+        alta_completa: alta,
+        cobros_activos: cobros,
+        // Lo que Stripe sigue esperando, para poder decirle que le falta en
+        // vez de solo "no puedes cobrar".
+        pendiente: datos.requirements?.currently_due ?? [],
+      });
+    }
 
     // Se crea una sola vez. Crear otra dejaria al psicologo con dos cuentas
     // y el dinero repartido entre ambas.

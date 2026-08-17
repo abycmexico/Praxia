@@ -1467,12 +1467,37 @@ async function cargarEstadoCobros(){
         </div>
         <div class="conectar-nota">Stripe te va a pedir tu RFC, una identificación y tu cuenta bancaria. Esos datos son suyos, no pasan por Praxia.</div>
       </div>
-      <button class="btn btn-primary" id="btnConectarCobros" style="width:auto;">
-        ${aMedias ? 'Continuar mi alta' : 'Conectar mi cuenta'}
-      </button>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:flex-start;">
+        <button class="btn btn-primary" id="btnConectarCobros" style="width:auto;">
+          ${aMedias ? 'Continuar mi alta' : 'Conectar mi cuenta'}
+        </button>
+        ${estado.tiene_cuenta
+          ? '<button class="btn" id="btnRevisarCobros" style="width:auto;">Ya lo terminé, revisar</button>'
+          : ''}
+      </div>
     </div>`;
 
   document.getElementById('btnConectarCobros').addEventListener('click', conectarCobros);
+
+  // Salida manual por si Stripe ya lo aprobó pero su aviso no llegó: sin
+  // esto la única forma de destrabarlo era tocar la base a mano.
+  const btnRev = document.getElementById('btnRevisarCobros');
+  if(btnRev) btnRev.addEventListener('click', async ()=>{
+    btnRev.disabled = true;
+    btnRev.textContent = 'Preguntándole a Stripe...';
+    const r = await revisarCobrosConStripe();
+    if(!r){
+      alert('No pudimos consultar tu estado con Stripe. Inténtalo en un momento.');
+      btnRev.disabled = false; btnRev.textContent = 'Ya lo terminé, revisar';
+      return;
+    }
+    if(r.cobros_activos){ await cargarEstadoCobros(); return; }
+    // Decirle qué falta es más útil que repetirle que no puede cobrar.
+    alert(r.pendiente?.length
+      ? 'Stripe todavía te pide: ' + r.pendiente.join(', ') + '.\nEntra a "Continuar mi alta" para completarlo.'
+      : 'Stripe aún está revisando tu cuenta. Suele tardar unos minutos.');
+    btnRev.disabled = false; btnRev.textContent = 'Ya lo terminé, revisar';
+  });
 }
 
 async function conectarCobros(){
@@ -1503,14 +1528,34 @@ async function conectarCobros(){
   }
 }
 
+// Le pregunta a Stripe el estado real y lo guarda. Devuelve lo que dijo,
+// o null si no se pudo preguntar.
+async function revisarCobrosConStripe(){
+  try{
+    const { data: { session } } = await sb.auth.getSession();
+    const r = await fetch(`${SUPABASE_URL}/functions/v1/conectar-cobros`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` },
+      body: JSON.stringify({ revisar: true })
+    });
+    return r.ok ? await r.json() : null;
+  }catch(e){
+    console.warn('Cobros — no se pudo consultar a Stripe:', e.message);
+    return null;
+  }
+}
+
 // Al volver de Stripe, el webhook puede tardar en avisar que ya quedó.
 function avisarRegresoDeCobros(){
   const estado = new URLSearchParams(location.search).get('cobros');
   if(!estado) return;
   history.replaceState({}, '', location.pathname);
   if(estado === 'listo'){
-    setTimeout(cargarEstadoCobros, 2500);
-    alert('Terminaste tu registro con Stripe. En cuanto lo validen, el cobro en línea queda activo aquí.');
+    // Se le pregunta a Stripe en vez de esperar su aviso: si ese aviso no
+    // llega, el psicólogo se queda con los cobros apagados sin saberlo y su
+    // paciente nunca ve el botón de pagar.
+    revisarCobrosConStripe().then(cargarEstadoCobros);
+    alert('Terminaste tu registro con Stripe. Estamos confirmando que ya quedó.');
   } else {
     alert('Tu alta quedó incompleta. Puedes retomarla cuando quieras desde Cobros.');
   }
