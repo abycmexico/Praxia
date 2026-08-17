@@ -42,7 +42,33 @@
   .btn-fantasma{border:1.5px solid var(--line);color:var(--ink);}
   .btn-fantasma:hover{border-color:var(--verde);color:var(--verde);}
   header .acciones{display:flex;align-items:center;gap:12px;}
-  @media(max-width:760px){ header nav{display:none;} }
+  /* En el celular el encabezado no cabe: el logo se encimaba con los botones
+     y "Crear mi espacio" se salía de la pantalla. Se reacomoda en dos filas
+     y el menú pasa a una tira que se desliza, en vez de desaparecer. */
+  @media(max-width:760px){
+    header{flex-wrap:wrap;padding:12px 16px;gap:10px;row-gap:10px;}
+    header .logo img{height:26px;}
+    header .logo span{font-size:17px;}
+    header .acciones{gap:8px;}
+    header .acciones .btn{padding:9px 14px;font-size:12.5px;}
+
+    header nav{
+      order:3;width:100%;gap:18px;
+      overflow-x:auto;-webkit-overflow-scrolling:touch;
+      padding-top:4px;
+      scrollbar-width:none;
+    }
+    header nav::-webkit-scrollbar{display:none;}
+    header nav a.navlink{white-space:nowrap;font-size:13px;}
+  }
+
+  /* Muy angosto: se achica lo demás antes que quitar botones. "Iniciar
+     sesión" es por donde entran los que ya usan Praxia; esconderlo los deja
+     sin puerta. */
+  @media(max-width:420px){
+    header .logo span{display:none;}
+    header .acciones .btn{padding:9px 12px;font-size:12px;}
+  }
 
   .hero{padding:90px 24px 60px;text-align:center;}
   .hero h1{font-size:46px;max-width:760px;margin:0 auto 20px;}
