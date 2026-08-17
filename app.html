@@ -69,6 +69,16 @@
   .etq.pendiente_aprobacion{background:#EEF0FF;color:#4a4ab8;}
   .etq.completada{background:#F4F4F4;color:var(--gris);}
 
+  /* Una solicitud pendiente le quita el lugar a otro paciente mientras no
+     se responda, así que se ve distinta al resto de la agenda. */
+  .solicitud{background:#F7F8FF;border:1.5px solid #D8DCFB;border-radius:14px;padding:14px 15px;margin-bottom:10px;}
+  .sol-nombre{font-size:14.5px;font-weight:800;}
+  .sol-cuando{font-size:12.5px;color:#4a4ab8;font-weight:700;margin-top:3px;}
+  .sol-botones{display:flex;gap:8px;margin-top:12px;}
+  .sol-botones button{flex:1;border:none;border-radius:11px;padding:11px;font-size:13px;font-weight:800;font-family:inherit;}
+  .sol-si{background:var(--primario);color:#fff;}
+  .sol-no{background:#fff;color:#B03030;border:1.5px solid #E8CFCF !important;}
+
   .btn{
     display:block;width:100%;padding:14px;border:none;border-radius:26px;
     background:var(--primario);color:#fff;font-weight:800;font-size:14.5px;margin-top:14px;
@@ -302,16 +312,41 @@ async function cargarCitas(){
 /* ---------- hoy ---------- */
 function pintarHoy(){
   const cont = document.getElementById('v-hoy');
-  const deHoy = citas.filter(c=> esHoy(c.fecha_hora));
+  // Lo que está por aprobar se muestra aparte, arriba: repetirlo en la lista
+  // del día haría creer que ya es una sesión agendada.
+  const deHoy = citas.filter(c=> esHoy(c.fecha_hora) && c.estado !== 'pendiente_aprobacion');
   const ahora = Date.now();
   // La próxima es la primera que no ha terminado, contando su duración: una
   // sesión en curso sigue siendo la que importa.
+  // Una solicitud sin aprobar no es "tu próxima sesión": todavía puede no
+  // ocurrir, y anunciarla como si estuviera confirmada desordena el día.
   const proxima = citas.find(c=>
-    new Date(c.fecha_hora).getTime() + (c.duracion_minutos || 50) * 60000 > ahora);
+    c.estado !== 'pendiente_aprobacion'
+    && new Date(c.fecha_hora).getTime() + (c.duracion_minutos || 50) * 60000 > ahora);
 
   let html = `<div id="avisosCaja"></div>
     <h2>${esHoy(new Date()) ? 'Hoy' : ''}</h2>
     <p class="sub">${new Date().toLocaleDateString('es-MX', { weekday:'long', day:'numeric', month:'long' })}</p>`;
+
+  // Las solicitudes van primero, antes que la propia agenda: el aviso al
+  // teléfono dice "entra para aprobarla", y si al entrar no se puede hacer
+  // nada, el aviso no sirvió de nada. Además cada solicitud sin responder
+  // le está apartando ese horario a alguien más.
+  const solicitudes = citas.filter(c=> c.estado === 'pendiente_aprobacion');
+  if(solicitudes.length){
+    html += `<h2 style="margin-bottom:3px;">${solicitudes.length === 1 ? 'Una solicitud te espera' : solicitudes.length + ' solicitudes te esperan'}</h2>
+      <p class="sub">Tu paciente no tiene la sesión hasta que la apruebes.</p>`;
+
+    html += solicitudes.map(c=> `
+      <div class="solicitud" id="sol-${escapar(c.id)}">
+        <div class="sol-nombre">${escapar(c.pacientes?.nombre || 'Un paciente')}</div>
+        <div class="sol-cuando">${escapar(diaCorto(c.fecha_hora))} · ${escapar(hora(c.fecha_hora))}</div>
+        <div class="sol-botones">
+          <button class="sol-si" onclick="responderSolicitud('${escapar(c.id)}', true, this)">Aprobar</button>
+          <button class="sol-no" onclick="responderSolicitud('${escapar(c.id)}', false, this)">Rechazar</button>
+        </div>
+      </div>`).join('');
+  }
 
   if(proxima){
     const enCurso = new Date(proxima.fecha_hora).getTime() <= ahora;
@@ -432,6 +467,47 @@ async function guardarCierre(conNota){
   await refrescar();
 }
 
+/* ---------- responder una solicitud ---------- */
+/* Se aprueba desde el celular porque es donde llega el aviso. Rechazar pide
+   motivo: al paciente le llega esa razón, y "no se pudo" sin explicación es
+   lo que hace que no vuelva a pedir sesión. */
+
+async function responderSolicitud(citaId, aprobar, boton){
+  let motivo = null;
+  if(!aprobar){
+    motivo = prompt('¿Por qué no puedes en ese horario?\nSe lo vamos a decir a tu paciente.');
+    // Cancelar el prompt es arrepentirse, no rechazar sin motivo.
+    if(motivo === null) return;
+  }
+
+  const caja = document.getElementById('sol-' + citaId);
+  caja?.querySelectorAll('button').forEach(b=> b.disabled = true);
+  boton.textContent = aprobar ? 'Aprobando...' : 'Rechazando...';
+
+  try{
+    const { data, error } = aprobar
+      ? await sb.rpc('aprobar_solicitud_paciente', { p_cita_id: citaId })
+      : await sb.rpc('rechazar_solicitud_paciente', { p_cita_id: citaId, p_motivo: motivo || null });
+
+    const r = Array.isArray(data) ? data[0] : data;
+
+    if(error || !r || !r.ok){
+      alert(error?.message || r?.mensaje || 'No se pudo responder la solicitud.');
+      caja?.querySelectorAll('button').forEach(b=> b.disabled = false);
+      boton.textContent = aprobar ? 'Aprobar' : 'Rechazar';
+      return;
+    }
+  }catch(e){
+    alert('No se pudo responder la solicitud: ' + e.message);
+    caja?.querySelectorAll('button').forEach(b=> b.disabled = false);
+    boton.textContent = aprobar ? 'Aprobar' : 'Rechazar';
+    return;
+  }
+
+  await refrescar();
+}
+window.responderSolicitud = responderSolicitud;
+
 async function refrescar(){
   await cargarCitas();
   pintarHoy();
@@ -441,7 +517,7 @@ async function refrescar(){
 /* ---------- agenda ---------- */
 function pintarAgenda(){
   const cont = document.getElementById('v-agenda');
-  const futuras = citas.filter(c=> !esHoy(c.fecha_hora));
+  const futuras = citas.filter(c=> !esHoy(c.fecha_hora) && c.estado !== 'pendiente_aprobacion');
 
   let html = `<h2>Próximas sesiones</h2><p class="sub">Lo que viene después de hoy.</p>`;
 
