@@ -1,0 +1,481 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<meta name="theme-color" content="#2E7D32">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Praxia">
+<title>Praxia</title>
+<link rel="manifest" href="./manifest.json">
+<link rel="icon" type="image/png" href="./assets/praxia-isotipo.png">
+<link rel="apple-touch-icon" href="./assets/icono-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  :root{
+    --primario:#2E7D32; --claro:#7BC043; --suave:#A8C99B;
+    --bg:#F7F9F6; --ink:#1A1A1A; --gris:#7a7a7a; --line:#ececec; --err:#c62828;
+    --barra: calc(58px + env(safe-area-inset-bottom));
+  }
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+  body{
+    background:var(--bg);color:var(--ink);
+    font-family:'Montserrat',-apple-system,system-ui,Arial,sans-serif;font-weight:500;
+    padding-bottom:var(--barra);overscroll-behavior-y:contain;
+  }
+  a{color:inherit;text-decoration:none;}
+  button{font-family:inherit;cursor:pointer;}
+
+  /* --- encabezado --- */
+  header{
+    position:sticky;top:0;z-index:20;background:#fff;
+    border-bottom:1.5px solid var(--line);
+    padding:calc(12px + env(safe-area-inset-top)) 18px 12px;
+    display:flex;align-items:center;justify-content:space-between;gap:12px;
+  }
+  header img{height:22px;}
+  .h-saludo{font-size:11.5px;color:var(--gris);font-weight:700;}
+  .h-nombre{font-size:14px;font-weight:800;line-height:1.2;}
+
+  main{padding:18px 16px 24px;}
+  h2{font-size:19px;margin-bottom:3px;}
+  .sub{font-size:12.5px;color:var(--gris);font-weight:600;margin-bottom:16px;line-height:1.5;}
+  .vista{display:none;}
+  .vista.activa{display:block;}
+
+  /* --- tarjetas --- */
+  .tarjeta{background:#fff;border:1.5px solid var(--line);border-radius:16px;padding:16px 18px;margin-bottom:12px;}
+  .destacada{background:var(--primario);border-color:var(--primario);color:#fff;}
+  .destacada .t-etq{color:#cfe6cd;}
+  .t-etq{font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.8px;color:var(--gris);margin-bottom:7px;}
+  .t-titulo{font-size:17px;font-weight:800;line-height:1.25;}
+  .t-detalle{font-size:12.5px;font-weight:600;opacity:.85;margin-top:4px;}
+
+  .cita{display:flex;gap:13px;align-items:center;background:#fff;border:1.5px solid var(--line);border-radius:14px;padding:13px 15px;margin-bottom:10px;}
+  .hora{text-align:center;flex-shrink:0;min-width:52px;}
+  .hora-num{font-size:15px;font-weight:800;line-height:1.1;}
+  .hora-ampm{font-size:9.5px;color:var(--gris);font-weight:700;}
+  .cita-datos{flex:1;min-width:0;}
+  .cita-nombre{font-size:14px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .cita-meta{font-size:11.5px;color:var(--gris);font-weight:600;margin-top:2px;}
+  .etq{font-size:9.5px;font-weight:800;padding:3px 8px;border-radius:20px;text-transform:uppercase;letter-spacing:.3px;white-space:nowrap;}
+  .etq.confirmada{background:#EDF6EC;color:var(--primario);}
+  .etq.pendiente_pago{background:#FFF1DB;color:#B5680A;}
+  .etq.pendiente_aprobacion{background:#EEF0FF;color:#4a4ab8;}
+  .etq.completada{background:#F4F4F4;color:var(--gris);}
+
+  .btn{
+    display:block;width:100%;padding:14px;border:none;border-radius:26px;
+    background:var(--primario);color:#fff;font-weight:800;font-size:14.5px;margin-top:14px;
+  }
+  .btn:active{transform:scale(.99);}
+  .btn:disabled{opacity:.55;}
+  .btn-claro{background:#fff;color:var(--primario);}
+  .btn-linea{background:none;border:1.5px solid var(--line);color:var(--ink);font-weight:700;font-size:13px;padding:11px;}
+
+  .cifras{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px;}
+  .cifra{background:#fff;border:1.5px solid var(--line);border-radius:14px;padding:14px;}
+  .cifra-num{font-size:21px;font-weight:800;color:var(--primario);line-height:1.1;}
+  .cifra-etq{font-size:10.5px;color:var(--gris);font-weight:700;margin-top:3px;line-height:1.3;}
+
+  .deudor{display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid var(--line);}
+  .deudor:last-child{border-bottom:none;}
+  .deudor-nombre{flex:1;font-size:13.5px;font-weight:700;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .deudor-saldo{font-size:15px;font-weight:800;color:var(--err);white-space:nowrap;}
+
+  .vacio{text-align:center;padding:34px 20px;color:var(--gris);font-size:13px;font-weight:600;line-height:1.6;}
+  .vacio-icono{font-size:30px;display:block;margin-bottom:10px;opacity:.5;}
+
+  /* --- barra inferior --- */
+  nav{
+    position:fixed;left:0;right:0;bottom:0;z-index:30;background:#fff;
+    border-top:1.5px solid var(--line);display:flex;
+    padding-bottom:env(safe-area-inset-bottom);
+  }
+  nav button{
+    flex:1;background:none;border:none;padding:9px 4px 8px;
+    display:flex;flex-direction:column;align-items:center;gap:3px;
+    font-size:10px;font-weight:700;color:var(--gris);
+  }
+  nav button.activa{color:var(--primario);}
+  nav svg{width:21px;height:21px;stroke-width:1.9;}
+
+  .aviso{
+    background:#FFF6E5;border:1.5px solid #F0D9A8;border-radius:12px;
+    padding:12px 14px;font-size:12px;font-weight:600;color:#7a5600;line-height:1.55;margin-bottom:14px;
+  }
+  .cargando{text-align:center;padding:40px;color:var(--gris);font-size:13px;font-weight:600;}
+
+  /* --- acceso --- */
+  #acceso{display:none;min-height:100dvh;flex-direction:column;justify-content:center;padding:32px 24px;}
+  #acceso.mostrar{display:flex;}
+  #acceso img{height:32px;margin-bottom:28px;align-self:center;}
+  #acceso h1{font-size:22px;margin-bottom:6px;}
+  #acceso label{display:block;font-size:12.5px;font-weight:700;margin:16px 0 6px;}
+  #acceso input{width:100%;padding:14px;border:1.5px solid var(--line);border-radius:12px;font-family:inherit;font-size:16px;background:#fff;}
+  #acceso input:focus{outline:none;border-color:var(--primario);}
+  .msg{font-size:12.5px;margin-top:12px;min-height:16px;text-align:center;}
+  .msg.err{color:var(--err);}
+</style>
+</head>
+<body>
+
+<div id="acceso">
+  <img src="./assets/praxia-logo-completo.png" alt="Praxia">
+  <h1>Entra a tu consultorio</h1>
+  <p class="sub">Con el mismo correo y contraseña que usas en Praxia.</p>
+  <form id="formAcceso">
+    <label for="correo">Correo</label>
+    <input type="email" id="correo" autocomplete="username" required>
+    <label for="clave">Contraseña</label>
+    <input type="password" id="clave" autocomplete="current-password" required>
+    <button type="submit" class="btn" id="btnEntrar">Entrar</button>
+    <p class="msg" id="msgAcceso"></p>
+  </form>
+</div>
+
+<div id="app" style="display:none;">
+  <header>
+    <div>
+      <div class="h-saludo" id="saludo">Hola</div>
+      <div class="h-nombre" id="quien">—</div>
+    </div>
+    <img src="./assets/praxia-isotipo.png" alt="Praxia">
+  </header>
+
+  <main>
+    <section class="vista activa" id="v-hoy"><div class="cargando">Cargando...</div></section>
+    <section class="vista" id="v-agenda"><div class="cargando">Cargando...</div></section>
+    <section class="vista" id="v-cobros"><div class="cargando">Cargando...</div></section>
+  </main>
+
+  <nav>
+    <button class="activa" data-vista="hoy">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M9 22V12h6v10"/></svg>
+      Hoy
+    </button>
+    <button data-vista="agenda">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+      Agenda
+    </button>
+    <button data-vista="cobros">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20M6 15h4"/></svg>
+      Cobros
+    </button>
+  </nav>
+</div>
+
+<script>
+const SUPABASE_URL = 'https://uxbpfyeahqpertamhdxt.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_xaaA4lYAQZjdcMFRhMGtuQ_fvIeJKv7';
+const EDGE_MEET = `${SUPABASE_URL}/functions/v1/crear-evento-meet`;
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+let yo = null;
+let citas = [];
+
+/* ---------- utilidades ---------- */
+function escapar(t){
+  return String(t == null ? '' : t).replace(/[&<>"']/g, c => (
+    {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]
+  ));
+}
+function pesos(n){ return '$' + Number(n || 0).toLocaleString('es-MX'); }
+function hora(f){
+  return new Date(f).toLocaleTimeString('es-MX', { hour:'numeric', minute:'2-digit' })
+    .replace(/\s?([ap])\.?\s?m\.?/i, (_,l)=> ' ' + l.toUpperCase() + 'M');
+}
+function esHoy(f){
+  const d = new Date(f), h = new Date();
+  return d.getDate() === h.getDate() && d.getMonth() === h.getMonth() && d.getFullYear() === h.getFullYear();
+}
+function diaCorto(f){
+  return new Date(f).toLocaleDateString('es-MX', { weekday:'short', day:'numeric', month:'short' });
+}
+const ETIQUETAS = {
+  pendiente_aprobacion:'Por aprobar', pendiente_confirmacion:'Sin confirmar',
+  pendiente_pago:'Falta pago', confirmada:'Confirmada', completada:'Hecha', cancelada:'Cancelada'
+};
+
+/* ---------- acceso ---------- */
+document.getElementById('formAcceso').addEventListener('submit', async (e)=>{
+  e.preventDefault();
+  const btn = document.getElementById('btnEntrar');
+  const msg = document.getElementById('msgAcceso');
+  btn.disabled = true; msg.textContent = 'Entrando...'; msg.className = 'msg';
+
+  const { error } = await sb.auth.signInWithPassword({
+    email: document.getElementById('correo').value.trim(),
+    password: document.getElementById('clave').value
+  });
+
+  if(error){
+    msg.textContent = 'Correo o contraseña incorrectos.';
+    msg.className = 'msg err';
+    btn.disabled = false;
+    return;
+  }
+  location.reload();
+});
+
+/* ---------- arranque ---------- */
+async function iniciar(){
+  const { data: { session } } = await sb.auth.getSession();
+  if(!session){ document.getElementById('acceso').classList.add('mostrar'); return; }
+
+  const { data: psi } = await sb.from('psicologos')
+    .select('*').eq('id', session.user.id).maybeSingle();
+
+  // La app es del psicólogo. Un paciente que entre aquí se va a su panel,
+  // en vez de quedarse en una pantalla que no le sirve.
+  if(!psi){
+    const { data: pac } = await sb.from('pacientes')
+      .select('id').eq('auth_user_id', session.user.id).maybeSingle();
+    if(pac){ location.href = './panel-paciente.html'; return; }
+    await sb.auth.signOut();
+    document.getElementById('acceso').classList.add('mostrar');
+    return;
+  }
+
+  if(psi.estado !== 'aprobado'){
+    document.getElementById('acceso').classList.add('mostrar');
+    document.getElementById('msgAcceso').textContent = 'Tu cuenta todavía está pendiente de aprobación.';
+    document.getElementById('msgAcceso').className = 'msg err';
+    await sb.auth.signOut();
+    return;
+  }
+
+  yo = psi;
+  document.getElementById('app').style.display = 'block';
+  document.getElementById('quien').textContent = psi.nombre;
+  document.getElementById('saludo').textContent = saludoSegunHora();
+
+  await cargarCitas();
+  pintarHoy();
+  pintarAgenda();
+  cargarCobros();
+}
+
+function saludoSegunHora(){
+  const h = new Date().getHours();
+  return h < 12 ? 'Buen día,' : h < 19 ? 'Buenas tardes,' : 'Buenas noches,';
+}
+
+async function cargarCitas(){
+  const desde = new Date(); desde.setHours(0,0,0,0);
+  const { data } = await sb.from('citas')
+    .select('id, fecha_hora, duracion_minutos, estado, precio, paciente_id, pacientes(nombre, telefono)')
+    .eq('psicologo_id', yo.id)
+    .gte('fecha_hora', desde.toISOString())
+    .neq('estado', 'cancelada')
+    .order('fecha_hora');
+  citas = data || [];
+}
+
+/* ---------- hoy ---------- */
+function pintarHoy(){
+  const cont = document.getElementById('v-hoy');
+  const deHoy = citas.filter(c=> esHoy(c.fecha_hora));
+  const ahora = Date.now();
+  // La próxima es la primera que no ha terminado, contando su duración: una
+  // sesión en curso sigue siendo la que importa.
+  const proxima = citas.find(c=>
+    new Date(c.fecha_hora).getTime() + (c.duracion_minutos || 50) * 60000 > ahora);
+
+  let html = `<h2>${esHoy(new Date()) ? 'Hoy' : ''}</h2>
+    <p class="sub">${new Date().toLocaleDateString('es-MX', { weekday:'long', day:'numeric', month:'long' })}</p>`;
+
+  if(proxima){
+    const enCurso = new Date(proxima.fecha_hora).getTime() <= ahora;
+    html += `
+      <div class="tarjeta destacada">
+        <div class="t-etq">${enCurso ? 'Sesión en curso' : (esHoy(proxima.fecha_hora) ? 'Tu próxima sesión' : 'Próxima sesión')}</div>
+        <div class="t-titulo">${escapar(proxima.pacientes?.nombre || 'Paciente')}</div>
+        <div class="t-detalle">
+          ${esHoy(proxima.fecha_hora) ? hora(proxima.fecha_hora) : diaCorto(proxima.fecha_hora) + ' · ' + hora(proxima.fecha_hora)}
+          · ${proxima.duracion_minutos || 50} min
+        </div>
+        <button class="btn btn-claro" onclick="entrarSesion('${proxima.id}', this)">Entrar a la videollamada</button>
+        ${proxima.pacientes?.telefono
+          ? `<a class="btn btn-claro" style="text-align:center;margin-top:8px;" href="tel:${escapar(proxima.pacientes.telefono)}">Llamar por teléfono</a>`
+          : ''}
+      </div>`;
+  }
+
+  html += `<h2 style="margin-top:22px;">Sesiones de hoy</h2>
+    <p class="sub">${deHoy.length === 0 ? 'Sin sesiones agendadas.' : deHoy.length + (deHoy.length === 1 ? ' sesión' : ' sesiones')}</p>`;
+
+  html += deHoy.length
+    ? deHoy.map(filaCita).join('')
+    : `<div class="vacio"><span class="vacio-icono">☕</span>Hoy no tienes sesiones.<br>Buen momento para ponerte al día con tus notas.</div>`;
+
+  cont.innerHTML = html;
+}
+
+function filaCita(c){
+  const t = hora(c.fecha_hora).split(' ');
+  return `
+    <div class="cita">
+      <div class="hora">
+        <div class="hora-num">${escapar(t[0])}</div>
+        <div class="hora-ampm">${escapar(t[1] || '')}</div>
+      </div>
+      <div class="cita-datos">
+        <div class="cita-nombre">${escapar(c.pacientes?.nombre || 'Paciente')}</div>
+        <div class="cita-meta">${c.duracion_minutos || 50} min${c.precio ? ' · ' + pesos(c.precio) : ''}</div>
+      </div>
+      <span class="etq ${escapar(c.estado)}">${escapar(ETIQUETAS[c.estado] || c.estado)}</span>
+    </div>`;
+}
+
+/* ---------- agenda ---------- */
+function pintarAgenda(){
+  const cont = document.getElementById('v-agenda');
+  const futuras = citas.filter(c=> !esHoy(c.fecha_hora));
+
+  let html = `<h2>Próximas sesiones</h2><p class="sub">Lo que viene después de hoy.</p>`;
+
+  if(!futuras.length){
+    cont.innerHTML = html + `<div class="vacio"><span class="vacio-icono">📅</span>No tienes sesiones agendadas más adelante.</div>`;
+    return;
+  }
+
+  // Agrupadas por día: una lista corrida en el celular se vuelve ilegible.
+  const porDia = {};
+  futuras.forEach(c=>{
+    const k = new Date(c.fecha_hora).toDateString();
+    (porDia[k] = porDia[k] || []).push(c);
+  });
+
+  html += Object.entries(porDia).map(([dia, lista])=> `
+    <div style="margin-top:18px;">
+      <div class="t-etq">${escapar(diaCorto(dia))}</div>
+      ${lista.map(filaCita).join('')}
+    </div>`).join('');
+
+  cont.innerHTML = html;
+}
+
+/* ---------- cobros ---------- */
+async function cargarCobros(){
+  const cont = document.getElementById('v-cobros');
+
+  const { data: cuentas, error } = await sb.from('estado_cuenta_pacientes')
+    .select('*').eq('psicologo_id', yo.id).order('saldo', { ascending:false });
+
+  if(error){
+    cont.innerHTML = `<h2>Cobros</h2><div class="vacio">No se pudo cargar: ${escapar(error.message)}</div>`;
+    return;
+  }
+
+  const lista = cuentas || [];
+  const deben = lista.filter(c=> Number(c.saldo) > 0);
+  const porCobrar = deben.reduce((a,c)=> a + Number(c.saldo), 0);
+  const cobrado = lista.reduce((a,c)=> a + Number(c.pagado || 0), 0);
+
+  let html = `<h2>Cobros</h2><p class="sub">Lo que llevas y lo que falta por cobrar.</p>
+    <div class="cifras">
+      <div class="cifra"><div class="cifra-num">${pesos(cobrado)}</div><div class="cifra-etq">Cobrado en total</div></div>
+      <div class="cifra"><div class="cifra-num">${pesos(porCobrar)}</div><div class="cifra-etq">Por cobrar</div></div>
+    </div>`;
+
+  html += `<h2 style="font-size:16px;">Quién te debe</h2><p class="sub">Se cuenta lo de las sesiones ya dadas.</p>`;
+
+  html += deben.length
+    ? `<div class="tarjeta">${deben.map(c=> `
+        <div class="deudor">
+          <div class="deudor-nombre">${escapar(c.nombre)}</div>
+          <div class="deudor-saldo">${pesos(c.saldo)}</div>
+          <button class="btn-linea" style="width:auto;padding:8px 12px;border-radius:20px;"
+            onclick="registrarCobro('${escapar(c.paciente_id)}','${escapar(c.nombre).replace(/'/g,"\\'")}',${Number(c.saldo)})">Registrar</button>
+        </div>`).join('')}</div>`
+    : `<div class="vacio"><span class="vacio-icono">✓</span>Nadie te debe.<br>Todas las sesiones dadas están pagadas.</div>`;
+
+  cont.innerHTML = html;
+}
+
+async function registrarCobro(pacienteId, nombre, saldo){
+  const texto = prompt(`¿Cuánto te pagó ${nombre}?\n\nDebe ${pesos(saldo)}. Puedes registrar un abono menor.`, String(saldo));
+  if(texto === null) return;
+
+  const monto = Number(texto);
+  if(!(monto > 0)){ alert('Escribe un monto válido.'); return; }
+
+  const metodo = confirm(`${pesos(monto)} de ${nombre}\n\n¿Fue en efectivo?\n\nAceptar = efectivo · Cancelar = transferencia`)
+    ? 'efectivo' : 'transferencia';
+
+  const { data, error } = await sb.rpc('registrar_pago', {
+    p_paciente_id: pacienteId, p_monto: monto, p_metodo: metodo
+  });
+  const r = Array.isArray(data) ? data[0] : data;
+
+  if(error || !r || !r.ok){
+    alert('No se pudo registrar: ' + (error?.message || r?.mensaje || 'error'));
+    return;
+  }
+  cargarCobros();
+}
+
+/* ---------- videollamada ---------- */
+async function entrarSesion(citaId, boton){
+  const previo = boton.textContent;
+  boton.disabled = true; boton.textContent = 'Conectando...';
+
+  try{
+    const { data: { session } } = await sb.auth.getSession();
+    if(!session){ alert('Tu sesión expiró. Vuelve a entrar.'); location.reload(); return; }
+
+    const res = await fetch(EDGE_MEET, {
+      method:'POST',
+      headers:{ 'Content-Type':'application/json', Authorization:`Bearer ${session.access_token}`, apikey: SUPABASE_KEY },
+      body: JSON.stringify({ cita_id: citaId })
+    });
+    const datos = await res.json();
+
+    if(!res.ok || !datos.ok){
+      alert('No se pudo abrir la videollamada: ' + (datos.error || 'error desconocido'));
+      boton.disabled = false; boton.textContent = previo;
+      return;
+    }
+    location.href = datos.url;
+  }catch(e){
+    alert('No se pudo abrir la videollamada: ' + e.message);
+    boton.disabled = false; boton.textContent = previo;
+  }
+}
+
+/* ---------- navegación ---------- */
+document.querySelectorAll('nav button').forEach(b=>{
+  b.addEventListener('click', ()=>{
+    document.querySelectorAll('nav button').forEach(x=> x.classList.remove('activa'));
+    document.querySelectorAll('.vista').forEach(v=> v.classList.remove('activa'));
+    b.classList.add('activa');
+    document.getElementById('v-' + b.dataset.vista).classList.add('activa');
+    window.scrollTo(0,0);
+    if(b.dataset.vista === 'cobros') cargarCobros();
+  });
+});
+
+// Al volver a la app se refresca: si estuvo minimizada, la agenda cambió.
+document.addEventListener('visibilitychange', async ()=>{
+  if(document.visibilityState === 'visible' && yo){
+    await cargarCitas();
+    pintarHoy();
+    pintarAgenda();
+  }
+});
+
+if('serviceWorker' in navigator){
+  navigator.serviceWorker.register('./sw.js').catch(()=>{});
+}
+
+iniciar();
+</script>
+
+</body>
+</html>

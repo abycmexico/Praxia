@@ -1,0 +1,33 @@
+{
+  "name": "Praxia — Mi consultorio",
+  "short_name": "Praxia",
+  "description": "Tu agenda, tus sesiones y tus cobros, desde el celular.",
+  "start_url": "./app.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#F7F9F6",
+  "theme_color": "#2E7D32",
+  "lang": "es-MX",
+  "categories": ["medical", "productivity"],
+  "icons": [
+    {
+      "src": "./assets/icono-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "./assets/icono-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "./assets/icono-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}
