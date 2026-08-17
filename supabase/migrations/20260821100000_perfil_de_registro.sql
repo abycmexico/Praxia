@@ -21,8 +21,18 @@ COMMENT ON COLUMN public.psicologos.nombre_consultorio IS
 
 -- Que el correo no se repita. Antes dos altas con el mismo correo creaban dos
 -- perfiles y ninguna consulta sabia cual era el bueno.
-CREATE UNIQUE INDEX IF NOT EXISTS psicologos_correo_unico
-  ON public.psicologos (lower(correo));
+--
+-- Va dentro de un bloque que aguanta el error a proposito: si hoy ya hay
+-- correos repetidos, el indice no se puede crear, y sin esto esa falla
+-- abortaba la migracion entera y se quedaba sin aplicar ni las columnas ni la
+-- funcion. Vale mas que lo demas entre y que el indice se avise aparte.
+DO $$
+BEGIN
+  CREATE UNIQUE INDEX IF NOT EXISTS psicologos_correo_unico
+    ON public.psicologos (lower(correo));
+EXCEPTION WHEN unique_violation OR duplicate_table THEN
+  RAISE NOTICE 'No se pudo crear el indice de correo unico: hay correos repetidos en psicologos. Limpialos y vuelve a crearlo.';
+END $$;
 
 -- ---------------------------------------------------------------------
 -- Alta desde el registro
