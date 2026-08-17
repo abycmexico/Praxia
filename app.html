@@ -118,8 +118,15 @@
   .btn-cerrar{background:var(--primario);color:#fff;border:none;border-radius:20px;padding:7px 13px;font-size:11px;font-weight:800;white-space:nowrap;}
 
   /* hoja inferior: en el celular se alcanza con el pulgar */
-  #cierre{position:fixed;inset:0;z-index:50;background:rgba(0,0,0,.45);display:none;align-items:flex-end;}
-  #cierre.abierto{display:flex;}
+  #cierre, #ficha{position:fixed;inset:0;z-index:50;background:rgba(0,0,0,.45);display:none;align-items:flex-end;}
+  #cierre.abierto, #ficha.abierto{display:flex;}
+
+  /* Notas previas: se leen de corrido, minutos antes de la consulta. */
+  .nota{border-left:3px solid var(--line);padding:2px 0 2px 12px;margin-bottom:16px;}
+  .nota-fecha{font-size:10.5px;font-weight:800;text-transform:uppercase;letter-spacing:.5px;color:var(--gris);margin-bottom:5px;}
+  .nota-campo{font-size:13.5px;line-height:1.6;margin-bottom:7px;white-space:pre-wrap;}
+  .nota-campo b{display:block;font-size:10.5px;text-transform:uppercase;letter-spacing:.4px;color:var(--gris);margin-bottom:1px;}
+  .ficha-dato{font-size:13px;font-weight:600;color:var(--gris);margin-bottom:4px;}
   .hoja{
     background:#fff;width:100%;border-radius:22px 22px 0 0;
     padding:10px 20px calc(22px + env(safe-area-inset-bottom));
@@ -359,6 +366,10 @@ function pintarHoy(){
           · ${proxima.duracion_minutos || 50} min
         </div>
         <button class="btn btn-claro" onclick="entrarSesion('${proxima.id}', this)">Entrar a la videollamada</button>
+        <button class="btn btn-claro" style="margin-top:8px;"
+          onclick="verFicha('${escapar(proxima.paciente_id)}','${escapar(proxima.pacientes?.nombre || 'Paciente').replace(/'/g, "\\'")}')">
+          Ver en qué quedaron
+        </button>
         ${proxima.pacientes?.telefono
           ? `<a class="btn btn-claro" style="text-align:center;margin-top:8px;" href="tel:${escapar(proxima.pacientes.telefono)}">Llamar por teléfono</a>`
           : ''}
@@ -382,6 +393,7 @@ function filaCita(c){
   // fresca. Lo que no se anota ahí, se pierde.
   const yaPaso = new Date(c.fecha_hora).getTime() + (c.duracion_minutos || 50) * 60000 < Date.now();
   const cerrable = yaPaso && c.estado !== 'completada';
+  const nombreJS = escapar(c.pacientes?.nombre || 'Paciente').replace(/'/g, "\\'");
 
   return `
     <div class="cita">
@@ -389,9 +401,9 @@ function filaCita(c){
         <div class="hora-num">${escapar(t[0])}</div>
         <div class="hora-ampm">${escapar(t[1] || '')}</div>
       </div>
-      <div class="cita-datos">
+      <div class="cita-datos" onclick="verFicha('${escapar(c.paciente_id)}','${nombreJS}')" style="cursor:pointer;">
         <div class="cita-nombre">${escapar(c.pacientes?.nombre || 'Paciente')}</div>
-        <div class="cita-meta">${c.duracion_minutos || 50} min${c.precio ? ' · ' + pesos(c.precio) : ''}</div>
+        <div class="cita-meta">${c.duracion_minutos || 50} min${c.precio ? ' · ' + pesos(c.precio) : ''} · ver notas</div>
       </div>
       ${cerrable
         ? `<button class="btn-cerrar" onclick="abrirCierre('${escapar(c.id)}','${escapar(c.pacientes?.nombre || 'Paciente').replace(/'/g,"\\'")}')">Cerrar</button>`
@@ -466,6 +478,79 @@ async function guardarCierre(conNota){
   btn.disabled = false;
   await refrescar();
 }
+
+/* ---------- ficha del paciente ---------- */
+/* Lo que se revisa cinco minutos antes de una consulta: en qué quedaron la
+   vez pasada. Antes había que abrir la computadora para eso.
+
+   Se abre bajo demanda, nunca se precarga: son notas clínicas, y no tiene
+   sentido traerlas al teléfono de alguien que solo iba a ver su agenda. */
+
+function cerrarFicha(){
+  document.getElementById('ficha').classList.remove('abierto');
+}
+window.cerrarFicha = cerrarFicha;
+
+async function verFicha(pacienteId, nombre){
+  const caja = document.getElementById('ficha');
+  const cuerpo = document.getElementById('fichaCuerpo');
+  document.getElementById('fichaNombre').textContent = nombre;
+  cuerpo.innerHTML = '<p class="cargando">Cargando...</p>';
+  caja.classList.add('abierto');
+
+  try{
+    const { data: pac } = await sb.from('pacientes')
+      .select('telefono, motivo_consulta').eq('id', pacienteId).maybeSingle();
+
+    // Las notas cuelgan de la cita, así que se filtra por el paciente de esa
+    // cita. !inner descarta las que quedaron sin cita asociada.
+    const { data: notas, error } = await sb.from('notas_sesion')
+      .select('objetivos, observaciones, tareas, evolucion, contenido, creado_en, citas!inner(paciente_id, fecha_hora)')
+      .eq('citas.paciente_id', pacienteId)
+      .order('creado_en', { ascending:false })
+      .limit(3);
+
+    if(error) throw new Error(error.message);
+
+    let html = '';
+    if(pac?.motivo_consulta){
+      html += `<p class="ficha-dato">Motivo de consulta: ${escapar(pac.motivo_consulta)}</p>`;
+    }
+    if(pac?.telefono){
+      html += `<a class="btn btn-linea" style="text-align:center;" href="tel:${escapar(pac.telefono)}">Llamar a ${escapar(nombre)}</a>`;
+    }
+
+    if(!notas?.length){
+      html += `<p class="hoja-sub" style="margin-top:14px;">Todavía no hay notas de sesiones anteriores. La primera la escribes al cerrar la sesión.</p>`;
+    } else {
+      html += `<p class="hoja-sub" style="margin-top:14px;">${notas.length === 1 ? 'Su última sesión' : 'Sus últimas ' + notas.length + ' sesiones'}, de la más reciente a la más antigua.</p>`;
+      html += notas.map(n=>{
+        const cuando = n.citas?.fecha_hora || n.creado_en;
+        const campos = [
+          ['En qué quedaron', n.evolucion],
+          ['Observaciones', n.observaciones],
+          ['Objetivos', n.objetivos],
+          ['Tareas', n.tareas],
+          ['Nota', n.contenido],
+        ].filter(([, v]) => v && String(v).trim());
+
+        return `<div class="nota">
+          <div class="nota-fecha">${escapar(diaCorto(cuando))}</div>
+          ${campos.length
+            ? campos.map(([t, v]) => `<div class="nota-campo"><b>${escapar(t)}</b>${escapar(v)}</div>`).join('')
+            : '<div class="nota-campo">Sesión cerrada sin nota.</div>'}
+        </div>`;
+      }).join('');
+      html += `<p class="hoja-sub">El expediente completo está en Praxia desde la computadora.</p>`;
+    }
+
+    cuerpo.innerHTML = html;
+  }catch(e){
+    // Decirlo, no dejar "Cargando..." para siempre.
+    cuerpo.innerHTML = `<p class="hoja-sub">No pudimos traer sus notas: ${escapar(e.message)}</p>`;
+  }
+}
+window.verFicha = verFicha;
 
 /* ---------- responder una solicitud ---------- */
 /* Se aprueba desde el celular porque es donde llega el aviso. Rechazar pide
@@ -753,6 +838,16 @@ if('serviceWorker' in navigator){
 
 iniciar();
 </script>
+
+<div id="ficha">
+  <div class="hoja">
+    <div class="hoja-tirador"></div>
+    <div class="t-etq">Antes de la sesión</div>
+    <div class="hoja-titulo" id="fichaNombre">—</div>
+    <div id="fichaCuerpo"><p class="cargando">Cargando...</p></div>
+    <button class="btn btn-linea" onclick="cerrarFicha()">Cerrar</button>
+  </div>
+</div>
 
 <div id="cierre">
   <div class="hoja">
