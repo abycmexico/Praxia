@@ -243,6 +243,58 @@ async function iniciar(){
   } else {
     document.getElementById('fotoPreview').textContent = (psi.nombre||'?').charAt(0).toUpperCase();
   }
+
+  // La especialidad que eligió al registrarse puede no estar en esta lista.
+  // Si no se agrega como opción, el select se queda vacío y al guardar borra
+  // lo que ya había elegido.
+  const selEsp = document.getElementById('especialidad');
+  if(psi.especialidad){
+    const existe = [...selEsp.options].some(o=> o.value === psi.especialidad);
+    if(!existe){
+      const op = document.createElement('option');
+      op.value = op.textContent = psi.especialidad;
+      selEsp.insertBefore(op, selEsp.options[1] || null);
+    }
+    selEsp.value = psi.especialidad;
+  }
+
+  if(psi.nombre_consultorio){
+    document.getElementById('nombreConsultorio').value = psi.nombre_consultorio;
+  }
+
+  ocultarLoQueYaSabemos(psi);
+}
+
+/* Lo que ya dio al registrarse no se le vuelve a preguntar. Volver a pedir
+   el mismo dato hace pensar que el primero no se guardó, y de paso alarga
+   una pantalla que ya es larga.
+
+   Se ocultan en vez de borrarse: el resto del código los sigue leyendo para
+   guardar, y así no hay que tocarlo. */
+function ocultarLoQueYaSabemos(psi){
+  const ocultarSiHay = (valor, idCampo)=>{
+    if(!valor) return;
+    const campo = document.getElementById(idCampo)?.closest('.campo');
+    if(campo) campo.style.display = 'none';
+  };
+
+  ocultarSiHay(psi.nombre,             'nombre');
+  ocultarSiHay(psi.telefono,           'telefono');
+  ocultarSiHay(psi.cedula_profesional, 'cedula');
+  ocultarSiHay(psi.ciudad,             'ciudad');
+  ocultarSiHay(psi.especialidad,       'especialidad');
+  ocultarSiHay(psi.correo,             'correo');
+
+  // Si el primer paso se quedó solo con la foto, se dice para qué sirve; una
+  // pantalla titulada "Tus datos" sin ningún dato se ve descompuesta.
+  const visibles = [...document.querySelectorAll('#paso1 .campo')]
+    .filter(c=> c.style.display !== 'none').length;
+
+  if(visibles === 0){
+    document.querySelector('#paso1 h2').textContent = 'Tu foto';
+    document.querySelector('#paso1 .bh').textContent =
+      'Es lo que ve tu paciente antes de entrar a la sesión. Puedes ponerla después.';
+  }
 }
 
 /* ---------- navegación entre pasos ---------- */

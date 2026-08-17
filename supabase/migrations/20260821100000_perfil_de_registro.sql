@@ -92,7 +92,11 @@ begin
     nullif(trim(coalesce(p_consultorio,'')), ''),
     nullif(trim(coalesce(p_ciudad,'')), ''),
     'pendiente',
-    true
+    -- Sigue en false a proposito: perfil_completo lo marca la pantalla de
+    -- bienvenida, que es donde se piden la foto, la direccion y el codigo de
+    -- etica. Darlo por completo aqui haria que esa pantalla se saltara y esos
+    -- datos no se pidieran nunca.
+    false
   )
   -- Si vuelve a enviar el formulario -recargo, se le fue el internet- se
   -- actualiza en vez de tronar por clave duplicada.
@@ -105,8 +109,7 @@ begin
     especialidad       = excluded.especialidad,
     cedula_profesional = excluded.cedula_profesional,
     nombre_consultorio = excluded.nombre_consultorio,
-    ciudad             = excluded.ciudad,
-    perfil_completo    = true;
+    ciudad             = excluded.ciudad;
 
   return query select true, 'Tu perfil quedó registrado.';
 end $function$;
