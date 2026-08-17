@@ -118,11 +118,36 @@
   .btn-cerrar{background:var(--primario);color:#fff;border:none;border-radius:20px;padding:7px 13px;font-size:11px;font-weight:800;white-space:nowrap;}
 
   /* hoja inferior: en el celular se alcanza con el pulgar */
-  #cierre, #ficha, #cuenta{position:fixed;inset:0;z-index:50;background:rgba(0,0,0,.45);display:none;align-items:flex-end;}
-  #cierre.abierto, #ficha.abierto, #cuenta.abierto{display:flex;}
+  #cierre, #ficha, #cuenta, #agendar{position:fixed;inset:0;z-index:50;background:rgba(0,0,0,.45);display:none;align-items:flex-end;}
+  #cierre.abierto, #ficha.abierto, #cuenta.abierto, #agendar.abierto{display:flex;}
 
   /* Salir se ve distinto de las demás: es la única que te saca. */
   .btn-salir{background:#fff;color:#B03030;border:1.5px solid #E8CFCF;}
+
+  /* Agendar: flotante y con el pulgar encima, porque es lo que más se hace
+     de pie y con prisa, entre un paciente y el siguiente. */
+  #fab{
+    position:fixed;right:18px;z-index:40;
+    bottom:calc(72px + env(safe-area-inset-bottom));
+    width:56px;height:56px;border-radius:50%;border:none;
+    background:var(--primario);color:#fff;font-size:30px;font-weight:300;line-height:1;
+    box-shadow:0 6px 20px rgba(46,125,50,.35);display:none;
+  }
+  #fab.visible{display:block;}
+
+  .campo{margin-bottom:12px;}
+  .campo label{display:block;font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.4px;color:var(--gris);margin-bottom:5px;}
+  .campo select, .campo input{
+    width:100%;padding:13px 14px;border:1.5px solid var(--line);border-radius:12px;
+    font-family:inherit;font-size:16px;background:#fff;color:var(--ink);
+  }
+  .campo select:focus, .campo input:focus{outline:none;border-color:var(--primario);}
+  .campo-fila{display:flex;gap:10px;}
+  .campo-fila .campo{flex:1;}
+  .liga{
+    background:#F4F6F3;border:1.5px solid var(--line);border-radius:12px;padding:12px;
+    font-size:11.5px;word-break:break-all;margin-bottom:12px;font-weight:600;
+  }
 
   /* Notas previas: se leen de corrido, minutos antes de la consulta. */
   .nota{border-left:3px solid var(--line);padding:2px 0 2px 12px;margin-bottom:16px;}
@@ -222,6 +247,7 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 let yo = null;
 let citas = [];
+let pacientesCache = [];
 
 /* ---------- utilidades ---------- */
 function escapar(t){
@@ -296,6 +322,7 @@ async function iniciar(){
 
   yo = psi;
   document.getElementById('app').style.display = 'block';
+  document.getElementById('fab').classList.add('visible');
   document.getElementById('quien').textContent = psi.nombre;
   document.getElementById('saludo').textContent = saludoSegunHora();
 
@@ -817,6 +844,136 @@ async function activarAvisos(){
   }
 }
 
+/* ---------- agendar ---------- */
+/* Agendar de pie, entre un paciente y el siguiente, es lo que más se hace
+   con el celular en la mano. Era lo único del día que seguía obligando a
+   volver a la computadora. */
+
+let ligaCita = '';
+
+function cerrarAgendar(){ document.getElementById('agendar').classList.remove('abierto'); }
+window.cerrarAgendar = cerrarAgendar;
+
+async function abrirAgendar(){
+  document.getElementById('agPaso1').style.display = '';
+  document.getElementById('agPaso2').style.display = 'none';
+  document.getElementById('agMsg').textContent = '';
+  document.getElementById('btnCrearCita').disabled = false;
+
+  // El precio por sesión ya lo tiene configurado: llenarlo evita teclear un
+  // número en el celular cada vez.
+  const { data: cfg } = await sb.from('configuracion')
+    .select('precio_sesion, duracion_sesion').eq('psicologo_id', yo.id).maybeSingle();
+  if(cfg?.precio_sesion) document.getElementById('agPrecio').value = cfg.precio_sesion;
+  if(cfg?.duracion_sesion) document.getElementById('agDuracion').value = cfg.duracion_sesion;
+
+  const sel = document.getElementById('agPaciente');
+  if(sel.options.length <= 1){
+    const { data: pacs, error } = await sb.from('pacientes')
+      .select('id, nombre, telefono').eq('psicologo_id', yo.id)
+      .eq('estado', 'activo').order('nombre');
+
+    // Una lista vacía sin explicación parece "no tienes pacientes", que es
+    // muy distinto de "la consulta falló".
+    if(error){
+      document.getElementById('agMsg').textContent = 'No pudimos traer tus pacientes: ' + error.message;
+      document.getElementById('agMsg').className = 'msg err';
+    }
+
+    pacientesCache = pacs || [];
+    sel.innerHTML = pacientesCache.length
+      ? '<option value="">Elige...</option>' +
+        pacientesCache.map(p=> `<option value="${escapar(p.id)}">${escapar(p.nombre)}</option>`).join('')
+      : '<option value="">No tienes pacientes activos</option>';
+  }
+
+  document.getElementById('agendar').classList.add('abierto');
+}
+window.abrirAgendar = abrirAgendar;
+
+async function crearCita(){
+  const btn = document.getElementById('btnCrearCita');
+  const msg = document.getElementById('agMsg');
+  msg.className = 'msg';
+
+  const pacienteId = document.getElementById('agPaciente').value;
+  const fecha = document.getElementById('agFecha').value;
+  const hr = document.getElementById('agHora').value;
+  const duracion = parseInt(document.getElementById('agDuracion').value, 10);
+  const precio = parseFloat(document.getElementById('agPrecio').value) || 0;
+
+  const falla = (t)=>{ msg.textContent = t; msg.className = 'msg err'; };
+
+  if(!pacienteId) return falla('Elige un paciente.');
+  if(!fecha || !hr) return falla('Falta el día o la hora.');
+  if(!duracion || duracion < 5) return falla('La sesión dura mínimo 5 minutos.');
+
+  const cuando = new Date(`${fecha}T${hr}:00`);
+  if(cuando <= new Date()) return falla('Esa fecha ya pasó. Elige una futura.');
+
+  btn.disabled = true;
+  msg.textContent = 'Creando...';
+  msg.className = 'msg';
+
+  try{
+    const { data, error } = await sb.rpc('crear_cita_para_paciente', {
+      p_paciente_id: pacienteId,
+      p_fecha_hora: cuando.toISOString(),
+      p_duracion_minutos: duracion,
+      p_precio: precio,
+    });
+    const r = Array.isArray(data) ? data[0] : data;
+
+    if(error || !r || !r.ok){
+      falla(error?.message || r?.mensaje || 'No se pudo crear la sesión.');
+      btn.disabled = false;
+      return;
+    }
+
+    ligaCita = new URL(`./confirmar-cita.html?t=${r.token}`, location.href).href;
+    document.getElementById('agLiga').textContent = ligaCita;
+
+    const pac = pacientesCache.find(p=> p.id === pacienteId);
+    const cuandoTexto = cuando.toLocaleDateString('es-MX', { weekday:'long', day:'numeric', month:'long' });
+    const horaTexto = cuando.toLocaleTimeString('es-MX', { hour:'2-digit', minute:'2-digit' });
+    const texto = `Hola ${pac ? pac.nombre.split(' ')[0] : ''}, te propongo una sesión el ${cuandoTexto} a las ${horaTexto}. Confírmala aquí: ${ligaCita}`;
+
+    const tel = (pac?.telefono || '').replace(/\D/g, '');
+    const wa = document.getElementById('agWhats');
+    if(tel){
+      // Diez dígitos es un número mexicano sin lada de país.
+      wa.href = `https://wa.me/${tel.length === 10 ? '52' + tel : tel}?text=${encodeURIComponent(texto)}`;
+      wa.style.opacity = ''; wa.style.pointerEvents = '';
+      wa.textContent = 'Mandar por WhatsApp';
+    } else {
+      // Sin teléfono el botón no puede funcionar: se dice, en vez de dejarlo
+      // ahí para que lo toque y no pase nada.
+      wa.href = '#';
+      wa.textContent = 'Sin teléfono registrado';
+      wa.style.opacity = '.5'; wa.style.pointerEvents = 'none';
+    }
+
+    document.getElementById('agPaso1').style.display = 'none';
+    document.getElementById('agPaso2').style.display = 'block';
+    await refrescar();
+  }catch(e){
+    falla('No se pudo crear la sesión: ' + e.message);
+    btn.disabled = false;
+  }
+}
+window.crearCita = crearCita;
+
+async function copiarLiga(){
+  try{
+    await navigator.clipboard.writeText(ligaCita);
+    alert('Liga copiada.');
+  }catch(e){
+    // En iOS el portapapeles falla si no viene de un toque directo.
+    prompt('Copia la liga:', ligaCita);
+  }
+}
+window.copiarLiga = copiarLiga;
+
 /* ---------- mi cuenta ---------- */
 /* Instalada no hay barra del navegador: sin esto no había ninguna forma de
    salir, y es un teléfono con notas de pacientes adentro. */
@@ -921,6 +1078,61 @@ if('serviceWorker' in navigator){
 
 iniciar();
 </script>
+
+<button id="fab" onclick="abrirAgendar()" aria-label="Agendar una sesión">+</button>
+
+<div id="agendar">
+  <div class="hoja">
+    <div class="hoja-tirador"></div>
+
+    <div id="agPaso1">
+      <div class="t-etq">Nueva sesión</div>
+      <div class="hoja-titulo">Agendar con un paciente</div>
+      <p class="hoja-sub">Le mandas la propuesta y él la confirma. Hasta entonces el horario queda apartado.</p>
+
+      <div class="campo">
+        <label for="agPaciente">Paciente</label>
+        <select id="agPaciente"><option value="">Elige...</option></select>
+      </div>
+
+      <div class="campo-fila">
+        <div class="campo">
+          <label for="agFecha">Día</label>
+          <input type="date" id="agFecha">
+        </div>
+        <div class="campo">
+          <label for="agHora">Hora</label>
+          <input type="time" id="agHora">
+        </div>
+      </div>
+
+      <div class="campo-fila">
+        <div class="campo">
+          <label for="agDuracion">Minutos</label>
+          <input type="number" id="agDuracion" value="50" min="5" step="5">
+        </div>
+        <div class="campo">
+          <label for="agPrecio">Precio</label>
+          <input type="number" id="agPrecio" min="0" step="50" placeholder="0">
+        </div>
+      </div>
+
+      <p class="msg" id="agMsg"></p>
+      <button class="btn" id="btnCrearCita" onclick="crearCita()">Crear la sesión</button>
+      <button class="btn btn-linea" onclick="cerrarAgendar()">Cancelar</button>
+    </div>
+
+    <div id="agPaso2" style="display:none;">
+      <div class="t-etq">Falta un paso</div>
+      <div class="hoja-titulo">Mándasela para que la confirme</div>
+      <p class="hoja-sub">La sesión ya está en tu agenda, pero tu paciente todavía no se entera.</p>
+      <div class="liga" id="agLiga"></div>
+      <a class="btn" id="agWhats" href="#">Mandar por WhatsApp</a>
+      <button class="btn btn-linea" onclick="copiarLiga()">Copiar la liga</button>
+      <button class="btn btn-linea" onclick="cerrarAgendar()">Listo</button>
+    </div>
+  </div>
+</div>
 
 <div id="cuenta">
   <div class="hoja">
