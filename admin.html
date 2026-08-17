@@ -475,6 +475,19 @@ function pintarPsicologos(){
       <div>
         <h3>${escapar(p.nombre)} <span class="tag ${p.estado}">${p.estado}</span></h3>
         <p>${escapar(p.correo)} · registrado ${new Date(p.creado_en).toLocaleDateString('es-MX')}${p.especialidad ? ' · '+escapar(p.especialidad) : ''}</p>
+        <p>
+          ${p.profesion ? escapar(p.profesion) : '<em>sin profesión declarada</em>'}
+          ${p.telefono ? ' · ' + escapar(p.telefono) : ''}
+          ${p.ciudad ? ' · ' + escapar(p.ciudad) : ''}
+          ${p.nombre_consultorio ? ' · ' + escapar(p.nombre_consultorio) : ''}
+        </p>
+        <p>
+          ${p.cedula_profesional
+            ? `Cédula <b>${escapar(p.cedula_profesional)}</b> ·
+               <a href="https://www.cedulaprofesional.sep.gob.mx/cedula/presidencia/indexAvanzada.action"
+                  target="_blank" rel="noopener">comprobar en la SEP</a>`
+            : '<b>Sin cédula registrada</b>'}
+        </p>
       </div>
       <div class="acciones-fila">
         ${p.estado!=='aprobado' ? `<button class="btn-mini primario" onclick="cambiarEstadoPsi('${p.id}','aprobado','aprobar_psicologo')">Aprobar</button>` : ''}

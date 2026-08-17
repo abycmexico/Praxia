@@ -4,160 +4,505 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="robots" content="noindex, nofollow">
-<title>Registro de psicólogo | Praxia</title>
+<title>Crea tu cuenta | Praxia</title>
 <link rel="icon" type="image/png" href="./assets/praxia-isotipo.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,400;1,600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
-  :root{--primario:#2E7D32;--primario-claro:#7BC043;--primario-suave:#A8C99B;--bg:#F7F9F6;--ink:#1A1A1A;--gray:#7a7a7a;--line:#ececec;--err:#c62828;--ok:#2e7d32;}
+  :root{--primario:#2E7D32;--suave:#A8C99B;--claro:#EDF5EC;--bg:#F7F9F6;--ink:#1A1A1A;--gray:#7a7a7a;--line:#e6e6e6;--err:#c62828;}
   *{box-sizing:border-box;margin:0;padding:0;}
-  body{background:var(--bg,#F7F9F6);color:var(--ink);font-family:'Montserrat',Arial,sans-serif;font-weight:500;min-height:100vh;display:flex;flex-direction:column;}
+  body{background:var(--bg);color:var(--ink);font-family:'Montserrat',Arial,sans-serif;font-weight:500;min-height:100dvh;display:flex;flex-direction:column;}
   a{color:inherit;text-decoration:none;}
-  header{display:flex;align-items:center;gap:10px;padding:24px 32px;border-bottom:1.5px solid var(--line);}
-  header img{height:26px;} header .logo-link{display:flex;align-items:center;gap:10px;}
-  header span{font-weight:800;letter-spacing:2px;font-size:15px;}
-  main{flex:1;display:flex;align-items:center;justify-content:center;padding:40px 24px;}
-  .box{width:100%;max-width:420px;}
-  .box h1{font-size:26px;margin-bottom:8px;}
-  .box p.sub{color:var(--gray);font-size:14px;margin-bottom:32px;}
-  label{display:block;font-size:13px;font-weight:700;margin-bottom:6px;margin-top:18px;}
-  input{width:100%;padding:12px 14px;border:1.5px solid var(--line);border-radius:10px;font-family:inherit;font-size:15px;}
-  input:focus{outline:none;border-color:var(--primario);}
-  button{width:100%;margin-top:28px;padding:14px;border:none;border-radius:30px;background:var(--primario);color:var(--ink);font-weight:700;font-size:15px;cursor:pointer;font-family:inherit;}
-  button:hover{background:var(--primario-claro);}
-  button:disabled{opacity:.6;cursor:default;}
-  .msg{margin-top:16px;font-size:13.5px;min-height:18px;}
-  .msg.err{color:var(--err);}
-  .msg.ok{color:var(--ok);}
-  .foot{margin-top:24px;font-size:13px;color:var(--gray);text-align:center;}
-  .separador{display:flex;align-items:center;gap:12px;margin:22px 0;color:var(--gray);font-size:12px;}
-  .separador::before,.separador::after{content:"";flex:1;height:1px;background:var(--line);}
-  .btn-google{width:100%;display:flex;align-items:center;justify-content:center;gap:10px;padding:13px;border:1.5px solid var(--line);border-radius:30px;background:#fff;font-weight:700;font-size:14px;cursor:pointer;font-family:inherit;color:var(--ink);}
-  .btn-google:hover{border-color:var(--primario);}
-  .opcional{color:var(--gray);font-weight:600;}
-  .pista{font-size:11.5px;color:var(--gray);font-weight:600;margin-top:5px;line-height:1.5;}
-  .foot a{color:var(--ink);font-weight:700;border-bottom:1.5px solid var(--primario);}
 
-  .marca-pie{display:flex;justify-content:center;padding:24px 0 8px;opacity:.35;}
-  .marca-pie img{height:18px;width:auto;}
+  header{display:flex;align-items:center;justify-content:space-between;padding:18px 24px;gap:12px;}
+  header img{height:24px;}
+  .paso-num{font-size:12px;font-weight:800;color:var(--gray);letter-spacing:.5px;}
+
+  /* La barra dice cuánto falta. Sin ella, un formulario por pasos se siente
+     interminable y la gente lo abandona a la mitad. */
+  .barra{height:4px;background:var(--line);}
+  .barra div{height:100%;background:var(--primario);width:0;transition:width .32s cubic-bezier(.4,0,.2,1);}
+
+  main{flex:1;display:flex;align-items:center;justify-content:center;padding:28px 22px 40px;}
+  .caja{width:100%;max-width:460px;}
+
+  .paso{display:none;animation:entra .3s cubic-bezier(.4,0,.2,1);}
+  .paso.activo{display:block;}
+  @keyframes entra{from{opacity:0;transform:translateY(10px);}to{opacity:1;transform:none;}}
+
+  h1{font-size:27px;line-height:1.22;margin-bottom:8px;font-weight:800;}
+  h1 em{color:var(--primario);font-style:normal;}
+  p.dice{color:var(--gray);font-size:14px;line-height:1.6;margin-bottom:26px;}
+
+  label{display:block;font-size:12px;font-weight:800;letter-spacing:.3px;text-transform:uppercase;color:var(--gray);margin:16px 0 6px;}
+  input, select{
+    width:100%;padding:14px 15px;border:1.5px solid var(--line);border-radius:12px;
+    font-family:inherit;font-size:16px;background:#fff;color:var(--ink);font-weight:600;
+  }
+  input:focus, select:focus{outline:none;border-color:var(--primario);box-shadow:0 0 0 3px var(--claro);}
+  .fila{display:flex;gap:10px;}
+  .fila > div{flex:1;}
+  .pista{font-size:12px;color:var(--gray);font-weight:600;margin-top:7px;line-height:1.55;}
+
+  /* Opciones como tarjetas: en el celular se tocan mejor que un menú, y de
+     paso se ve todo lo que hay sin desplegar nada. */
+  .opciones{display:grid;gap:10px;}
+  .op{
+    border:1.5px solid var(--line);border-radius:14px;padding:15px 16px;background:#fff;
+    cursor:pointer;text-align:left;font-family:inherit;width:100%;transition:border-color .15s, background .15s;
+  }
+  .op:hover{border-color:var(--suave);}
+  .op.elegida{border-color:var(--primario);background:var(--claro);}
+  .op b{display:block;font-size:15px;font-weight:800;margin-bottom:2px;}
+  .op span{font-size:12.5px;color:var(--gray);font-weight:600;line-height:1.5;}
+
+  .chips{display:flex;flex-wrap:wrap;gap:8px;}
+  .chip{
+    border:1.5px solid var(--line);border-radius:22px;padding:10px 15px;background:#fff;
+    font-family:inherit;font-size:13.5px;font-weight:700;cursor:pointer;color:var(--ink);
+  }
+  .chip.elegida{border-color:var(--primario);background:var(--claro);color:var(--primario);}
+
+  .botones{display:flex;gap:10px;margin-top:28px;}
+  .btn{
+    flex:1;padding:15px;border:none;border-radius:30px;font-weight:800;font-size:15px;
+    cursor:pointer;font-family:inherit;background:var(--primario);color:#fff;
+  }
+  .btn:disabled{opacity:.5;cursor:default;}
+  .btn-atras{flex:0 0 auto;padding:15px 20px;background:#fff;color:var(--gray);border:1.5px solid var(--line);}
+
+  .msg{margin-top:14px;font-size:13.5px;min-height:18px;font-weight:600;}
+  .msg.err{color:var(--err);}
+  .msg.ok{color:var(--primario);}
+
+  .resumen{background:#fff;border:1.5px solid var(--line);border-radius:16px;padding:18px;margin-bottom:20px;}
+  .resumen div{display:flex;justify-content:space-between;gap:14px;font-size:13.5px;padding:7px 0;border-bottom:1px solid var(--line);}
+  .resumen div:last-child{border:none;}
+  .resumen b{font-weight:800;text-align:right;word-break:break-word;}
+  .resumen span{color:var(--gray);font-weight:600;flex-shrink:0;}
+
+  .nota{background:#FFF6E5;border:1.5px solid #F0D9A8;border-radius:12px;padding:13px 15px;font-size:12.5px;line-height:1.6;color:#7a5600;font-weight:600;margin-top:16px;}
+  .foot{margin-top:22px;font-size:13px;color:var(--gray);text-align:center;}
+  .foot a{font-weight:800;color:var(--ink);border-bottom:1.5px solid var(--primario);}
+  .listo{text-align:center;}
+  .listo .palomita{width:64px;height:64px;border-radius:50%;background:var(--claro);color:var(--primario);font-size:32px;display:flex;align-items:center;justify-content:center;margin:0 auto 20px;}
 </style>
 </head>
 <body>
 
 <header>
-  <a class="logo-link" href="./index.html">
-    <img src="./assets/praxia-logo-completo.png" alt="Praxia">
-  </a>
+  <a href="./index.html"><img src="./assets/praxia-logo-completo.png" alt="Praxia"></a>
+  <span class="paso-num" id="pasoNum"></span>
 </header>
+<div class="barra"><div id="barraLlena"></div></div>
 
 <main>
-  <div class="box">
-    <h1>Regístrate como psicólogo</h1>
-    <p class="sub">Tu cuenta queda pendiente de aprobación antes de poder usarse. Te avisamos por correo en cuanto esté activa.</p>
+<div class="caja">
 
-    <form id="formRegistro">
-      <label for="nombre">Nombre completo</label>
-      <input type="text" id="nombre" required>
+  <!-- 1. Nombre -->
+  <section class="paso activo" data-paso="1">
+    <h1>Empecemos por <em>tu nombre</em></h1>
+    <p class="dice">Así es como te van a ver tus pacientes en Praxia.</p>
 
-      <label for="correo">Correo</label>
-      <input type="email" id="correo" required>
+    <label for="nombre">Nombre(s)</label>
+    <input type="text" id="nombre" autocomplete="given-name" placeholder="María Fernanda">
 
-      <label for="password">Contraseña</label>
-      <input type="password" id="password" minlength="8" required>
+    <div class="fila">
+      <div>
+        <label for="apPaterno">Primer apellido</label>
+        <input type="text" id="apPaterno" autocomplete="family-name" placeholder="López">
+      </div>
+      <div>
+        <label for="apMaterno">Segundo apellido</label>
+        <input type="text" id="apMaterno" placeholder="Ruiz">
+      </div>
+    </div>
 
-      <label for="codigo">Código de invitación <span class="opcional">(si tienes uno)</span></label>
-      <input type="text" id="codigo" placeholder="Déjalo vacío si vas a contratar un plan" autocomplete="off">
-      <p class="pista">Con código entras sin pagar. Sin código, eliges tu plan al entrar.</p>
-
-      <button type="submit" id="btnRegistrar">Crear cuenta</button>
-      <p class="msg" id="msg"></p>
-    </form>
-
-    <!-- Alta con Google oculta por ahora: el registro de psicologos va por
-         correo y contraseña, para que cada alta pase por aprobacion.
-         Se conserva el codigo para reactivarlo quitando el display:none. -->
-    <div class="separador" style="display:none;"><span>o</span></div>
-    <button class="btn-google" id="btnGoogle" style="display:none;">
-      <svg viewBox="0 0 48 48" width="18" height="18"><path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3C33.7 32.9 29.3 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.1 8 3l6-6C34.5 5.1 29.5 3 24 3 12.4 3 3 12.4 3 24s9.4 21 21 21 21-9.4 21-21c0-1.4-.1-2.7-.4-4z"/><path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.5 15.9 18.9 13 24 13c3.1 0 5.8 1.1 8 3l6-6C34.5 5.1 29.5 3 24 3 16.3 3 9.7 7.3 6.3 14.7z"/><path fill="#4CAF50" d="M24 45c5.2 0 9.9-1.7 13.6-4.7l-6.3-5.3c-2 1.5-4.7 2.5-7.3 2.5-5.3 0-9.7-3.4-11.3-8.1l-6.5 5C9.5 40.5 16.2 45 24 45z"/><path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.4-2.3 4.4-4.2 5.9l6.3 5.3C41.4 36.4 45 30.8 45 24c0-1.4-.1-2.7-.4-3.5z"/></svg>
-      Continuar con Google
-    </button>
-
+    <div class="botones">
+      <button class="btn" onclick="avanzar()">Continuar</button>
+    </div>
+    <p class="msg" id="msg1"></p>
     <p class="foot">¿Ya tienes cuenta? <a href="./login.html">Inicia sesión</a></p>
-  </div>
+  </section>
+
+  <!-- 2. Contacto -->
+  <section class="paso" data-paso="2">
+    <h1>¿Cómo te <em>contactamos</em>?</h1>
+    <p class="dice">Tu correo es con el que entras a Praxia. El teléfono lo usamos solo si hay algo con tu cuenta.</p>
+
+    <label for="correo">Correo</label>
+    <input type="email" id="correo" autocomplete="email" placeholder="tu@correo.com">
+
+    <label for="telefono">Teléfono (10 dígitos)</label>
+    <input type="tel" id="telefono" inputmode="numeric" autocomplete="tel" placeholder="5512345678" maxlength="14">
+
+    <div class="botones">
+      <button class="btn btn-atras" onclick="volver()">Atrás</button>
+      <button class="btn" onclick="avanzar()">Continuar</button>
+    </div>
+    <p class="msg" id="msg2"></p>
+  </section>
+
+  <!-- 3. Profesión -->
+  <section class="paso" data-paso="3">
+    <h1>¿A qué te <em>dedicas</em>?</h1>
+    <p class="dice">Esto define qué documentos puede generar tu cuenta.</p>
+
+    <div class="opciones" id="opsProfesion"></div>
+
+    <div class="botones">
+      <button class="btn btn-atras" onclick="volver()">Atrás</button>
+      <button class="btn" onclick="avanzar()">Continuar</button>
+    </div>
+    <p class="msg" id="msg3"></p>
+  </section>
+
+  <!-- 4. Especialidad -->
+  <section class="paso" data-paso="4">
+    <h1>¿Cuál es tu <em>área</em>?</h1>
+    <p class="dice">Elige la que más se acerque. Si atiendes de todo un poco, deja General — se puede cambiar después.</p>
+
+    <div class="chips" id="chipsEspecialidad"></div>
+
+    <div class="botones">
+      <button class="btn btn-atras" onclick="volver()">Atrás</button>
+      <button class="btn" onclick="avanzar()">Continuar</button>
+    </div>
+    <p class="msg" id="msg4"></p>
+  </section>
+
+  <!-- 5. Cédula -->
+  <section class="paso" data-paso="5">
+    <h1>Tu <em>cédula profesional</em></h1>
+    <p class="dice">La revisamos en el registro de la SEP antes de activar tu cuenta. Es lo que le da confianza a tus pacientes.</p>
+
+    <label for="cedula">Número de cédula</label>
+    <input type="text" id="cedula" inputmode="numeric" placeholder="12345678" maxlength="10">
+    <p class="pista">Son los 7 u 8 dígitos que aparecen en tu cédula. Sin puntos ni espacios.</p>
+
+    <label for="ciudad">Ciudad donde ejerces</label>
+    <input type="text" id="ciudad" placeholder="Guadalajara, Jalisco">
+
+    <div class="botones">
+      <button class="btn btn-atras" onclick="volver()">Atrás</button>
+      <button class="btn" onclick="avanzar()">Continuar</button>
+    </div>
+    <p class="msg" id="msg5"></p>
+  </section>
+
+  <!-- 6. Consultorio -->
+  <section class="paso" data-paso="6">
+    <h1>¿Trabajas en un <em>consultorio</em>?</h1>
+    <p class="dice">Si tienes uno con nombre propio, lo usamos en tus documentos y recibos.</p>
+
+    <div class="opciones" id="opsConsultorio"></div>
+
+    <div id="cajaConsultorio" style="display:none;">
+      <label for="consultorio">Nombre del consultorio</label>
+      <input type="text" id="consultorio" placeholder="Centro Psicológico Aurora">
+      <p class="pista">Si más adelante trabajas con más psicólogos, aquí es donde se arma tu equipo.</p>
+    </div>
+
+    <div class="botones">
+      <button class="btn btn-atras" onclick="volver()">Atrás</button>
+      <button class="btn" onclick="avanzar()">Continuar</button>
+    </div>
+    <p class="msg" id="msg6"></p>
+  </section>
+
+  <!-- 7. Cuenta -->
+  <section class="paso" data-paso="7">
+    <h1>Ya casi. <em>Tu contraseña</em></h1>
+    <p class="dice">Revisa que todo esté bien y crea tu acceso.</p>
+
+    <div class="resumen" id="resumen"></div>
+
+    <label for="password">Contraseña</label>
+    <input type="password" id="password" autocomplete="new-password" minlength="8" placeholder="Mínimo 8 caracteres">
+
+    <label for="codigo">Código de invitación <span style="text-transform:none;font-weight:600;">(si tienes uno)</span></label>
+    <input type="text" id="codigo" autocomplete="off" placeholder="Déjalo vacío si vas a contratar un plan">
+    <p class="pista">Con código entras sin pagar. Sin código, eliges tu plan al entrar.</p>
+
+    <div class="nota">
+      Praxia guarda expedientes clínicos, así que cada cuenta se revisa antes de
+      activarse. Te avisamos por correo en cuanto quede lista.
+    </div>
+
+    <div class="botones">
+      <button class="btn btn-atras" onclick="volver()">Atrás</button>
+      <button class="btn" id="btnCrear" onclick="crearCuenta()">Crear mi cuenta</button>
+    </div>
+    <p class="msg" id="msg7"></p>
+  </section>
+
+  <!-- 8. Listo -->
+  <section class="paso listo" data-paso="8">
+    <div class="palomita">✓</div>
+    <h1>Tu cuenta <em>quedó creada</em></h1>
+    <p class="dice" id="textoFinal">
+      Falta que revisemos tu cédula para activarla. Te avisamos por correo, normalmente el mismo día.
+    </p>
+    <div class="botones">
+      <a class="btn" href="./login.html" style="text-align:center;text-decoration:none;">Ir a iniciar sesión</a>
+    </div>
+  </section>
+
+</div>
 </main>
-<div class="marca-pie"><img src="./assets/praxia-isotipo.png" alt="Praxia"></div>
 
 <script>
-  const SUPABASE_URL = 'https://uxbpfyeahqpertamhdxt.supabase.co';
-  const SUPABASE_KEY = 'sb_publishable_xaaA4lYAQZjdcMFRhMGtuQ_fvIeJKv7';
-  const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+const SUPABASE_URL = 'https://uxbpfyeahqpertamhdxt.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_xaaA4lYAQZjdcMFRhMGtuQ_fvIeJKv7';
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-  document.getElementById('btnGoogle').addEventListener('click', async ()=>{
-    await sb.auth.signInWithOAuth({
-      provider: 'google',
-      options: { redirectTo: `${location.origin}${location.pathname.replace(/[^/]+$/,'')}completar-registro.html?rol=psicologo` }
+const TOTAL = 7;              // el 8 es la pantalla de listo, no cuenta
+let paso = 1;
+let profesion = '';
+let especialidad = '';
+let tieneConsultorio = null;
+
+/* Las profesiones cambian lo que la cuenta puede hacer. Solo los médicos
+   pueden recetar: en México un psicólogo no puede, y ofrecerle recetas
+   sería meterlo en un problema legal, no darle una función. */
+const PROFESIONES = [
+  ['Psicólogo clínico', 'Consulta, evaluación y terapia'],
+  ['Psicoterapeuta', 'Terapia con formación en algún enfoque'],
+  ['Psiquiatra', 'Médico especialista; puede recetar'],
+  ['Neuropsicólogo', 'Evaluación y rehabilitación cognitiva'],
+  ['Otra profesión de la salud', 'Nutrición, terapia de lenguaje y demás'],
+];
+
+const ESPECIALIDADES = [
+  'General', 'Ansiedad y depresión', 'Terapia de pareja', 'Infantil y adolescentes',
+  'Familiar', 'Adicciones', 'Trauma y duelo', 'Trastornos de la alimentación',
+  'Neurodesarrollo', 'Laboral y organizacional', 'Psicología del deporte', 'Sexualidad',
+];
+
+/* ---------- pintar opciones ---------- */
+function pintarOpciones(){
+  document.getElementById('opsProfesion').innerHTML = PROFESIONES.map(([t, d])=>
+    `<button type="button" class="op" data-valor="${t}"><b>${t}</b><span>${d}</span></button>`).join('');
+
+  document.getElementById('chipsEspecialidad').innerHTML = ESPECIALIDADES.map(e=>
+    `<button type="button" class="chip" data-valor="${e}">${e}</button>`).join('');
+
+  document.getElementById('opsConsultorio').innerHTML = `
+    <button type="button" class="op" data-valor="si"><b>Sí, tengo consultorio</b><span>Propio o compartido, con nombre</span></button>
+    <button type="button" class="op" data-valor="no"><b>Trabajo por mi cuenta</b><span>En línea, a domicilio o sin nombre comercial</span></button>`;
+
+  document.querySelectorAll('#opsProfesion .op').forEach(b=>{
+    b.addEventListener('click', ()=>{
+      document.querySelectorAll('#opsProfesion .op').forEach(x=> x.classList.remove('elegida'));
+      b.classList.add('elegida');
+      profesion = b.dataset.valor;
+      document.getElementById('msg3').textContent = '';
     });
   });
 
-  const form = document.getElementById('formRegistro');
-  const btn = document.getElementById('btnRegistrar');
-  const msg = document.getElementById('msg');
-
-  form.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    btn.disabled = true;
-    msg.textContent = 'Creando cuenta...';
-    msg.className = 'msg';
-
-    const nombre = document.getElementById('nombre').value.trim();
-    const correo = document.getElementById('correo').value.trim();
-    const password = document.getElementById('password').value;
-
-    const { data, error } = await sb.auth.signUp({
-      email: correo,
-      password: password
+  document.querySelectorAll('#chipsEspecialidad .chip').forEach(b=>{
+    b.addEventListener('click', ()=>{
+      document.querySelectorAll('#chipsEspecialidad .chip').forEach(x=> x.classList.remove('elegida'));
+      b.classList.add('elegida');
+      especialidad = b.dataset.valor;
+      document.getElementById('msg4').textContent = '';
     });
+  });
 
-    if (error) {
-      msg.textContent = error.message.includes('already registered')
-        ? 'Ese correo ya está registrado. Intenta iniciar sesión.'
-        : 'Hubo un error: ' + error.message;
-      msg.className = 'msg err';
-      btn.disabled = false;
-      return;
-    }
-
-    const { error: insertError } = await sb.from('psicologos').insert({
-      id: data.user.id,
-      nombre: nombre,
-      correo: correo,
-      estado: 'pendiente'
+  document.querySelectorAll('#opsConsultorio .op').forEach(b=>{
+    b.addEventListener('click', ()=>{
+      document.querySelectorAll('#opsConsultorio .op').forEach(x=> x.classList.remove('elegida'));
+      b.classList.add('elegida');
+      tieneConsultorio = b.dataset.valor === 'si';
+      document.getElementById('cajaConsultorio').style.display = tieneConsultorio ? 'block' : 'none';
+      if(tieneConsultorio) document.getElementById('consultorio').focus();
+      document.getElementById('msg6').textContent = '';
     });
+  });
+}
+pintarOpciones();
 
-    if (insertError) {
-      msg.textContent = 'Tu cuenta se creó pero hubo un error al guardar tu perfil. Contáctanos.';
-      msg.className = 'msg err';
-      btn.disabled = false;
-      return;
-    }
+/* ---------- moverse entre pasos ---------- */
+function mostrar(n){
+  document.querySelectorAll('.paso').forEach(s=> s.classList.remove('activo'));
+  document.querySelector(`.paso[data-paso="${n}"]`).classList.add('activo');
+  paso = n;
 
-    // El código no se puede canjear todavía: la función necesita una sesión
-    // y, si el correo requiere confirmación, aún no la hay. Se guarda para
-    // aplicarlo en cuanto entre al panel.
-    const codigo = document.getElementById('codigo').value.trim();
-    if(codigo){
-      try{ sessionStorage.setItem('praxia_codigo', codigo); }catch(e){}
-    }
+  const final = n > TOTAL;
+  document.getElementById('barraLlena').style.width = (final ? 100 : (n / TOTAL) * 100) + '%';
+  document.getElementById('pasoNum').textContent = final ? '' : `Paso ${n} de ${TOTAL}`;
+  window.scrollTo(0, 0);
 
-    msg.textContent = codigo
-      ? 'Cuenta creada. Tu código se aplicará al entrar. Queda pendiente de aprobación, te avisamos por correo.'
-      : 'Cuenta creada. Queda pendiente de aprobación, te avisamos por correo.';
-    msg.className = 'msg ok';
-    form.reset();
+  // Enfocar el primer campo ahorra un toque en cada paso, que en un
+  // formulario de siete se nota.
+  const primero = document.querySelector(`.paso[data-paso="${n}"] input`);
+  if(primero && window.innerWidth > 760) primero.focus();
+}
+
+function volver(){ if(paso > 1) mostrar(paso - 1); }
+window.volver = volver;
+
+function decir(n, texto){
+  const m = document.getElementById('msg' + n);
+  m.textContent = texto;
+  m.className = 'msg err';
+  return false;
+}
+
+// Cada paso se valida antes de dejar pasar. Descubrir hasta el final que el
+// teléfono estaba mal obliga a recorrer todo de regreso.
+function validar(n){
+  const v = (id)=> (document.getElementById(id).value || '').trim();
+  document.getElementById('msg' + n).textContent = '';
+
+  if(n === 1){
+    if(!v('nombre')) return decir(1, 'Falta tu nombre.');
+    if(!v('apPaterno')) return decir(1, 'Falta tu primer apellido.');
+    if(!v('apMaterno')) return decir(1, 'Falta tu segundo apellido.');
+  }
+  if(n === 2){
+    const correo = v('correo');
+    if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(correo)) return decir(2, 'Ese correo no se ve bien.');
+    if(v('telefono').replace(/\D/g,'').length !== 10) return decir(2, 'El teléfono va con 10 dígitos.');
+  }
+  if(n === 3 && !profesion) return decir(3, 'Elige a qué te dedicas.');
+  if(n === 4 && !especialidad) return decir(4, 'Elige un área, o deja General.');
+  if(n === 5){
+    const ced = v('cedula').replace(/\D/g,'');
+    if(ced.length < 7 || ced.length > 8) return decir(5, 'La cédula tiene 7 u 8 dígitos.');
+    if(!v('ciudad')) return decir(5, 'Falta la ciudad donde ejerces.');
+  }
+  if(n === 6){
+    if(tieneConsultorio === null) return decir(6, 'Dinos si trabajas en un consultorio.');
+    if(tieneConsultorio && !v('consultorio')) return decir(6, 'Falta el nombre de tu consultorio.');
+  }
+  return true;
+}
+
+function avanzar(){
+  if(!validar(paso)) return;
+  if(paso === 6) pintarResumen();
+  mostrar(paso + 1);
+}
+window.avanzar = avanzar;
+
+// Se le enseña lo que va a quedar guardado antes de crear la cuenta: es más
+// fácil corregir aquí que pedir después que le cambien la cédula.
+function pintarResumen(){
+  const v = (id)=> (document.getElementById(id).value || '').trim();
+  const filas = [
+    ['Nombre', `${v('nombre')} ${v('apPaterno')} ${v('apMaterno')}`],
+    ['Correo', v('correo')],
+    ['Teléfono', v('telefono')],
+    ['Profesión', profesion],
+    ['Área', especialidad],
+    ['Cédula', v('cedula')],
+    ['Ciudad', v('ciudad')],
+  ];
+  if(tieneConsultorio && v('consultorio')) filas.push(['Consultorio', v('consultorio')]);
+
+  document.getElementById('resumen').innerHTML = filas
+    .map(([k, val])=> `<div><span>${k}</span><b>${escapar(val)}</b></div>`).join('');
+}
+
+function escapar(t){
+  return String(t ?? '').replace(/[&<>"']/g, c=>
+    ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+/* ---------- crear la cuenta ---------- */
+async function crearCuenta(){
+  const btn = document.getElementById('btnCrear');
+  const msg = document.getElementById('msg7');
+  const v = (id)=> (document.getElementById(id).value || '').trim();
+
+  const password = document.getElementById('password').value;
+  if(password.length < 8){
+    msg.textContent = 'La contraseña necesita al menos 8 caracteres.';
+    msg.className = 'msg err';
+    return;
+  }
+
+  btn.disabled = true;
+  msg.textContent = 'Creando tu cuenta...';
+  msg.className = 'msg';
+
+  const correo = v('correo').toLowerCase();
+
+  const { data, error } = await sb.auth.signUp({ email: correo, password });
+
+  if(error){
+    msg.textContent = error.message.includes('already registered')
+      ? 'Ese correo ya está registrado. Intenta iniciar sesión.'
+      : 'No se pudo crear la cuenta: ' + error.message;
+    msg.className = 'msg err';
     btn.disabled = false;
+    return;
+  }
+
+  // El perfil se guarda por función, que valida todo del lado del servidor:
+  // lo que se revisa solo en el navegador no está revisado.
+  const { data: res, error: errPerfil } = await sb.rpc('registrar_perfil_psicologo', {
+    p_nombre: v('nombre'),
+    p_apellido_paterno: v('apPaterno'),
+    p_apellido_materno: v('apMaterno'),
+    p_telefono: v('telefono'),
+    p_correo: correo,
+    p_profesion: profesion,
+    p_especialidad: especialidad,
+    p_cedula: v('cedula'),
+    p_consultorio: tieneConsultorio ? v('consultorio') : null,
+    p_ciudad: v('ciudad'),
   });
+
+  const r = Array.isArray(res) ? res[0] : res;
+
+  if(errPerfil || !r || !r.ok){
+    // Se dice de frente en vez de mandarlo a una cuenta a medias: su acceso
+    // existe pero sin perfil no lo pueden aprobar.
+    msg.textContent = 'Tu acceso se creó pero el perfil no se guardó: '
+      + (errPerfil?.message || r?.mensaje || 'error desconocido')
+      + '. Escríbenos y lo completamos.';
+    msg.className = 'msg err';
+    btn.disabled = false;
+    return;
+  }
+
+  const codigo = v('codigo');
+  if(codigo){
+    // No se puede canjear aquí: la función necesita sesión y, si el correo
+    // pide confirmación, todavía no la hay. Se guarda para aplicarlo al entrar.
+    try{ sessionStorage.setItem('praxia_codigo', codigo); }catch(e){}
+    document.getElementById('textoFinal').textContent =
+      'Tu código se aplica en cuanto entres. Falta que revisemos tu cédula para activar la cuenta; te avisamos por correo, normalmente el mismo día.';
+  }
+
+  mostrar(8);
+}
+window.crearCuenta = crearCuenta;
+
+/* ---------- comodidades ---------- */
+// Enter avanza, como en cualquier formulario. Sin esto hay que bajar a
+// buscar el botón en cada paso.
+document.addEventListener('keydown', (e)=>{
+  if(e.key !== 'Enter') return;
+  if(paso > TOTAL) return;
+  e.preventDefault();
+  if(paso === TOTAL) crearCuenta(); else avanzar();
+});
+
+// El teléfono solo acepta números: escribirlo con guiones y paréntesis es
+// lo normal, y luego no coincide con nada.
+document.getElementById('telefono').addEventListener('input', (e)=>{
+  e.target.value = e.target.value.replace(/[^\d\s()-]/g, '');
+});
+document.getElementById('cedula').addEventListener('input', (e)=>{
+  e.target.value = e.target.value.replace(/\D/g, '');
+});
+
+mostrar(1);
 </script>
 
 </body>
