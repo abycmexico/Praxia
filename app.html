@@ -118,8 +118,11 @@
   .btn-cerrar{background:var(--primario);color:#fff;border:none;border-radius:20px;padding:7px 13px;font-size:11px;font-weight:800;white-space:nowrap;}
 
   /* hoja inferior: en el celular se alcanza con el pulgar */
-  #cierre, #ficha{position:fixed;inset:0;z-index:50;background:rgba(0,0,0,.45);display:none;align-items:flex-end;}
-  #cierre.abierto, #ficha.abierto{display:flex;}
+  #cierre, #ficha, #cuenta{position:fixed;inset:0;z-index:50;background:rgba(0,0,0,.45);display:none;align-items:flex-end;}
+  #cierre.abierto, #ficha.abierto, #cuenta.abierto{display:flex;}
+
+  /* Salir se ve distinto de las demás: es la única que te saca. */
+  .btn-salir{background:#fff;color:#B03030;border:1.5px solid #E8CFCF;}
 
   /* Notas previas: se leen de corrido, minutos antes de la consulta. */
   .nota{border-left:3px solid var(--line);padding:2px 0 2px 12px;margin-bottom:16px;}
@@ -183,7 +186,10 @@
       <div class="h-saludo" id="saludo">Hola</div>
       <div class="h-nombre" id="quien">—</div>
     </div>
-    <img src="./assets/praxia-isotipo.png" alt="Praxia">
+    <button id="btnCuenta" onclick="abrirCuenta()" aria-label="Mi cuenta"
+      style="background:none;border:none;padding:6px;margin:-6px;line-height:0;">
+      <img src="./assets/praxia-isotipo.png" alt="Mi cuenta">
+    </button>
   </header>
 
   <main>
@@ -811,6 +817,83 @@ async function activarAvisos(){
   }
 }
 
+/* ---------- mi cuenta ---------- */
+/* Instalada no hay barra del navegador: sin esto no había ninguna forma de
+   salir, y es un teléfono con notas de pacientes adentro. */
+
+function cerrarCuenta(){ document.getElementById('cuenta').classList.remove('abierto'); }
+window.cerrarCuenta = cerrarCuenta;
+
+async function abrirCuenta(){
+  document.getElementById('cuentaNombre').textContent = yo?.nombre || 'Mi cuenta';
+  document.getElementById('cuentaCorreo').textContent = yo?.correo || '';
+  document.getElementById('cuentaVersion').textContent =
+    window.matchMedia('(display-mode: standalone)').matches || navigator.standalone
+      ? 'Praxia instalada en este dispositivo'
+      : 'Praxia en el navegador';
+  document.getElementById('cuenta').classList.add('abierto');
+  await pintarAvisosCuenta();
+}
+window.abrirCuenta = abrirCuenta;
+
+// Poder apagarlos importa tanto como poder prenderlos: si los avisos
+// molestan y no hay como quitarlos, se apagan desde el sistema y ya nunca
+// vuelven.
+async function pintarAvisosCuenta(){
+  const caja = document.getElementById('cuentaAvisos');
+  if(!soportaAvisos()){ caja.innerHTML = ''; return; }
+
+  const reg = await navigator.serviceWorker.getRegistration();
+  const susc = reg && await reg.pushManager.getSubscription();
+
+  caja.innerHTML = susc
+    ? `<p class="hoja-sub" style="margin-bottom:8px;">Este dispositivo recibe avisos de solicitudes, cancelaciones y pagos.</p>
+       <button class="btn btn-linea" id="btnApagarAvisos">Dejar de recibir avisos aquí</button>`
+    : `<p class="hoja-sub" style="margin-bottom:8px;">Este dispositivo no recibe avisos.</p>
+       <button class="btn" id="btnPrenderAvisos">Activar avisos</button>`;
+
+  const apagar = document.getElementById('btnApagarAvisos');
+  if(apagar) apagar.addEventListener('click', async ()=>{
+    apagar.disabled = true; apagar.textContent = 'Quitando...';
+    await quitarAvisosDeEsteAparato();
+    await pintarAvisosCuenta();
+  });
+
+  const prender = document.getElementById('btnPrenderAvisos');
+  if(prender) prender.addEventListener('click', async ()=>{
+    cerrarCuenta();
+    await pintarCajaAvisos();
+    const b = document.getElementById('btnActivarAvisos');
+    if(b) b.click();
+  });
+}
+
+async function quitarAvisosDeEsteAparato(){
+  try{
+    const reg = await navigator.serviceWorker.getRegistration();
+    const susc = reg && await reg.pushManager.getSubscription();
+    if(!susc) return;
+    // Primero en la base y luego en el navegador: al revés se pierde el
+    // endpoint y la fila queda huérfana mandando avisos a la nada.
+    await sb.rpc('quitar_dispositivo_push', { p_endpoint: susc.endpoint });
+    await susc.unsubscribe();
+  }catch(e){
+    console.warn('No se pudo quitar la suscripción push:', e.message);
+  }
+}
+
+async function salir(){
+  if(!confirm('¿Cerrar tu sesión en este dispositivo?')) return;
+
+  // Se quitan los avisos antes de salir: si no, este teléfono seguiría
+  // recibiendo avisos de un psicólogo que ya se salió, con el nombre de sus
+  // pacientes en la pantalla bloqueada.
+  await quitarAvisosDeEsteAparato();
+  await sb.auth.signOut();
+  location.reload();
+}
+window.salir = salir;
+
 /* ---------- navegación ---------- */
 document.querySelectorAll('nav button').forEach(b=>{
   b.addEventListener('click', ()=>{
@@ -838,6 +921,26 @@ if('serviceWorker' in navigator){
 
 iniciar();
 </script>
+
+<div id="cuenta">
+  <div class="hoja">
+    <div class="hoja-tirador"></div>
+    <div class="t-etq">Mi cuenta</div>
+    <div class="hoja-titulo" id="cuentaNombre">—</div>
+    <p class="hoja-sub" id="cuentaCorreo"></p>
+
+    <div id="cuentaAvisos"></div>
+
+    <p class="hoja-sub" style="margin-top:16px;">
+      Praxia completa —expedientes, pacientes y reportes— está en la computadora.
+      Esta app es para el día: tu agenda, tus sesiones y tus cobros.
+    </p>
+
+    <button class="btn btn-linea" onclick="cerrarCuenta()">Volver</button>
+    <button class="btn btn-salir" onclick="salir()">Cerrar sesión</button>
+    <p class="hoja-sub" style="text-align:center;margin:12px 0 0;" id="cuentaVersion"></p>
+  </div>
+</div>
 
 <div id="ficha">
   <div class="hoja">
