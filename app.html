@@ -105,6 +105,27 @@
   nav button.activa{color:var(--primario);}
   nav svg{width:21px;height:21px;stroke-width:1.9;}
 
+  .btn-cerrar{background:var(--primario);color:#fff;border:none;border-radius:20px;padding:7px 13px;font-size:11px;font-weight:800;white-space:nowrap;}
+
+  /* hoja inferior: en el celular se alcanza con el pulgar */
+  #cierre{position:fixed;inset:0;z-index:50;background:rgba(0,0,0,.45);display:none;align-items:flex-end;}
+  #cierre.abierto{display:flex;}
+  .hoja{
+    background:#fff;width:100%;border-radius:22px 22px 0 0;
+    padding:10px 20px calc(22px + env(safe-area-inset-bottom));
+    max-height:92dvh;overflow:auto;animation:subir .22s ease;
+  }
+  @keyframes subir{from{transform:translateY(14%);}to{transform:none;}}
+  .hoja-tirador{width:38px;height:4px;border-radius:4px;background:var(--line);margin:0 auto 16px;}
+  .hoja-titulo{font-size:19px;font-weight:800;line-height:1.2;}
+  .hoja-sub{font-size:12.5px;color:var(--gris);font-weight:600;margin:6px 0 14px;line-height:1.55;}
+  .hoja textarea{
+    width:100%;padding:14px;border:1.5px solid var(--line);border-radius:12px;
+    font-family:inherit;font-size:16px;line-height:1.5;resize:vertical;background:#fff;color:var(--ink);
+  }
+  .hoja textarea:focus{outline:none;border-color:var(--primario);}
+  .hoja .btn{margin-top:10px;}
+
   .aviso{
     background:#FFF6E5;border:1.5px solid #F0D9A8;border-radius:12px;
     padding:12px 14px;font-size:12px;font-weight:600;color:#7a5600;line-height:1.55;margin-bottom:14px;
@@ -319,6 +340,12 @@ function pintarHoy(){
 
 function filaCita(c){
   const t = hora(c.fecha_hora).split(' ');
+  // Una sesión que ya pasó su horario se puede cerrar desde aquí: es el
+  // momento en que el psicólogo tiene el celular en la mano y la sesión
+  // fresca. Lo que no se anota ahí, se pierde.
+  const yaPaso = new Date(c.fecha_hora).getTime() + (c.duracion_minutos || 50) * 60000 < Date.now();
+  const cerrable = yaPaso && c.estado !== 'completada';
+
   return `
     <div class="cita">
       <div class="hora">
@@ -329,8 +356,84 @@ function filaCita(c){
         <div class="cita-nombre">${escapar(c.pacientes?.nombre || 'Paciente')}</div>
         <div class="cita-meta">${c.duracion_minutos || 50} min${c.precio ? ' · ' + pesos(c.precio) : ''}</div>
       </div>
-      <span class="etq ${escapar(c.estado)}">${escapar(ETIQUETAS[c.estado] || c.estado)}</span>
+      ${cerrable
+        ? `<button class="btn-cerrar" onclick="abrirCierre('${escapar(c.id)}','${escapar(c.pacientes?.nombre || 'Paciente').replace(/'/g,"\\'")}')">Cerrar</button>`
+        : `<span class="etq ${escapar(c.estado)}">${escapar(ETIQUETAS[c.estado] || c.estado)}</span>`}
     </div>`;
+}
+
+/* ---------- cerrar la sesión ---------- */
+/* Marcar como hecha y dejar la nota van juntos, en una sola pantalla: son
+   dos partes del mismo momento y separarlas hace que la segunda no ocurra. */
+
+let citaCerrando = null;
+
+function abrirCierre(citaId, nombre){
+  citaCerrando = citaId;
+  document.getElementById('cierreNombre').textContent = nombre;
+  document.getElementById('cierreNota').value = '';
+  document.getElementById('cierreMsg').textContent = '';
+  document.getElementById('cierre').classList.add('abierto');
+  document.body.style.overflow = 'hidden';
+}
+
+function cerrarHoja(){
+  document.getElementById('cierre').classList.remove('abierto');
+  document.body.style.overflow = '';
+  citaCerrando = null;
+}
+
+async function guardarCierre(conNota){
+  const btn = document.getElementById('btnGuardarCierre');
+  const msg = document.getElementById('cierreMsg');
+  const nota = document.getElementById('cierreNota').value.trim();
+
+  if(conNota && !nota){
+    msg.textContent = 'Escribe algo o usa "Solo marcar como hecha".';
+    msg.className = 'msg err';
+    return;
+  }
+
+  btn.disabled = true;
+  msg.textContent = 'Guardando...'; msg.className = 'msg';
+
+  const { error } = await sb.from('citas')
+    .update({ estado: 'completada' }).eq('id', citaCerrando);
+
+  if(error){
+    msg.textContent = 'No se pudo cerrar: ' + error.message;
+    msg.className = 'msg err';
+    btn.disabled = false;
+    return;
+  }
+
+  // La nota va después de marcar la sesión: si falla el guardado de la nota,
+  // al menos la sesión quedó cerrada y el texto sigue en pantalla para
+  // reintentar, en vez de perderse.
+  if(conNota && nota){
+    const { error: errNota } = await sb.from('notas_sesion').insert({
+      cita_id: citaCerrando,
+      psicologo_id: yo.id,
+      observaciones: nota,
+    });
+    if(errNota){
+      msg.textContent = 'La sesión quedó cerrada, pero la nota no se guardó: ' + errNota.message;
+      msg.className = 'msg err';
+      btn.disabled = false;
+      await refrescar();
+      return;
+    }
+  }
+
+  cerrarHoja();
+  btn.disabled = false;
+  await refrescar();
+}
+
+async function refrescar(){
+  await cargarCitas();
+  pintarHoy();
+  pintarAgenda();
 }
 
 /* ---------- agenda ---------- */
@@ -476,6 +579,20 @@ if('serviceWorker' in navigator){
 
 iniciar();
 </script>
+
+<div id="cierre">
+  <div class="hoja">
+    <div class="hoja-tirador"></div>
+    <div class="t-etq">Cerrar sesión</div>
+    <div class="hoja-titulo" id="cierreNombre">—</div>
+    <p class="hoja-sub">Anota lo esencial mientras lo tienes fresco. Puedes completarlo después en el expediente.</p>
+    <textarea id="cierreNota" placeholder="¿Qué se trabajó? ¿Cómo llegó? ¿Qué acordaron?" rows="5"></textarea>
+    <button class="btn" id="btnGuardarCierre" onclick="guardarCierre(true)">Guardar nota y cerrar</button>
+    <button class="btn btn-linea" onclick="guardarCierre(false)">Solo marcar como hecha</button>
+    <button class="btn btn-linea" onclick="cerrarHoja()">Cancelar</button>
+    <p class="msg" id="cierreMsg"></p>
+  </div>
+</div>
 
 </body>
 </html>
