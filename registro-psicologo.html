@@ -86,6 +86,30 @@
   .nota{background:#FFF6E5;border:1.5px solid #F0D9A8;border-radius:12px;padding:13px 15px;font-size:12.5px;line-height:1.6;color:#7a5600;font-weight:600;margin-top:16px;}
   .foot{margin-top:22px;font-size:13px;color:var(--gray);text-align:center;}
   .foot a{font-weight:800;color:var(--ink);border-bottom:1.5px solid var(--primario);}
+  /* Contraseña con ojo: teclear una contraseña a ciegas en un celular es de
+     donde salen la mitad de los "no me deja entrar". */
+  .con-ojo{position:relative;}
+  .con-ojo input{padding-right:48px;}
+  .ojo{
+    position:absolute;right:6px;top:50%;transform:translateY(-50%);
+    background:none;border:none;padding:10px;cursor:pointer;font-size:17px;line-height:1;
+  }
+  .fuerza{height:4px;border-radius:3px;background:var(--line);margin-top:8px;overflow:hidden;}
+  .fuerza div{height:100%;width:0;background:var(--primario);transition:width .25s;}
+
+  .buscador{margin-bottom:12px;}
+  .sin-resultado{font-size:13px;color:var(--gray);font-weight:600;padding:14px 2px;}
+
+  /* Planes: uno al lado del otro para poder compararlos de un vistazo. */
+  .plan{border:1.5px solid var(--line);border-radius:16px;padding:18px;background:#fff;cursor:pointer;text-align:left;width:100%;font-family:inherit;margin-bottom:10px;}
+  .plan.elegida{border-color:var(--primario);background:var(--claro);}
+  .plan .nom{font-size:16px;font-weight:800;}
+  .plan .precio{font-size:22px;font-weight:800;color:var(--primario);margin:4px 0 10px;}
+  .plan .precio small{font-size:12px;color:var(--gray);font-weight:700;}
+  .plan ul{list-style:none;font-size:13px;line-height:1.75;color:var(--gray);font-weight:600;}
+  .plan li::before{content:"✓";color:var(--primario);font-weight:800;margin-right:7px;}
+  .plan li.no::before{content:"·";color:#c0392b;}
+
   .listo{text-align:center;}
   .listo .palomita{width:64px;height:64px;border-radius:50%;background:var(--claro);color:var(--primario);font-size:32px;display:flex;align-items:center;justify-content:center;margin:0 auto 20px;}
 </style>
@@ -162,9 +186,13 @@
   <!-- 4. Especialidad -->
   <section class="paso" data-paso="4">
     <h1>¿Cuál es tu <em>área</em>?</h1>
-    <p class="dice">Elige la que más se acerque. Si atiendes de todo un poco, deja General — se puede cambiar después.</p>
+    <p class="dice" id="diceEspecialidad">Elige la que más se acerque. Si atiendes de todo un poco, deja General — se puede cambiar después.</p>
 
+    <input type="search" class="buscador" id="buscaEspecialidad" placeholder="Buscar tu área..." autocomplete="off">
     <div class="chips" id="chipsEspecialidad"></div>
+    <p class="sin-resultado" id="sinEspecialidad" style="display:none;">
+      No encontramos esa área. Elige General y la afinamos después desde tu perfil.
+    </p>
 
     <div class="botones">
       <button class="btn btn-atras" onclick="volver()">Atrás</button>
@@ -212,15 +240,54 @@
     <p class="msg" id="msg6"></p>
   </section>
 
-  <!-- 7. Cuenta -->
+  <!-- 7. Cuántos pacientes -->
   <section class="paso" data-paso="7">
+    <h1>¿A cuántos pacientes <em>atiendes</em>?</h1>
+    <p class="dice">Más o menos, hoy. Nos sirve para recomendarte el plan que te conviene, no para cobrarte por paciente.</p>
+
+    <div class="opciones" id="opsPacientes"></div>
+
+    <div class="botones">
+      <button class="btn btn-atras" onclick="volver()">Atrás</button>
+      <button class="btn" onclick="avanzar()">Continuar</button>
+    </div>
+    <p class="msg" id="msg7"></p>
+  </section>
+
+  <!-- 8. Plan -->
+  <section class="paso" data-paso="8">
+    <h1>Elige tu <em>plan</em></h1>
+    <p class="dice" id="dicePlan">Puedes cambiarlo después. Si tienes código de invitación, elige el que quieras y lo aplicamos.</p>
+
+    <div id="opsPlan"></div>
+
+    <div class="botones">
+      <button class="btn btn-atras" onclick="volver()">Atrás</button>
+      <button class="btn" onclick="avanzar()">Continuar</button>
+    </div>
+    <p class="msg" id="msg8"></p>
+  </section>
+
+  <!-- 9. Cuenta -->
+  <section class="paso" data-paso="9">
     <h1>Ya casi. <em>Tu contraseña</em></h1>
     <p class="dice">Revisa que todo esté bien y crea tu acceso.</p>
 
     <div class="resumen" id="resumen"></div>
 
     <label for="password">Contraseña</label>
-    <input type="password" id="password" autocomplete="new-password" minlength="8" placeholder="Mínimo 8 caracteres">
+    <div class="con-ojo">
+      <input type="password" id="password" autocomplete="new-password" minlength="8" placeholder="Mínimo 8 caracteres">
+      <button type="button" class="ojo" onclick="verContrasena('password', this)" aria-label="Mostrar contraseña">👁</button>
+    </div>
+    <div class="fuerza"><div id="barraFuerza"></div></div>
+
+    <label for="password2">Repite tu contraseña</label>
+    <div class="con-ojo">
+      <input type="password" id="password2" autocomplete="new-password" placeholder="La misma de arriba">
+      <button type="button" class="ojo" onclick="verContrasena('password2', this)" aria-label="Mostrar contraseña">👁</button>
+    </div>
+    <p class="pista" id="pistaCoincide"></p>
 
     <label for="codigo">Código de invitación <span style="text-transform:none;font-weight:600;">(si tienes uno)</span></label>
     <input type="text" id="codigo" autocomplete="off" placeholder="Déjalo vacío si vas a contratar un plan">
@@ -235,11 +302,11 @@
       <button class="btn btn-atras" onclick="volver()">Atrás</button>
       <button class="btn" id="btnCrear" onclick="crearCuenta()">Crear mi cuenta</button>
     </div>
-    <p class="msg" id="msg7"></p>
+    <p class="msg" id="msg9"></p>
   </section>
 
-  <!-- 8. Listo -->
-  <section class="paso listo" data-paso="8">
+  <!-- 10. Listo -->
+  <section class="paso listo" data-paso="10">
     <div class="palomita">✓</div>
     <h1>Tu cuenta <em>quedó creada</em></h1>
     <p class="dice" id="textoFinal">
@@ -258,36 +325,83 @@ const SUPABASE_URL = 'https://uxbpfyeahqpertamhdxt.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_xaaA4lYAQZjdcMFRhMGtuQ_fvIeJKv7';
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-const TOTAL = 7;              // el 8 es la pantalla de listo, no cuenta
+const TOTAL = 9;              // el 10 es la pantalla de listo, no cuenta
 let paso = 1;
 let profesion = '';
 let especialidad = '';
 let tieneConsultorio = null;
+let pacientesEstimados = null;
+let plan = '';
 
 /* Las profesiones cambian lo que la cuenta puede hacer. Solo los médicos
    pueden recetar: en México un psicólogo no puede, y ofrecerle recetas
    sería meterlo en un problema legal, no darle una función. */
 const PROFESIONES = [
-  ['Psicólogo clínico', 'Consulta, evaluación y terapia'],
-  ['Psicoterapeuta', 'Terapia con formación en algún enfoque'],
+  ['Psicólogo', 'Consulta, evaluación y terapia'],
   ['Psiquiatra', 'Médico especialista; puede recetar'],
-  ['Neuropsicólogo', 'Evaluación y rehabilitación cognitiva'],
-  ['Otra profesión de la salud', 'Nutrición, terapia de lenguaje y demás'],
 ];
 
-const ESPECIALIDADES = [
-  'General', 'Ansiedad y depresión', 'Terapia de pareja', 'Infantil y adolescentes',
-  'Familiar', 'Adicciones', 'Trauma y duelo', 'Trastornos de la alimentación',
-  'Neurodesarrollo', 'Laboral y organizacional', 'Psicología del deporte', 'Sexualidad',
+/* Cada profesión tiene sus propias áreas. Enseñarle a un psiquiatra las
+   especialidades de psicología —o al revés— hace que la lista se sienta
+   escrita para alguien más. */
+const AREAS = {
+  'Psicólogo': [
+    'General', 'Psicología clínica', 'Ansiedad y depresión', 'Terapia de pareja',
+    'Infantil y adolescentes', 'Terapia familiar', 'Adicciones', 'Trauma y duelo',
+    'Trastornos de la alimentación', 'Neuropsicología', 'Psicoanálisis',
+    'Terapia cognitivo-conductual', 'Terapia humanista', 'Terapia sistémica',
+    'Terapia Gestalt', 'Psicología del deporte', 'Sexualidad y terapia sexual',
+    'Laboral y organizacional', 'Psicología educativa', 'Psicología forense',
+    'Neurodesarrollo y TEA', 'TDAH', 'Duelo perinatal', 'Violencia de género',
+    'Adultos mayores', 'Terapia breve', 'Mindfulness y tercera ola',
+  ],
+  'Psiquiatra': [
+    'General', 'Psiquiatría general', 'Psiquiatría infantil y del adolescente',
+    'Trastornos del ánimo', 'Trastornos de ansiedad', 'Psicosis y esquizofrenia',
+    'Trastorno bipolar', 'Adicciones y patología dual', 'Psicogeriatría',
+    'Trastornos de la alimentación', 'TDAH', 'Trastornos del sueño',
+    'Psiquiatría de enlace', 'Neuropsiquiatría', 'Psicofarmacología',
+    'Trastornos de la personalidad', 'Psiquiatría perinatal', 'Urgencias psiquiátricas',
+  ],
+};
+
+const CUANTOS_PACIENTES = [
+  ['1 a 7', 'Estoy empezando o llevo pocos', 7],
+  ['8 a 20', 'Consulta constante', 20],
+  ['21 a 50', 'Agenda llena', 50],
+  ['Más de 50', 'Consultorio con varios profesionales', 80],
 ];
+
+/* ---------- nombres bien escritos ---------- */
+/* La gente escribe su nombre en minúsculas, sobre todo desde el celular.
+   Guardarlo así lo deja mal en su tarjeta, en sus recetas y en los PDF del
+   expediente, que son documentos que sus pacientes van a ver.
+
+   Las partículas van en minúscula porque así se escriben en español: "María
+   de la Luz", no "María De La Luz". */
+const PARTICULAS = ['de','del','la','las','los','y','da','di','van','von','el'];
+
+function acomodarNombre(texto){
+  return String(texto || '')
+    .toLowerCase()
+    .replace(/\s+/g, ' ')
+    .trim()
+    .split(' ')
+    .map((palabra, i)=>{
+      if(i > 0 && PARTICULAS.includes(palabra)) return palabra;
+      // Respeta guiones y apóstrofes: Jean-Pierre, O'Brien.
+      return palabra.replace(/(^|[-'’])(\p{L})/gu, (_, sep, letra)=> sep + letra.toUpperCase());
+    })
+    .join(' ');
+}
 
 /* ---------- pintar opciones ---------- */
 function pintarOpciones(){
   document.getElementById('opsProfesion').innerHTML = PROFESIONES.map(([t, d])=>
     `<button type="button" class="op" data-valor="${t}"><b>${t}</b><span>${d}</span></button>`).join('');
 
-  document.getElementById('chipsEspecialidad').innerHTML = ESPECIALIDADES.map(e=>
-    `<button type="button" class="chip" data-valor="${e}">${e}</button>`).join('');
+  document.getElementById('opsPacientes').innerHTML = CUANTOS_PACIENTES.map(([t, d, n])=>
+    `<button type="button" class="op" data-valor="${n}"><b>${t} pacientes</b><span>${d}</span></button>`).join('');
 
   document.getElementById('opsConsultorio').innerHTML = `
     <button type="button" class="op" data-valor="si"><b>Sí, tengo consultorio</b><span>Propio o compartido, con nombre</span></button>
@@ -297,17 +411,21 @@ function pintarOpciones(){
     b.addEventListener('click', ()=>{
       document.querySelectorAll('#opsProfesion .op').forEach(x=> x.classList.remove('elegida'));
       b.classList.add('elegida');
+      // Cambiar de profesión invalida el área elegida: las listas no se
+      // comparten y dejarla puesta guardaría un área de la otra profesión.
+      if(profesion !== b.dataset.valor) especialidad = '';
       profesion = b.dataset.valor;
+      pintarAreas();
       document.getElementById('msg3').textContent = '';
     });
   });
 
-  document.querySelectorAll('#chipsEspecialidad .chip').forEach(b=>{
+  document.querySelectorAll('#opsPacientes .op').forEach(b=>{
     b.addEventListener('click', ()=>{
-      document.querySelectorAll('#chipsEspecialidad .chip').forEach(x=> x.classList.remove('elegida'));
+      document.querySelectorAll('#opsPacientes .op').forEach(x=> x.classList.remove('elegida'));
       b.classList.add('elegida');
-      especialidad = b.dataset.valor;
-      document.getElementById('msg4').textContent = '';
+      pacientesEstimados = parseInt(b.dataset.valor, 10);
+      document.getElementById('msg7').textContent = '';
     });
   });
 
@@ -323,6 +441,96 @@ function pintarOpciones(){
   });
 }
 pintarOpciones();
+
+/* ---------- áreas, filtradas por lo que escribe ---------- */
+/* Con casi treinta áreas, una lista completa se vuelve un muro. El buscador
+   ignora acentos: quien escribe "ansiedad" y quien escribe "Ansiedad" -o
+   "depresion" sin acento- deben encontrar lo mismo. */
+function sinAcentos(t){
+  return String(t || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+}
+
+function pintarAreas(){
+  const cont = document.getElementById('chipsEspecialidad');
+  const busca = sinAcentos(document.getElementById('buscaEspecialidad').value.trim());
+  const lista = (AREAS[profesion] || []).filter(a=> !busca || sinAcentos(a).includes(busca));
+
+  document.getElementById('diceEspecialidad').textContent = profesion === 'Psiquiatra'
+    ? 'Elige la que más se acerque a tu práctica. Si atiendes de todo, deja General.'
+    : 'Elige la que más se acerque. Si atiendes de todo un poco, deja General — se puede cambiar después.';
+
+  cont.innerHTML = lista.map(a=>
+    `<button type="button" class="chip${a === especialidad ? ' elegida' : ''}" data-valor="${a}">${a}</button>`).join('');
+
+  document.getElementById('sinEspecialidad').style.display = lista.length ? 'none' : 'block';
+
+  cont.querySelectorAll('.chip').forEach(b=>{
+    b.addEventListener('click', ()=>{
+      cont.querySelectorAll('.chip').forEach(x=> x.classList.remove('elegida'));
+      b.classList.add('elegida');
+      especialidad = b.dataset.valor;
+      document.getElementById('msg4').textContent = '';
+    });
+  });
+}
+document.getElementById('buscaEspecialidad').addEventListener('input', pintarAreas);
+
+/* ---------- planes ---------- */
+/* Se traen de la base y no se escriben aquí: si el precio o el límite cambian
+   en un lado y no en el otro, alguien contrata algo que no existe. */
+async function pintarPlanes(){
+  const cont = document.getElementById('opsPlan');
+  const { data, error } = await sb.from('planes')
+    .select('*').eq('activo', true).order('orden');
+
+  if(error || !data?.length){
+    cont.innerHTML = `<p class="sin-resultado">No pudimos cargar los planes${error ? ': ' + escapar(error.message) : ''}.
+      Puedes continuar y elegirlo al entrar.</p>`;
+    return;
+  }
+
+  cont.innerHTML = data.map(p=>{
+    const expedientes = p.limite_pacientes
+      ? `Hasta ${p.limite_pacientes} expedientes`
+      : 'Expedientes ilimitados';
+    const equipo = p.permite_equipo
+      ? `Hasta ${p.limite_psicologos || 7} psicólogos en tu consultorio`
+      : 'Para un solo psicólogo';
+
+    return `<button type="button" class="plan${p.id === plan ? ' elegida' : ''}" data-valor="${p.id}">
+      <div class="nom">${escapar(p.nombre)}</div>
+      <div class="precio">$${Number(p.precio_mensual).toLocaleString('es-MX')} <small>/ mes</small></div>
+      <ul>
+        <li>${expedientes}</li>
+        <li class="${p.permite_equipo ? '' : 'no'}">${equipo}</li>
+        <li>Agenda, videollamada y cobros</li>
+      </ul>
+    </button>`;
+  }).join('');
+
+  cont.querySelectorAll('.plan').forEach(b=>{
+    b.addEventListener('click', ()=>{
+      cont.querySelectorAll('.plan').forEach(x=> x.classList.remove('elegida'));
+      b.classList.add('elegida');
+      plan = b.dataset.valor;
+      document.getElementById('msg8').textContent = '';
+    });
+  });
+
+  sugerirPlan(data);
+}
+
+// Si dijo que lleva más pacientes de los que caben en el plan chico, se le
+// dice antes de que lo elija y se tope con el límite en su primera semana.
+function sugerirPlan(planes){
+  if(!pacientesEstimados) return;
+  const chico = planes.find(p=> p.limite_pacientes);
+  if(!chico || pacientesEstimados <= chico.limite_pacientes) return;
+
+  document.getElementById('dicePlan').innerHTML =
+    `Dijiste que llevas más de ${chico.limite_pacientes} pacientes, así que el plan
+     ${escapar(chico.nombre)} se te quedaría corto: solo guarda ${chico.limite_pacientes} expedientes.`;
+}
 
 /* ---------- moverse entre pasos ---------- */
 function mostrar(n){
@@ -378,12 +586,16 @@ function validar(n){
     if(tieneConsultorio === null) return decir(6, 'Dinos si trabajas en un consultorio.');
     if(tieneConsultorio && !v('consultorio')) return decir(6, 'Falta el nombre de tu consultorio.');
   }
+  if(n === 7 && !pacientesEstimados) return decir(7, 'Elige más o menos cuántos llevas.');
+  if(n === 8 && !plan) return decir(8, 'Elige un plan para continuar.');
   return true;
 }
 
 function avanzar(){
   if(!validar(paso)) return;
-  if(paso === 6) pintarResumen();
+  if(paso === 3) pintarAreas();     // las áreas dependen de la profesión
+  if(paso === 7) pintarPlanes();
+  if(paso === 8) pintarResumen();
   mostrar(paso + 1);
 }
 window.avanzar = avanzar;
@@ -392,16 +604,21 @@ window.avanzar = avanzar;
 // fácil corregir aquí que pedir después que le cambien la cédula.
 function pintarResumen(){
   const v = (id)=> (document.getElementById(id).value || '').trim();
+  // Se acomoda igual que al guardar. Si avanzó con Enter nunca salió del
+  // campo, y entonces el resumen le enseñaría algo distinto de lo que se va
+  // a guardar: justo lo contrario de para qué sirve un resumen.
   const filas = [
-    ['Nombre', `${v('nombre')} ${v('apPaterno')} ${v('apMaterno')}`],
-    ['Correo', v('correo')],
+    ['Nombre', acomodarNombre(`${v('nombre')} ${v('apPaterno')} ${v('apMaterno')}`)],
+    ['Correo', v('correo').toLowerCase()],
     ['Teléfono', v('telefono')],
     ['Profesión', profesion],
     ['Área', especialidad],
     ['Cédula', v('cedula')],
-    ['Ciudad', v('ciudad')],
+    ['Ciudad', acomodarNombre(v('ciudad'))],
   ];
-  if(tieneConsultorio && v('consultorio')) filas.push(['Consultorio', v('consultorio')]);
+  if(tieneConsultorio && v('consultorio')) filas.push(['Consultorio', acomodarNombre(v('consultorio'))]);
+  const plan_ = document.querySelector('#opsPlan .plan.elegida .nom');
+  if(plan_) filas.push(['Plan', plan_.textContent]);
 
   document.getElementById('resumen').innerHTML = filas
     .map(([k, val])=> `<div><span>${k}</span><b>${escapar(val)}</b></div>`).join('');
@@ -413,15 +630,52 @@ function escapar(t){
 }
 
 /* ---------- crear la cuenta ---------- */
+/* ---------- contraseña ---------- */
+function verContrasena(id, boton){
+  const campo = document.getElementById(id);
+  const oculta = campo.type === 'password';
+  campo.type = oculta ? 'text' : 'password';
+  boton.textContent = oculta ? '🙈' : '👁';
+  boton.setAttribute('aria-label', oculta ? 'Ocultar contraseña' : 'Mostrar contraseña');
+}
+window.verContrasena = verContrasena;
+
+// Se avisa mientras escribe, no al enviar: darse cuenta hasta el final de que
+// las dos no coinciden obliga a reescribir ambas a ciegas.
+function revisarContrasenas(){
+  const a = document.getElementById('password').value;
+  const b = document.getElementById('password2').value;
+  const pista = document.getElementById('pistaCoincide');
+
+  const puntos = [a.length >= 8, a.length >= 12, /[A-Z]/.test(a), /\d/.test(a), /[^\w\s]/.test(a)]
+    .filter(Boolean).length;
+  document.getElementById('barraFuerza').style.width = (puntos / 5) * 100 + '%';
+
+  if(!b){ pista.textContent = ''; pista.style.color = ''; return; }
+  const igual = a === b;
+  pista.textContent = igual ? 'Las dos coinciden.' : 'Todavía no coinciden.';
+  pista.style.color = igual ? 'var(--primario)' : 'var(--err)';
+}
+document.getElementById('password').addEventListener('input', revisarContrasenas);
+document.getElementById('password2').addEventListener('input', revisarContrasenas);
+
 async function crearCuenta(){
   const btn = document.getElementById('btnCrear');
-  const msg = document.getElementById('msg7');
+  const msg = document.getElementById('msg9');
   const v = (id)=> (document.getElementById(id).value || '').trim();
 
   const password = document.getElementById('password').value;
+  const password2 = document.getElementById('password2').value;
+
   if(password.length < 8){
     msg.textContent = 'La contraseña necesita al menos 8 caracteres.';
     msg.className = 'msg err';
+    return;
+  }
+  if(password !== password2){
+    msg.textContent = 'Las dos contraseñas no coinciden.';
+    msg.className = 'msg err';
+    document.getElementById('password2').focus();
     return;
   }
 
@@ -445,16 +699,18 @@ async function crearCuenta(){
   // El perfil se guarda por función, que valida todo del lado del servidor:
   // lo que se revisa solo en el navegador no está revisado.
   const { data: res, error: errPerfil } = await sb.rpc('registrar_perfil_psicologo', {
-    p_nombre: v('nombre'),
-    p_apellido_paterno: v('apPaterno'),
-    p_apellido_materno: v('apMaterno'),
+    p_nombre: acomodarNombre(v('nombre')),
+    p_apellido_paterno: acomodarNombre(v('apPaterno')),
+    p_apellido_materno: acomodarNombre(v('apMaterno')),
     p_telefono: v('telefono'),
     p_correo: correo,
     p_profesion: profesion,
     p_especialidad: especialidad,
     p_cedula: v('cedula'),
-    p_consultorio: tieneConsultorio ? v('consultorio') : null,
-    p_ciudad: v('ciudad'),
+    p_consultorio: tieneConsultorio ? acomodarNombre(v('consultorio')) : null,
+    p_ciudad: acomodarNombre(v('ciudad')),
+    p_pacientes_estimados: pacientesEstimados,
+    p_plan: plan || null,
   });
 
   const r = Array.isArray(res) ? res[0] : res;
@@ -479,7 +735,7 @@ async function crearCuenta(){
       'Tu código se aplica en cuanto entres. Falta que revisemos tu cédula para activar la cuenta; te avisamos por correo, normalmente el mismo día.';
   }
 
-  mostrar(8);
+  mostrar(10);
 }
 window.crearCuenta = crearCuenta;
 
@@ -500,6 +756,14 @@ document.getElementById('telefono').addEventListener('input', (e)=>{
 });
 document.getElementById('cedula').addEventListener('input', (e)=>{
   e.target.value = e.target.value.replace(/\D/g, '');
+});
+
+// El nombre se acomoda al salir del campo, no mientras teclea: corregirlo
+// letra por letra pelea con el cursor y se siente que el campo tiene vida
+// propia. Al salir ya ve cómo va a quedar en sus documentos.
+['nombre','apPaterno','apMaterno','ciudad','consultorio'].forEach(id=>{
+  const campo = document.getElementById(id);
+  if(campo) campo.addEventListener('blur', ()=>{ campo.value = acomodarNombre(campo.value); });
 });
 
 mostrar(1);
