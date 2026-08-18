@@ -133,7 +133,11 @@ END $$;
 -- config_plataforma tenia una politica de lectura para todos, y ahi vive
 -- comision_porcentaje. Solo la lee el panel de administracion, asi que no hay
 -- motivo para que un competidor -o un psicologo- vea el margen del negocio.
-DROP POLICY IF EXISTS "todos leen config plataforma" ON public.config_plataforma;
+-- Se borran tambien las nuevas antes de crearlas: si esta migracion se corre
+-- dos veces -y se corre, porque se pega a mano en el editor- la segunda
+-- fallaba por politica repetida y abortaba todo lo que viene despues.
+DROP POLICY IF EXISTS "todos leen config plataforma"  ON public.config_plataforma;
+DROP POLICY IF EXISTS "solo el admin lee la config"   ON public.config_plataforma;
 CREATE POLICY "solo el admin lee la config" ON public.config_plataforma
   FOR SELECT TO authenticated
   USING (public.es_admin());
@@ -141,6 +145,7 @@ CREATE POLICY "solo el admin lee la config" ON public.config_plataforma
 -- La politica de edicion tenia el correo escrito a mano y no revisaba la fila
 -- resultante: sin WITH CHECK se podia cambiar el id de la fila.
 DROP POLICY IF EXISTS "admin edita config plataforma" ON public.config_plataforma;
+DROP POLICY IF EXISTS "solo el admin edita la config" ON public.config_plataforma;
 CREATE POLICY "solo el admin edita la config" ON public.config_plataforma
   FOR UPDATE TO authenticated
   USING (public.es_admin()) WITH CHECK (public.es_admin());
