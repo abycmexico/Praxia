@@ -2,10 +2,10 @@
   "version": "0.0.1",
   "configurations": [
     {
-      "name": "praxia-static",
+      "name": "praxia",
       "runtimeExecutable": "npx",
-      "runtimeArgs": ["--yes", "http-server", ".", "-p", "5599", "-c-1"],
-      "port": 5599
+      "runtimeArgs": ["--yes", "serve", "-l", "4173", "."],
+      "port": 4173
     }
   ]
 }

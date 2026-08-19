@@ -1,0 +1,322 @@
+/* ═══════════════════════════════════════════════════════════════════
+   ESTILO DE PRAXIA — capa de tema
+
+   Va enlazada DESPUES del <style> de cada pagina, para ganarle sin tener
+   que reescribir doce archivos. Si algun dia hay que volver atras, se
+   quita el <link> de cada pagina y todo regresa a como estaba: por eso
+   se hizo asi y no editando las reglas originales.
+
+   La idea: superficie plana, trazo grueso, esquinas geometricas y nada
+   de sombras difusas. El suelo es verde profundo -el mismo verde de
+   Praxia en su tono mas oscuro- y encima van paneles claros.
+
+   Regla que sostiene todo: sobre suelo hondo, los elementos van claros.
+   Un elemento oscuro sobre fondo oscuro desaparece.
+   ═══════════════════════════════════════════════════════════════════ */
+
+:root{
+  /* Los de Praxia, sin cambios */
+  --primario:#2E7D32;
+  --primario-claro:#7BC043;
+  --primario-suave:#A8C99B;
+  --ink:#1A1A1A;
+  /* El gris de Praxia daba 4.29 de contraste sobre blanco, debajo del
+     minimo de 4.5 para texto normal. Se oscurece lo justo para pasar sin
+     que deje de leerse como texto secundario. */
+  --gray:#666666;
+  --gris:#666666;
+  --err:#c62828;
+  --ok:#2e7d32;
+
+  /* Derivados para poder tener suelo firme */
+  --hondo:#0C2412;
+  --hondo-2:#14351C;
+  --linea-honda:#081A0C;
+  --hueso:#F7F9F6;
+  --claro-verde:#EDF5EC;
+
+  /* El fondo de contenido se queda CLARO. Vale la pena explicar por que,
+     porque la primera version lo puso hondo y hubo que echarla atras.
+
+     Con suelo hondo, todo el texto tiene que volverse claro. Pero cada
+     pantalla tiene decenas de superficies claras propias -.cp-nombre,
+     .mid-valor, .conectar-titulo, .chip, .tag- y cada una que se olvide
+     queda blanco sobre blanco: invisible. Al medirlo pestaña por pestaña
+     aparecieron ocho, doce, dieciseis casos, y cada correccion destapaba
+     otros.
+
+     El problema no era la lista incompleta: era que equivocarse costaba
+     texto invisible. Con fondo claro, lo que se me escape se queda oscuro
+     sobre claro, o sea legible. El estilo lo dan igual el trazo grueso,
+     las esquinas geometricas, la ausencia de sombras y la barra lateral
+     honda; el suelo oscuro era lo unico que obligaba a acertarle a todo. */
+  --bg:#EEF2ED;
+  --line:#DDE4DB;
+
+  --r:8px;
+  --r-chico:6px;
+  --r-pastilla:100px;
+  --trazo:2.5px;
+}
+
+body{
+  background:var(--bg) !important;
+  color:var(--ink);
+}
+
+/* ── barra lateral ───────────────────────────────────────────────── */
+.sidebar{
+  background:var(--hondo-2) !important;
+  border-right:var(--trazo) solid var(--linea-honda) !important;
+}
+.sidebar-nav button,
+nav.sidebar-nav button{
+  color:var(--primario-suave) !important;
+  border:var(--trazo) solid transparent !important;
+  border-radius:var(--r) !important;
+  font-weight:700;
+}
+.sidebar-nav button:hover,
+nav.sidebar-nav button:hover{
+  background:var(--hondo) !important;
+  color:var(--hueso) !important;
+}
+.sidebar-nav button.active,
+nav.sidebar-nav button.active{
+  background:var(--primario-claro) !important;
+  border-color:var(--primario-claro) !important;
+  color:var(--hondo) !important;
+  font-weight:800;
+}
+
+/* Lo que vive en la barra lateral fuera del menu: nombre, rol, botones. */
+.sidebar .perfil-nombre,
+.sidebar .perfil-rol,
+.sidebar h1, .sidebar h2, .sidebar p, .sidebar span{
+  color:var(--hueso);
+}
+.sidebar .perfil-rol{color:var(--primario-suave);}
+/* La ficha de usuario al pie de la barra: sobre fondo hondo tenia que ir
+   clara y estaba quedando en gris de fondo claro. */
+.sidebar-user-nombre, .sidebar-avatar{color:var(--hueso) !important;}
+.sidebar-user-rol{color:var(--primario-suave) !important;}
+.sidebar-avatar{background:var(--primario) !important;}
+.btn-salir{
+  color:var(--primario-suave) !important;
+  border-color:var(--primario-suave) !important;
+  background:transparent !important;
+}
+.btn-salir:hover{color:var(--err) !important;border-color:var(--err) !important;}
+
+/* ── texto sobre el suelo ────────────────────────────────────────── */
+/* El modelo es simple: por omision el texto va claro, porque el suelo es
+   hondo. Adentro de un panel claro se vuelve oscuro otra vez.
+   Enumerar padres uno por uno no funcionaba: cada pantalla envuelve su
+   contenido distinto y siempre quedaba alguna con tinta oscura sobre
+   verde oscuro. */
+/* El texto se queda como estaba: oscuro sobre claro. No hay reglas de
+   color aqui a proposito. Cada una que se agregara seria una que habria
+   que acertar en doce pantallas. */
+
+/* La tarjeta destacada de la app va en verde y no debe volverse panel. */
+.tarjeta.destacada{
+  background:var(--primario) !important;
+  border-color:var(--primario) !important;
+  color:#fff !important;
+}
+.tarjeta.destacada .t-titulo,
+.tarjeta.destacada .t-detalle{color:#fff !important;}
+/* El verde palido de la etiqueta daba 3.87 sobre el verde primario. */
+.tarjeta.destacada .t-etq{color:#DFF0DD !important;}
+.tarjeta.destacada .btn-claro{
+  background:#fff !important;color:var(--primario) !important;border-color:#fff !important;
+}
+
+/* ── paneles ─────────────────────────────────────────────────────── */
+/* .caja NO va aqui a proposito: en registro-psicologo es el contenedor de
+   toda la pantalla, no una tarjeta, y pintarlo de claro convertia el fondo
+   entero en un panel. */
+.bloque, .card, .tarjeta, .panel,
+.fila-usuario, .modal, .modal-caja{
+  background:var(--hueso) !important;
+  color:var(--ink);
+  border:var(--trazo) solid var(--hueso) !important;
+  border-radius:var(--r) !important;
+  box-shadow:none !important;
+}
+.bloque h2, .bloque h3, .bloque h4,
+.card h2, .card h3, .card h4{color:var(--ink) !important;}
+.bloque .bh, .bloque .sub, .card .bh{color:var(--gray) !important;}
+
+/* ── botones ─────────────────────────────────────────────────────── */
+.btn, button.btn{
+  border-radius:var(--r) !important;
+  box-shadow:none !important;
+  font-weight:800;
+  border:var(--trazo) solid transparent;
+}
+.btn-primary, .btn-primario{
+  background:var(--primario) !important;
+  border-color:var(--primario) !important;
+  color:var(--hueso) !important;
+}
+.btn-primary:hover, .btn-primario:hover{
+  background:var(--primario-claro) !important;
+  border-color:var(--primario-claro) !important;
+  color:var(--hondo) !important;
+}
+.btn-ghost, .btn-linea, .btn-fantasma, .btn-secundario{
+  background:transparent !important;
+  border:var(--trazo) solid var(--primario) !important;
+  color:var(--primario) !important;
+}
+.btn-danger, .btn-peligro{
+  background:transparent !important;
+  border:var(--trazo) solid var(--err) !important;
+  color:var(--err) !important;
+}
+
+/* ── campos ──────────────────────────────────────────────────────── */
+input, select, textarea{
+  border:var(--trazo) solid var(--line) !important;
+  border-radius:var(--r-chico) !important;
+  box-shadow:none !important;
+}
+input:focus, select:focus, textarea:focus{
+  border-color:var(--primario) !important;
+  outline:none !important;
+}
+
+/* ── pestañas ────────────────────────────────────────────────────── */
+nav.tabs:not(.sidebar-nav) button{
+  border-radius:var(--r) !important;
+  border:var(--trazo) solid var(--primario) !important;
+  background:var(--primario) !important;
+  color:var(--hueso) !important;
+  font-weight:800;
+}
+nav.tabs:not(.sidebar-nav) button.active{
+  background:var(--hueso) !important;
+  color:var(--primario) !important;
+}
+
+/* ── datos y etiquetas ───────────────────────────────────────────── */
+/* El bloque de dato es el corazon del estilo: numero grande, etiqueta
+   chica en mayusculas, y un cuadro en la esquina como firma. */
+.card-dash, .eq-total, .cob-tarjeta, .mock-stat{
+  background:var(--hueso) !important;
+  border:var(--trazo) solid var(--hueso) !important;
+  border-radius:var(--r) !important;
+  position:relative;overflow:hidden;
+}
+.card-dash-num, .eq-total-num{
+  font-weight:900 !important;letter-spacing:-1px;color:var(--ink) !important;
+}
+.card-dash-label, .eq-total-etq{
+  font-weight:800 !important;text-transform:uppercase;letter-spacing:.7px;color:var(--gray) !important;
+}
+.card-dash::after, .eq-total::after{
+  content:"";position:absolute;right:-14px;bottom:-14px;width:44px;height:44px;
+  background:var(--claro-verde);border-radius:var(--r);
+}
+
+/* Avatares de iniciales: iban en blanco sobre verde palido, que da 1.83 de
+   contraste. Es un problema que ya existia; se arregla de paso porque las
+   iniciales son como se distingue a un paciente de otro en las listas. */
+.eq-avatar, .perfil-foto-preview, .foto-preview,
+.sidebar-avatar, .avatar, .org-avatar{
+  color:var(--hondo) !important;
+  font-weight:800 !important;
+}
+.sidebar-avatar{color:var(--hueso) !important;}
+
+.etq, .tag, .chip, .eq-rol, .eq-acceso{
+  border-radius:var(--r-chico) !important;
+  font-weight:800 !important;
+  box-shadow:none !important;
+}
+
+/* Insignias: casi todas venian con el texto del mismo tono que su fondo
+   palido y quedaban entre 3.8 y 4.45 de contraste, debajo del minimo de
+   4.5. Se oscurece el texto sin tocar el fondo, asi que siguen leyendose
+   como insignias de color pero ya se distinguen. Es un arreglo viejo que
+   se hace de paso. */
+.tag.aprobado, .ta-etq.aprobado, .etq.confirmada, .tag.confirmada,
+.pac-estado-tag, .eq-acceso.si, .etq.completada{
+  color:#17591C !important;
+}
+.tag.pendiente, .ta-etq.pendiente, .etq.pendiente_pago, .tag.pendiente_pago,
+.badge-proximamente, .pac-sin-cuenta-tag{
+  color:#7A4E00 !important;
+}
+.etq.pendiente_aprobacion{color:#33338F !important;}
+/* La insignia de superadministrador iba en verde limon sobre negro: 2.10.
+   Se pasa a fondo limon con texto hondo, que ademas la hace resaltar mas,
+   que es justo lo que debe hacer. */
+.badge-superadmin{
+  background:var(--primario-claro) !important;
+  color:var(--hondo) !important;
+}
+.tag.rechazado, .ta-etq.rechazado, .ta-etq.suspendido, .tag.suspendido{
+  color:#A31515 !important;
+}
+/* Los chips del calendario iban en verde palido sobre verde palido. */
+.cal-evento-chip{color:#17591C !important;}
+.cal-evento-chip.cancelada{color:#8A8A8A !important;}
+.cal-dia.fuera-de-mes .cal-dia-num{color:#666D68 !important;}
+
+/* ── organigrama ─────────────────────────────────────────────────── */
+.org-nodo{
+  border-width:var(--trazo) !important;
+  border-color:var(--ink) !important;
+  border-radius:var(--r-pastilla) !important;
+}
+.org-nodo.jefe{border-color:var(--primario) !important;}
+.org-conector, .org-hijos{border-color:var(--ink) !important;}
+.org-hijos .org-nodo::before{background:var(--ink) !important;}
+
+/* ── encabezado superior ─────────────────────────────────────────── */
+header.barra-superior, .topbar, .cinta-superior{
+  background:var(--hondo-2) !important;
+  border-bottom:var(--trazo) solid var(--linea-honda) !important;
+  color:var(--hueso);
+}
+
+/* ── el panorama lateral de Mi consultorio ───────────────────────── */
+.consultorio-lado .bloque{background:var(--hueso) !important;}
+.pan-dia.hoy{background:var(--primario) !important;color:var(--hueso) !important;}
+/* Los dias del mes vecino iban en gris casi blanco: se ven apagados,
+   pero deben poder leerse. */
+.pan-dia.fuera, .cal-dia.fuera-de-mes{color:#666D68 !important;}
+.pan-dia .punto{background:var(--primario-claro) !important;}
+.pan-dia.hoy .punto{background:var(--hueso) !important;}
+
+/* ── encabezado de Mi consultorio ────────────────────────────────── */
+.consultorio-logo-preview{
+  border-radius:var(--r) !important;
+  border:var(--trazo) solid var(--hueso) !important;
+}
+
+/* ── atajos ──────────────────────────────────────────────────────── */
+/* Van claros porque estan sobre el suelo hondo. */
+.atajo-consultorio{
+  background:var(--claro-verde) !important;
+  border:var(--trazo) solid var(--claro-verde) !important;
+  border-radius:var(--r) !important;
+  color:var(--ink) !important;
+  box-shadow:none !important;
+}
+.atajo-consultorio:hover{border-color:var(--primario) !important;}
+.atajo-consultorio .ac-icono{color:var(--primario);}
+.ac-texto{font-weight:800 !important;}
+
+/* ── barra de busqueda del equipo ────────────────────────────────── */
+.eq-busca input{border-color:var(--ink) !important;background:#fff !important;}
+.eq-vistas{border:var(--trazo) solid var(--hueso) !important;border-radius:var(--r) !important;}
+
+/* ── bloques plegables ───────────────────────────────────────────── */
+.plegable > summary:hover{background:var(--claro-verde) !important;}
+.plegable[open] > summary{border-bottom:var(--trazo) solid var(--claro-verde) !important;}
+
+/* ── nada de sombras difusas en ningun lado ──────────────────────── */
+*{box-shadow:none !important;}
