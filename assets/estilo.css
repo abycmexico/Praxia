@@ -35,22 +35,8 @@
   --hueso:#F7F9F6;
   --claro-verde:#EDF5EC;
 
-  /* El fondo de contenido se queda CLARO. Vale la pena explicar por que,
-     porque la primera version lo puso hondo y hubo que echarla atras.
-
-     Con suelo hondo, todo el texto tiene que volverse claro. Pero cada
-     pantalla tiene decenas de superficies claras propias -.cp-nombre,
-     .mid-valor, .conectar-titulo, .chip, .tag- y cada una que se olvide
-     queda blanco sobre blanco: invisible. Al medirlo pestaña por pestaña
-     aparecieron ocho, doce, dieciseis casos, y cada correccion destapaba
-     otros.
-
-     El problema no era la lista incompleta: era que equivocarse costaba
-     texto invisible. Con fondo claro, lo que se me escape se queda oscuro
-     sobre claro, o sea legible. El estilo lo dan igual el trazo grueso,
-     las esquinas geometricas, la ausencia de sombras y la barra lateral
-     honda; el suelo oscuro era lo unico que obligaba a acertarle a todo. */
-  --bg:#EEF2ED;
+  /* Suelo hondo, como la muestra aprobada. */
+  --bg:#0C2412;
   --line:#DDE4DB;
 
   --r:8px;
@@ -60,14 +46,101 @@
 }
 
 body{
-  background:var(--bg) !important;
+  background:var(--hondo) !important;
+  /* El color del cuerpo NO se toca: sigue oscuro.
+     El primer intento lo puso claro y entonces cada superficie clara de
+     cada pantalla heredaba texto blanco sobre blanco. Habia decenas y no
+     se acababan nunca.
+     Ahora se aclara SOLO lo que de verdad esta parado sobre el suelo, que
+     es un puñado de cosas por pantalla y se puede medir. Lo que se me
+     escape queda oscuro sobre panel claro: legible. */
   color:var(--ink);
 }
+
+/* ── lo que esta parado sobre el suelo ───────────────────────────── */
+/* Regla amplia en vez de lista: TODO lo que cuelga de una seccion se
+   aclara. Asi quedan cubiertos tambien los h2, h3, h4 y p sin clase, que
+   son varios por pantalla y no se pueden nombrar uno por uno. */
+main, .content-area, .zona, .intro,
+main > section, .content-area > section,
+main > section > *, .content-area > section > *{
+  color:var(--hueso);
+}
+.sub, p.sub, .sub-bloque, .bh, .empty,
+.consultorio-cabecera .sub, .contador-historial, .disp-ayuda, .res-vacio{
+  color:var(--primario-suave);
+}
+
+/* Y en cuanto el texto entra a una superficie clara, vuelve a ser oscuro.
+   Esta lista salio de recorrer el HTML buscando que elementos tienen fondo
+   propio, no de adivinar: es el inventario completo de las cuatro
+   pantallas grandes. */
+.bloque, .card, .tarjeta, .panel, .fila-usuario, .modal, .modal-caja,
+.plegable, .tabla-scroll, .auditoria-item, .eq-miembro, .cita,
+/* .box, .caja y .paso NO van aqui: en varias pantallas son envoltorios
+   transparentes que estan sobre el suelo, no tarjetas. Ponerlos dejaba el
+   titulo "Entrar a Praxia" en tinta oscura sobre verde oscuro. */
+.cifra, .hoja, .solicitud, .resumen,
+.card-dash, .eq-total, .kpi-card, .grafica-card, .cal-mes, .cal-semana,
+.disp-grid, .tarjeta-mi-id, .psi-perfil-card, .grid-resumen, .subir-box,
+.asignar-caja, .cob-resumen, .cob-tarjeta, .conectar-caja, .pan-bloque,
+.atajo-consultorio, .eq-caja, .op, .plan, .politicas, .hoy-pacientes-fila{
+  color:var(--ink);
+}
+/* Sus textos secundarios vuelven a gris, no al verde palido del suelo. */
+.bloque .sub, .bloque .bh, .bloque .empty,
+.card .sub, .card .bh, .panel .sub, .panel .bh, .plegable .bh,
+.modal .sub, .modal .bh{
+  color:var(--gray) !important;
+}
+/* Los envoltorios transparentes: su texto va claro como el suelo. */
+.box h1, .box p.sub, .caja h1, .caja p.dice, .box .foot, .box .foot a,
+.intro h1, .intro p, .link-olvide button{
+  color:var(--hueso) !important;
+}
+.box p.sub, .caja p.dice, .intro p, .box .foot{color:var(--primario-suave) !important;}
+/* Botones de texto suelto sobre el suelo -volver, olvide mi contraseña-. */
+.btn-volver, .link-olvide button{
+  color:var(--primario-suave) !important;
+}
+.btn-volver:hover, .link-olvide button:hover{color:var(--primario-claro) !important;}
+
+/* "Atras" tiene fondo blanco: su texto va oscuro. Se le habia puesto claro
+   por venir en la misma lista que los botones de texto suelto, y quedaba
+   blanco sobre blanco. */
+.btn-atras{
+  background:#fff !important;
+  color:var(--primario) !important;
+  border:var(--trazo) solid var(--primario) !important;
+}
+
+/* Etiquetas y textos sueltos que quedan sobre el suelo en las pantallas de
+   alta. Dentro de un panel se devuelven a gris mas abajo. */
+label, .paso-num, .foot, .pista, .dice{color:var(--primario-suave);}
+.foot a{color:var(--hueso) !important;border-bottom-color:var(--primario-claro) !important;}
+.bloque label, .card label, .modal label, .panel label, .plegable label,
+.bloque .pista, .card .pista{color:var(--gray) !important;}
+
+/* Mensajes sobre el suelo. El rojo de Praxia daba 2.93 contra el verde
+   hondo, y un mensaje de error que no se lee es peor que no tenerlo:
+   la persona se queda sin saber por que no avanza. */
+.msg.err{color:#FF9E9E !important;}
+.msg.ok{color:var(--primario-claro) !important;}
+.bloque .msg.err, .card .msg.err, .modal .msg.err, .panel .msg.err,
+.plegable .msg.err{color:var(--err) !important;}
+.bloque .msg.ok, .card .msg.ok, .modal .msg.ok, .panel .msg.ok,
+.plegable .msg.ok{color:var(--primario) !important;}
 
 /* ── barra lateral ───────────────────────────────────────────────── */
 .sidebar{
   background:var(--hondo-2) !important;
   border-right:var(--trazo) solid var(--linea-honda) !important;
+}
+/* El logotipo de Praxia es negro sobre transparente: sobre la barra honda
+   la palabra "Praxia" desaparecia. Se invierte a blanco. Es la misma
+   solucion que ya usaba el panel de administracion. */
+.sidebar img, .sidebar-logo img{
+  filter:brightness(0) invert(1);
 }
 .sidebar-nav button,
 nav.sidebar-nav button{
@@ -207,17 +280,19 @@ nav.tabs:not(.sidebar-nav) button.active{
   background:var(--hueso) !important;
   border:var(--trazo) solid var(--hueso) !important;
   border-radius:var(--r) !important;
-  position:relative;overflow:hidden;
+  padding:18px 20px !important;
+  text-align:left !important;
 }
 .card-dash-num, .eq-total-num{
   font-weight:900 !important;letter-spacing:-1px;color:var(--ink) !important;
+  line-height:1 !important;
 }
 .card-dash-label, .eq-total-etq{
-  font-weight:800 !important;text-transform:uppercase;letter-spacing:.7px;color:var(--gray) !important;
-}
-.card-dash::after, .eq-total::after{
-  content:"";position:absolute;right:-14px;bottom:-14px;width:44px;height:44px;
-  background:var(--claro-verde);border-radius:var(--r);
+  font-weight:800 !important;text-transform:uppercase;letter-spacing:.6px;
+  color:var(--gray) !important;font-size:10.5px !important;margin-top:7px !important;
+  /* Sin recorte: la etiqueta puede ocupar dos renglones antes que cortarse.
+     "COBRADO ESTE ME" no es una etiqueta, es un error. */
+  white-space:normal !important;overflow:visible !important;line-height:1.35 !important;
 }
 
 /* Avatares de iniciales: iban en blanco sobre verde palido, que da 1.83 de
