@@ -130,6 +130,52 @@ header .acciones .btn{padding:11px 20px;font-size:13px;}
   font-weight:700;line-height:1.7;background:var(--hondo);
 }
 
+/* ── panel dibujado con codigo ──────────────────────────────────── */
+/* En vez de una captura de pantalla: no depende de ningun archivo, se ve
+   nitido en cualquier pantalla y no hay que volver a tomarla cada vez que
+   cambia el panel. */
+.demo{display:grid;grid-template-columns:190px 1fr;background:var(--hueso);text-align:left;}
+.demo-lado{background:var(--hondo-2);padding:16px 12px;}
+.demo-marca{display:flex;align-items:center;gap:7px;margin-bottom:18px;padding-left:5px;}
+.demo-marca span{font-size:13px;font-weight:900;color:var(--hueso);letter-spacing:.4px;}
+.demo-cubo{width:22px;height:22px;background:var(--acento);border-radius:5px;}
+.demo-menu{display:flex;flex-direction:column;gap:3px;}
+.demo-menu div{
+  font-size:11px;font-weight:700;color:var(--suave);padding:8px 10px;border-radius:6px;
+}
+.demo-menu div.on{background:var(--acento);color:var(--hondo);font-weight:800;}
+.demo-cuerpo{padding:18px;background:#EEF2ED;}
+.demo-fila{display:flex;gap:9px;margin-bottom:12px;}
+.demo-dato{background:#fff;border:2px solid #fff;border-radius:6px;padding:11px 13px;flex:1;}
+.demo-num{font-size:19px;font-weight:900;color:var(--tinta);line-height:1;letter-spacing:-.5px;}
+.demo-etq{font-size:8px;font-weight:800;text-transform:uppercase;letter-spacing:.5px;color:var(--gris);margin-top:5px;}
+.demo-panel{background:#fff;border-radius:6px;padding:14px;}
+.demo-tit{font-size:12px;font-weight:900;color:var(--tinta);margin-bottom:11px;}
+.demo-arbol{display:flex;flex-direction:column;align-items:center;gap:0;}
+.demo-nodo{
+  display:flex;align-items:center;gap:7px;background:#fff;border:2px solid var(--tinta);
+  border-radius:40px;padding:4px 12px 4px 4px;
+}
+.demo-nodo.jefe{background:var(--primario);border-color:var(--primario);}
+.demo-ini{width:20px;height:20px;border-radius:50%;background:var(--acento);flex-shrink:0;}
+.demo-nom{font-size:9.5px;font-weight:800;color:var(--tinta);white-space:nowrap;}
+.demo-nodo.jefe .demo-nom{color:#fff;}
+.demo-baja{width:2px;height:14px;background:var(--tinta);}
+.demo-hijos{display:flex;gap:10px;border-top:2px solid var(--tinta);padding-top:14px;position:relative;}
+.demo-hijos .demo-nodo::before{content:"";position:absolute;top:-14px;left:50%;width:2px;height:14px;background:var(--tinta);}
+@media(max-width:700px){
+  .demo{grid-template-columns:1fr;}
+  .demo-lado{display:none;}
+  /* Los bloques de dato se acomodan en dos filas: en una sola no caben y
+     el marco los recortaba a media palabra. */
+  .demo-fila{flex-wrap:wrap;}
+  .demo-fila .demo-dato{flex:1 1 calc(50% - 5px);min-width:0;}
+  .demo-num{font-size:16px;}
+  .demo-hijos{flex-wrap:wrap;justify-content:center;border-top:none;padding-top:6px;}
+  .demo-hijos .demo-nodo::before{display:none;}
+  .demo-baja{display:none;}
+}
+
 /* ── tira de datos ──────────────────────────────────────────────── */
 .tira{border-top:var(--trazo) solid var(--linea-honda);border-bottom:var(--trazo) solid var(--linea-honda);
   padding:26px 24px;background:var(--hondo-2);}
@@ -322,8 +368,39 @@ footer a{color:var(--acento);font-weight:800;}
       <span class="marco-punto"></span><span class="marco-punto"></span><span class="marco-punto"></span>
       <span class="marco-url">praxia.mx · Mi consultorio</span>
     </div>
-    <img src="./assets/captura-consultorio.png" alt="Panel de Praxia: Mi consultorio" class="captura">
-    <div class="falta">Aquí va la captura de Mi consultorio<br>(assets/captura-consultorio.png)</div>
+    <div class="demo">
+      <div class="demo-lado">
+        <div class="demo-marca"><span class="demo-cubo"></span><span>Praxia</span></div>
+        <div class="demo-menu">
+          <div class="on">Mi consultorio</div>
+          <div>Resumen</div>
+          <div>Mis citas</div>
+          <div>Calendario</div>
+          <div>Mis pacientes</div>
+          <div>Cobros</div>
+        </div>
+      </div>
+      <div class="demo-cuerpo">
+        <div class="demo-fila">
+          <div class="demo-dato"><div class="demo-num">5</div><div class="demo-etq">Psicólogos</div></div>
+          <div class="demo-dato"><div class="demo-num">42</div><div class="demo-etq">Pacientes activos</div></div>
+          <div class="demo-dato"><div class="demo-num">96</div><div class="demo-etq">Sesiones este mes</div></div>
+          <div class="demo-dato"><div class="demo-num">$48,200</div><div class="demo-etq">Cobrado este mes</div></div>
+        </div>
+        <div class="demo-panel">
+          <div class="demo-tit">Equipo del consultorio</div>
+          <div class="demo-arbol">
+            <div class="demo-nodo jefe"><span class="demo-ini"></span><span class="demo-nom">Cristian Vega · Responsable</span></div>
+            <div class="demo-baja"></div>
+            <div class="demo-hijos">
+              <div class="demo-nodo"><span class="demo-ini"></span><span class="demo-nom">Ana Ruiz</span></div>
+              <div class="demo-nodo"><span class="demo-ini"></span><span class="demo-nom">Jesús Molina</span></div>
+              <div class="demo-nodo"><span class="demo-ini"></span><span class="demo-nom">Sofía Herrera</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 </section>
 
@@ -468,9 +545,27 @@ footer a{color:var(--acento);font-weight:800;}
           <span class="marco-punto" style="background:var(--linea);"></span>
           <span class="marco-url" style="background:var(--claro);color:var(--gris);">Resumen</span>
         </div>
-        <img src="./assets/captura-resumen.png" alt="Resumen del día en Praxia" class="captura">
-        <div class="falta" style="background:var(--claro);color:var(--gris);">
-          Aquí va la captura del Resumen<br>(assets/captura-resumen.png)
+        <div style="background:#EEF2ED;padding:16px;">
+          <div style="background:linear-gradient(135deg,var(--primario),var(--acento));border-radius:6px;padding:16px;margin-bottom:12px;">
+            <div style="font-size:15px;font-weight:900;color:#fff;">Buenas tardes, Adán</div>
+            <div style="font-size:10.5px;font-weight:700;color:#DFF0DD;margin-top:3px;">Miércoles, 19 de agosto</div>
+            <div style="font-size:11px;font-weight:700;color:#fff;margin-top:8px;">Tienes 1 sesión hoy, a las 7:00 p.m.</div>
+          </div>
+          <div style="background:#fff;border-left:4px solid var(--primario);border-radius:6px;padding:14px;margin-bottom:12px;">
+            <div style="font-size:8.5px;font-weight:900;letter-spacing:.8px;text-transform:uppercase;color:var(--primario);">Próxima sesión</div>
+            <div style="display:flex;align-items:center;gap:10px;margin-top:9px;">
+              <span style="width:30px;height:30px;border-radius:50%;background:var(--suave);flex-shrink:0;"></span>
+              <div>
+                <div style="font-size:12.5px;font-weight:900;color:var(--tinta);">Ana Ruiz</div>
+                <div style="font-size:10px;font-weight:600;color:var(--gris);">hoy a las 7:00 p.m. · 50 min</div>
+              </div>
+            </div>
+          </div>
+          <div class="demo-fila" style="margin:0;">
+            <div class="demo-dato"><div class="demo-num">4</div><div class="demo-etq">Pacientes activos</div></div>
+            <div class="demo-dato"><div class="demo-num">1</div><div class="demo-etq">Sesiones hoy</div></div>
+            <div class="demo-dato"><div class="demo-num">3</div><div class="demo-etq">Próximos 7 días</div></div>
+          </div>
         </div>
       </div>
     </div>
@@ -515,8 +610,37 @@ footer a{color:var(--acento);font-weight:800;}
         <span class="marco-punto"></span><span class="marco-punto"></span><span class="marco-punto"></span>
         <span class="marco-url">praxia.mx · Cobros</span>
       </div>
-      <img src="./assets/captura-cobros.png" alt="Pantalla de cobros en Praxia" class="captura">
-      <div class="falta">Aquí va la captura de Cobros<br>(assets/captura-cobros.png)</div>
+      <div style="background:#EEF2ED;padding:18px;text-align:left;">
+        <div style="background:#fff;border:2px solid var(--primario);border-radius:6px;padding:13px 16px;margin-bottom:12px;display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;">
+          <div>
+            <div style="font-size:12.5px;font-weight:900;color:var(--tinta);">Cobro en línea activo</div>
+            <div style="font-size:10.5px;font-weight:600;color:var(--gris);margin-top:2px;">El dinero llega directo a tu cuenta</div>
+          </div>
+          <span style="background:var(--claro);color:var(--primario);font-size:8.5px;font-weight:900;letter-spacing:.7px;text-transform:uppercase;padding:5px 11px;border-radius:5px;">Conectado</span>
+        </div>
+        <div class="demo-fila">
+          <div class="demo-dato"><div class="demo-num">$12,400</div><div class="demo-etq">Cobrado este mes</div></div>
+          <div class="demo-dato"><div class="demo-num">$1,800</div><div class="demo-etq">Por cobrar</div></div>
+          <div class="demo-dato"><div class="demo-num">3</div><div class="demo-etq">Pacientes con saldo</div></div>
+        </div>
+        <div class="demo-panel">
+          <div class="demo-tit">Planes mensuales</div>
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;padding:9px 0;border-bottom:1px solid var(--linea);">
+            <div>
+              <div style="font-size:11.5px;font-weight:800;color:var(--tinta);">4 sesiones al mes</div>
+              <div style="font-size:9.5px;font-weight:600;color:var(--gris);">$300 c/u · 10% de descuento</div>
+            </div>
+            <div style="font-size:14px;font-weight:900;color:var(--primario);">$1,080</div>
+          </div>
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;padding:9px 0;">
+            <div>
+              <div style="font-size:11.5px;font-weight:800;color:var(--tinta);">8 sesiones al mes</div>
+              <div style="font-size:9.5px;font-weight:600;color:var(--gris);">$300 c/u · 15% de descuento</div>
+            </div>
+            <div style="font-size:14px;font-weight:900;color:var(--primario);">$2,040</div>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 </section>
