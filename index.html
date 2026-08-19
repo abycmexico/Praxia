@@ -224,6 +224,9 @@ header .acciones .btn{padding:11px 20px;font-size:13px;}
 .rejilla-3{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;margin-top:46px;}
 @media(max-width:920px){ .rejilla-3{grid-template-columns:1fr 1fr;} }
 @media(max-width:640px){ .rejilla-3{grid-template-columns:1fr;} }
+/* Dos columnas para bloques con mas texto, que en tres se aprietan. */
+.rejilla-2{display:grid;grid-template-columns:repeat(2,1fr);gap:18px;margin-top:46px;max-width:880px;}
+@media(max-width:760px){ .rejilla-2{grid-template-columns:1fr;} }
 .func{background:#fff;border:var(--trazo) solid var(--linea);border-radius:var(--r);padding:26px 24px;}
 .func-num{font-size:11px;font-weight:900;color:var(--primario);letter-spacing:1.4px;margin-bottom:14px;display:block;}
 .func h3{font-size:19px;margin-bottom:9px;color:var(--tinta);}
@@ -365,10 +368,11 @@ footer a{color:var(--acento);font-weight:800;}
     no con el de una plataforma.
   </p>
   <div class="acciones">
-    <a class="btn btn-acento" href="./registro-psicologo.html">Crear mi cuenta</a>
-    <a class="btn btn-linea" href="#precios">Ver precios</a>
+    <a class="btn btn-acento" href="https://wa.me/525615056334?text=Hola%2C%20me%20interesa%20Praxia%20y%20quiero%20que%20me%20la%20ense%C3%B1en."
+       target="_blank" rel="noopener">Que me la enseñen</a>
+    <a class="btn btn-linea" href="./registro-psicologo.html">Crear mi cuenta</a>
   </div>
-  <p class="nota">Sin permanencia · Cancela cuando quieras · Hecho en México</p>
+  <p class="nota">15 minutos por videollamada · Sin permanencia · Hecho en México</p>
 
   <div class="marco">
     <div class="marco-barra">
@@ -521,10 +525,11 @@ footer a{color:var(--acento);font-weight:800;}
     </div>
     <div class="func">
       <span class="func-num">06</span>
-      <h3>Tu equipo, si lo tienes</h3>
-      <p>Da de alta a otros psicólogos de tu consultorio. Ves su operación —sesiones, pacientes, ingresos— sin ver sus expedientes.</p>
+      <h3>Tu consultorio completo</h3>
+      <p>Es lo que más sorprende a quien tiene equipo: ver en una sola pantalla cuántas sesiones dio cada quien, cuántos pacientes lleva y cuánto entró este mes.</p>
       <ul>
         <li>Organigrama por especialidad</li>
+        <li>Alta de psicólogos con una liga</li>
         <li>Cada quien es dueño de sus expedientes</li>
       </ul>
     </div>
@@ -692,13 +697,64 @@ footer a{color:var(--acento);font-weight:800;}
         <div class="falta">Aquí va la foto del psicólogo<br>(assets/foto-psicologo.jpg)</div>
       </div>
       <div class="persona-texto">
-        <h3>Si tienes consultorio</h3>
+        <h3>Si tienes consultorio con equipo</h3>
         <p>
-          Das de alta a los psicólogos de tu equipo y ves cómo va la operación:
-          sesiones, pacientes e ingresos de cada quien. Sin entrar a sus
+          Por primera vez ves tu consultorio completo en una pantalla: cuántas
+          sesiones dio cada psicólogo, cuántos pacientes lleva y cuánto entró
+          este mes. Sin pedirle reportes a nadie y sin entrar a sus
           expedientes, porque esos son de ellos y de sus pacientes.
         </p>
       </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── POR QUE PRAXIA ──────────────────────────────────────────── -->
+<section class="clara">
+  <div class="wrap centrado entra">
+    <span class="kicker">La diferencia</span>
+    <h2>Por qué Praxia y no otra</h2>
+    <p class="entrada">
+      Sistemas para llevar pacientes hay varios. Estas cuatro cosas son las
+      que casi ninguno hace, y son justo las que cambian tu día.
+    </p>
+  </div>
+
+  <div class="wrap rejilla-2 entra">
+    <div class="func">
+      <span class="func-num">Tu marca, no la de ellos</span>
+      <h3>El paciente ve tu consultorio</h3>
+      <p>
+        Casi todas las plataformas ponen su logo en la pantalla de tu paciente:
+        tú pagas y ellas se anuncian. En Praxia aparece tu nombre y tu logo, y
+        el nuestro no sale por ningún lado.
+      </p>
+    </div>
+    <div class="func">
+      <span class="func-num">Hecho para consulta psicológica</span>
+      <h3>No es un sistema médico adaptado</h3>
+      <p>
+        Valoración de riesgo, encuadre, tutor legal del menor, notas que no ve
+        nadie más. Eso no se le agrega después a un sistema para dentistas: se
+        piensa desde el principio o no está.
+      </p>
+    </div>
+    <div class="func">
+      <span class="func-num">Hecho en México</span>
+      <h3>Cédula, NOM-004 y pesos</h3>
+      <p>
+        Tu cédula profesional en cada documento, expediente conforme a la
+        normativa mexicana y cobros en pesos que caen en tu banco. No una
+        traducción de un producto gringo.
+      </p>
+    </div>
+    <div class="func">
+      <span class="func-num">Sin quedarte con tu dinero</span>
+      <h3>Tarifa plana, no comisión por paciente</h3>
+      <p>
+        Pagas lo mismo con 8 pacientes que con 80. Lo que ellos te pagan es
+        tuyo completo: Praxia no cobra porcentaje sobre tus honorarios.
+      </p>
     </div>
   </div>
 </section>
@@ -784,8 +840,14 @@ footer a{color:var(--acento);font-weight:800;}
     </div>
 
     <p class="nota-planes" style="color:var(--suave);">
-      Precios en pesos mexicanos, IVA incluido.<br>
+      Precios en pesos mexicanos, IVA incluido. Pagas lo mismo con 8 pacientes
+      que con 80.<br>
       Lo que tus pacientes te pagan es tuyo: Praxia no se queda con tus honorarios.
+      <br><br>
+      ¿No sabes cuál te toca?
+      <a href="https://wa.me/525615056334?text=Hola%2C%20quiero%20saber%20qu%C3%A9%20plan%20de%20Praxia%20me%20conviene."
+         target="_blank" rel="noopener" style="color:var(--acento);font-weight:800;">Pregúntame por WhatsApp</a>
+      y lo vemos en dos minutos.
     </p>
   </div>
 </section>
@@ -886,16 +948,20 @@ footer a{color:var(--acento);font-weight:800;}
 <!-- ── CIERRE ──────────────────────────────────────────────────── -->
 <section class="cierre">
   <div class="wrap entra">
-    <h2>La semana que viene vas a agendar igual</h2>
+    <h2>¿Te la enseño en 15 minutos?</h2>
     <p>
-      La pregunta es si va a ser a mano otra vez. Sin permanencia y sin
-      contratos largos: pagas el mes que usas, cancelas cuando quieras y tus
-      expedientes te los llevas siempre.
+      Nos conectamos, me cuentas cómo llevas tu consulta hoy y te enseño cómo
+      quedaría en Praxia. Sin presentación de ventas y sin compromiso: si no te
+      sirve, te lo digo yo mismo.
     </p>
     <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap;">
-      <a class="btn btn-acento" href="./registro-psicologo.html">Crear mi cuenta</a>
-      <a class="btn btn-linea" href="./login.html">Ya tengo cuenta</a>
+      <a class="btn btn-acento" href="https://wa.me/525615056334?text=Hola%2C%20me%20interesa%20Praxia%20y%20quiero%20que%20me%20la%20ense%C3%B1en."
+         target="_blank" rel="noopener">Agendar por WhatsApp</a>
+      <a class="btn btn-linea" href="./registro-psicologo.html">Prefiero entrar solo</a>
     </div>
+    <p style="font-size:12.5px;color:var(--suave);font-weight:700;margin-top:22px;">
+      Sin permanencia · Cancelas cuando quieras · Tus expedientes te los llevas
+    </p>
   </div>
 </section>
 
