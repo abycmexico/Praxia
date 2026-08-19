@@ -35,8 +35,25 @@
   --hueso:#F7F9F6;
   --claro-verde:#EDF5EC;
 
-  /* Suelo hondo, como la muestra aprobada. */
-  --bg:#0C2412;
+  /* SUELO CLARO. Se intento hondo dos veces y las dos se echo atras. La
+     razon, ya medida y no supuesta:
+
+     Las pantallas de Praxia traen 97 clases con el color del texto escrito
+     a mano -.eq-correo, .cob-etq, .plan-desc, .org-puesto...- contra solo
+     53 con fondo propio. Un color escrito en una clase le gana a cualquier
+     regla general de esta capa, asi que para aclararlos habria que
+     nombrarlos uno por uno; y cada uno que se olvide queda tinta oscura
+     sobre verde oscuro, o sea invisible, en una app donde se leen
+     expedientes.
+
+     Con suelo claro no hay nada que ganarle a nada: los 97 se quedan como
+     estaban y se leen. El caracter del estilo lo dan la barra lateral
+     honda, el trazo grueso, las esquinas geometricas y la ausencia total
+     de sombras.
+
+     Para tener el suelo hondo de verdad hay que editar el CSS de cada
+     pantalla, no sobreponerle una capa. Es un trabajo aparte. */
+  --bg:#EEF2ED;
   --line:#DDE4DB;
 
   --r:8px;
@@ -46,7 +63,7 @@
 }
 
 body{
-  background:var(--hondo) !important;
+  background:var(--bg) !important;
   /* El color del cuerpo NO se toca: sigue oscuro.
      El primer intento lo puso claro y entonces cada superficie clara de
      cada pantalla heredaba texto blanco sobre blanco. Habia decenas y no
@@ -58,33 +75,65 @@ body{
 }
 
 /* ── lo que esta parado sobre el suelo ───────────────────────────── */
-/* Regla amplia en vez de lista: TODO lo que cuelga de una seccion se
-   aclara. Asi quedan cubiertos tambien los h2, h3, h4 y p sin clase, que
-   son varios por pantalla y no se pueden nombrar uno por uno. */
-main, .content-area, .zona, .intro,
-main > section, .content-area > section,
-main > section > *, .content-area > section > *{
-  color:var(--hueso);
-}
-.sub, p.sub, .sub-bloque, .bh, .empty,
-.consultorio-cabecera .sub, .contador-historial, .disp-ayuda, .res-vacio{
-  color:var(--primario-suave);
-}
+/* TODO lo que hay dentro del area de contenido se aclara, sin excepciones
+   y a cualquier profundidad. Luego las superficies claras lo devuelven a
+   oscuro. Es al reves de como se intento antes.
+
+   Por que asi: hay 97 clases con tinta oscura escrita a mano y solo 53
+   con fondo claro. Aclarar todo y devolver 53 es una lista mas corta y
+   -sobre todo- generada del CSS, no adivinada. Ir al reves obligaba a
+   acertarle a 97 y cada omision era texto invisible sobre el suelo. */
+/* (sin reglas de color: el suelo es claro y el texto se queda como estaba) */
+
+
+
 
 /* Y en cuanto el texto entra a una superficie clara, vuelve a ser oscuro.
    Esta lista salio de recorrer el HTML buscando que elementos tienen fondo
    propio, no de adivinar: es el inventario completo de las cuatro
    pantallas grandes. */
-.bloque, .card, .tarjeta, .panel, .fila-usuario, .modal, .modal-caja,
-.plegable, .tabla-scroll, .auditoria-item, .eq-miembro, .cita,
 /* .box, .caja y .paso NO van aqui: en varias pantallas son envoltorios
    transparentes que estan sobre el suelo, no tarjetas. Ponerlos dejaba el
-   titulo "Entrar a Praxia" en tinta oscura sobre verde oscuro. */
-.cifra, .hoja, .solicitud, .resumen,
-.card-dash, .eq-total, .kpi-card, .grafica-card, .cal-mes, .cal-semana,
-.disp-grid, .tarjeta-mi-id, .psi-perfil-card, .grid-resumen, .subir-box,
-.asignar-caja, .cob-resumen, .cob-tarjeta, .conectar-caja, .pan-bloque,
-.atajo-consultorio, .eq-caja, .op, .plan, .politicas, .hoy-pacientes-fila{
+   titulo "Entrar a Praxia" en tinta oscura sobre verde oscuro.
+
+   La lista de abajo NO esta escrita a mano: sale de recorrer el CSS de las
+   seis pantallas buscando toda regla que pinte fondo claro, incluidas las
+   tarjetas que arma el JavaScript y que no existen en el marcado. La
+   version anterior se hizo leyendo solo el HTML estatico y por eso se le
+   fue .card-proxima: el nombre del paciente quedaba blanco sobre blanco. */
+.atajo-consultorio, .auditoria-item, .aviso-futuro, .ayuda, .baja-caja,
+.baja-pantalla, .bloque, .btn-claro, .btn-mini, .cal-dia, .cal-mes,
+.cal-mes-cabecera, .cal-semana, .cal-semana-cabecera, .cal-vista-btn,
+.campana-dropdown, .campo, .card, .card-dash, .card-proxima,
+.card-proxima-pac, .chip, .chip-sug, .cifra, .cita, .cob-resumen,
+.cob-tarjeta, .conectar-caja, .cr-fila-paciente, .cr-opcion, .disp-celda,
+.disp-dia-header, .disp-grid, .disp-rango-personalizado, .doc-card,
+.eq-busca, .eq-caja, .eq-liga, .eq-miembro, .eq-total, .exp-opcion,
+.fila-usuario, .filtro-historial-btn, .grafica-card, .grid-resumen,
+.hoja, .hora-btn, .imp-preview-box, .invite-box, .item-lista-clinica,
+.kpi, .kpi-card, .modal, .modal-caja, .muro, .muro-caja, .notif-item,
+.op, .org-nodo, .pac-btn, .pac-card, .pan-bloque, .pan-dia, .panel,
+.permiso-caja, .pg-caja, .plan, .plan-caja, .plan-tarjeta, .plegable,
+.politicas, .psi-box, .psi-perfil-card, .resultado-item,
+.resultados-busqueda, .resumen, .solicitud, .subir-box, .tabla-scroll,
+.tarjeta, .tarjeta-mi-id, .tarjeta-resumen, .topbar-stats,
+.asignar-caja, .cob-precio-fila,
+/* y todo lo que vaya adentro de ellas */
+.atajo-consultorio *, .auditoria-item *, .aviso-futuro *, .ayuda *,
+.baja-caja *, .bloque *, .cal-dia *, .cal-mes *, .cal-semana *,
+.campana-dropdown *, .campo *, .card *, .card-dash *, .card-proxima *,
+.card-proxima-pac *, .cifra *, .cita *, .cob-resumen *, .cob-tarjeta *,
+.conectar-caja *, .cr-fila-paciente *, .cr-opcion *, .disp-grid *,
+.doc-card *, .eq-busca *, .eq-caja *, .eq-liga *, .eq-miembro *,
+.eq-total *, .exp-opcion *, .fila-usuario *, .grafica-card *,
+.grid-resumen *, .hoja *, .imp-preview-box *, .invite-box *,
+.item-lista-clinica *, .kpi *, .kpi-card *, .modal *, .modal-caja *,
+.muro *, .muro-caja *, .notif-item *, .op *, .org-nodo *, .pac-card *,
+.pan-bloque *, .panel *, .permiso-caja *, .pg-caja *, .plan *,
+.plan-caja *, .plan-tarjeta *, .plegable *, .politicas *, .psi-box *,
+.psi-perfil-card *, .resultado-item *, .resultados-busqueda *,
+.resumen *, .solicitud *, .subir-box *, .tabla-scroll *, .tarjeta *,
+.tarjeta-mi-id *, .tarjeta-resumen *, .topbar-stats *, .asignar-caja *{
   color:var(--ink);
 }
 /* Sus textos secundarios vuelven a gris, no al verde palido del suelo. */
@@ -93,17 +142,8 @@ main > section > *, .content-area > section > *{
 .modal .sub, .modal .bh{
   color:var(--gray) !important;
 }
-/* Los envoltorios transparentes: su texto va claro como el suelo. */
-.box h1, .box p.sub, .caja h1, .caja p.dice, .box .foot, .box .foot a,
-.intro h1, .intro p, .link-olvide button{
-  color:var(--hueso) !important;
-}
-.box p.sub, .caja p.dice, .intro p, .box .foot{color:var(--primario-suave) !important;}
-/* Botones de texto suelto sobre el suelo -volver, olvide mi contraseña-. */
-.btn-volver, .link-olvide button{
-  color:var(--primario-suave) !important;
-}
-.btn-volver:hover, .link-olvide button:hover{color:var(--primario-claro) !important;}
+
+
 
 /* "Atras" tiene fondo blanco: su texto va oscuro. Se le habia puesto claro
    por venir en la misma lista que los botones de texto suelto, y quedaba
@@ -116,20 +156,10 @@ main > section > *, .content-area > section > *{
 
 /* Etiquetas y textos sueltos que quedan sobre el suelo en las pantallas de
    alta. Dentro de un panel se devuelven a gris mas abajo. */
-label, .paso-num, .foot, .pista, .dice{color:var(--primario-suave);}
-.foot a{color:var(--hueso) !important;border-bottom-color:var(--primario-claro) !important;}
 .bloque label, .card label, .modal label, .panel label, .plegable label,
 .bloque .pista, .card .pista{color:var(--gray) !important;}
 
-/* Mensajes sobre el suelo. El rojo de Praxia daba 2.93 contra el verde
-   hondo, y un mensaje de error que no se lee es peor que no tenerlo:
-   la persona se queda sin saber por que no avanza. */
-.msg.err{color:#FF9E9E !important;}
-.msg.ok{color:var(--primario-claro) !important;}
-.bloque .msg.err, .card .msg.err, .modal .msg.err, .panel .msg.err,
-.plegable .msg.err{color:var(--err) !important;}
-.bloque .msg.ok, .card .msg.ok, .modal .msg.ok, .panel .msg.ok,
-.plegable .msg.ok{color:var(--primario) !important;}
+
 
 /* ── barra lateral ───────────────────────────────────────────────── */
 .sidebar{
