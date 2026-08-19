@@ -13,6 +13,7 @@
   :root{
     --verde:#377534; --verde-suave:#5C9A59; --verde-claro:#EDF5EC;
     --ink:#111111; --gray:#7a7a7a; --line:#ececec; --bg:#fff;
+    --palomita:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'><path d='M20 6L9 17l-5-5'/></svg>");
   }
   *{box-sizing:border-box;margin:0;padding:0;}
   html{scroll-behavior:smooth;}
@@ -166,7 +167,12 @@
   .plan .desde{font-size:12px;color:#777;margin-bottom:22px;}
   .plan ul{list-style:none;margin-bottom:26px;flex:1;}
   .plan li{font-size:13px;color:#ccc;padding:8px 0 8px 22px;position:relative;line-height:1.5;}
-  .plan li::before{content:"✓";position:absolute;left:0;color:var(--verde-suave);font-weight:800;}
+  .plan li::before{
+    content:"";position:absolute;left:0;top:5px;width:14px;height:14px;
+    background:var(--verde-suave);
+    -webkit-mask:var(--palomita) center/contain no-repeat;
+            mask:var(--palomita) center/contain no-repeat;
+  }
   .plan .btn{width:100%;text-align:center;}
   .grid-precios.grid-dos{grid-template-columns:repeat(2,1fr);max-width:720px;margin:0 auto;}
   .nota-codigo{text-align:center;color:#9a9a9a;font-size:13.5px;margin-top:26px;line-height:1.6;max-width:620px;margin-left:auto;margin-right:auto;}
@@ -179,6 +185,14 @@
   .comparativa tr:last-child td{border-bottom:none;}
   .comparativa th:not(:first-child),.comparativa td:not(:first-child){text-align:center;width:150px;color:var(--verde-suave);font-weight:700;}
   .comparativa td.no{color:#5c5c5c;}
+  /* La palomita va dibujada y no como caracter: cada fuente la dibuja de su
+     propio tamaño, y en varios sistemas sale como emoji a color. */
+  .comparativa td.si::after{
+    content:"";display:inline-block;width:15px;height:15px;
+    background:currentColor;
+    -webkit-mask:var(--palomita) center/contain no-repeat;
+            mask:var(--palomita) center/contain no-repeat;
+  }
   .comparativa .col-destacada{background:#20281f;}
   .comparativa tr.grupo td{background:#161616;color:#8f8f8f;font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:1px;padding:10px 18px;}
   @media(max-width:860px){.grid-precios,.grid-precios.grid-dos{grid-template-columns:1fr;}.plan.destacado{order:-1;}}
@@ -508,33 +522,33 @@
         <tbody>
           <tr class="grupo"><td colspan="3">Tu consulta</td></tr>
           <tr><td>Pacientes y sesiones</td><td>Ilimitados</td><td class="col-destacada">Ilimitados</td></tr>
-          <tr><td>Expediente clínico de 15 secciones</td><td>✓</td><td class="col-destacada">✓</td></tr>
-          <tr><td>Notas de sesión privadas</td><td>✓</td><td class="col-destacada">✓</td></tr>
-          <tr><td>Evaluaciones y pruebas aplicadas</td><td>✓</td><td class="col-destacada">✓</td></tr>
-          <tr><td>Valoración de riesgo documentada</td><td>✓</td><td class="col-destacada">✓</td></tr>
-          <tr><td>Expediente en PDF, en tres formatos</td><td>✓</td><td class="col-destacada">✓</td></tr>
+          <tr><td>Expediente clínico de 15 secciones</td><td class="si"></td><td class="col-destacada si"></td></tr>
+          <tr><td>Notas de sesión privadas</td><td class="si"></td><td class="col-destacada si"></td></tr>
+          <tr><td>Evaluaciones y pruebas aplicadas</td><td class="si"></td><td class="col-destacada si"></td></tr>
+          <tr><td>Valoración de riesgo documentada</td><td class="si"></td><td class="col-destacada si"></td></tr>
+          <tr><td>Expediente en PDF, en tres formatos</td><td class="si"></td><td class="col-destacada si"></td></tr>
 
           <tr class="grupo"><td colspan="3">Agenda y sesiones</td></tr>
-          <tr><td>Agenda con tus reglas y disponibilidad</td><td>✓</td><td class="col-destacada">✓</td></tr>
-          <tr><td>Google Calendar con tu propia cuenta</td><td>✓</td><td class="col-destacada">✓</td></tr>
-          <tr><td>Videollamada con Google Meet</td><td>✓</td><td class="col-destacada">✓</td></tr>
-          <tr><td>El paciente propone horario y tú apruebas</td><td>✓</td><td class="col-destacada">✓</td></tr>
+          <tr><td>Agenda con tus reglas y disponibilidad</td><td class="si"></td><td class="col-destacada si"></td></tr>
+          <tr><td>Google Calendar con tu propia cuenta</td><td class="si"></td><td class="col-destacada si"></td></tr>
+          <tr><td>Videollamada con Google Meet</td><td class="si"></td><td class="col-destacada si"></td></tr>
+          <tr><td>El paciente propone horario y tú apruebas</td><td class="si"></td><td class="col-destacada si"></td></tr>
 
           <tr class="grupo"><td colspan="3">Documentos y cobros</td></tr>
-          <tr><td>Constancias, informes y canalizaciones</td><td>✓</td><td class="col-destacada">✓</td></tr>
-          <tr><td>Registro de pagos y adeudos</td><td>✓</td><td class="col-destacada">✓</td></tr>
+          <tr><td>Constancias, informes y canalizaciones</td><td class="si"></td><td class="col-destacada si"></td></tr>
+          <tr><td>Registro de pagos y adeudos</td><td class="si"></td><td class="col-destacada si"></td></tr>
 
           <tr class="grupo"><td colspan="3">Tu paciente</td></tr>
-          <tr><td>Portal con sus citas y documentos</td><td>✓</td><td class="col-destacada">✓</td></tr>
-          <tr><td>Pacientes sin cuenta obligatoria</td><td>✓</td><td class="col-destacada">✓</td></tr>
-          <tr><td>Menores de edad con tutor legal</td><td>✓</td><td class="col-destacada">✓</td></tr>
+          <tr><td>Portal con sus citas y documentos</td><td class="si"></td><td class="col-destacada si"></td></tr>
+          <tr><td>Pacientes sin cuenta obligatoria</td><td class="si"></td><td class="col-destacada si"></td></tr>
+          <tr><td>Menores de edad con tutor legal</td><td class="si"></td><td class="col-destacada si"></td></tr>
 
           <tr class="grupo"><td colspan="3">Equipo</td></tr>
           <tr><td>Psicólogos en el consultorio</td><td>Solo tú</td><td class="col-destacada">Ilimitados</td></tr>
-          <tr><td>Organigrama por especialidad</td><td class="no">—</td><td class="col-destacada">✓</td></tr>
-          <tr><td>Sesiones e ingresos de cada psicólogo</td><td class="no">—</td><td class="col-destacada">✓</td></tr>
-          <tr><td>Alta de psicólogos con liga de invitación</td><td class="no">—</td><td class="col-destacada">✓</td></tr>
-          <tr><td>Permiso de expedientes que decide cada quien</td><td class="no">—</td><td class="col-destacada">✓</td></tr>
+          <tr><td>Organigrama por especialidad</td><td class="no">—</td><td class="col-destacada si"></td></tr>
+          <tr><td>Sesiones e ingresos de cada psicólogo</td><td class="no">—</td><td class="col-destacada si"></td></tr>
+          <tr><td>Alta de psicólogos con liga de invitación</td><td class="no">—</td><td class="col-destacada si"></td></tr>
+          <tr><td>Permiso de expedientes que decide cada quien</td><td class="no">—</td><td class="col-destacada si"></td></tr>
         </tbody>
       </table>
     </div>

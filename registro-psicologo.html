@@ -11,7 +11,12 @@
 <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
-  :root{--primario:#2E7D32;--suave:#A8C99B;--claro:#EDF5EC;--bg:#F7F9F6;--ink:#1A1A1A;--gray:#7a7a7a;--line:#e6e6e6;--err:#c62828;}
+  :root{
+    --primario:#2E7D32;--suave:#A8C99B;--claro:#EDF5EC;--bg:#F7F9F6;
+    --ink:#1A1A1A;--gray:#7a7a7a;--line:#e6e6e6;--err:#c62828;
+    --palomita:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'><path d='M20 6L9 17l-5-5'/></svg>");
+    --tache:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='3' stroke-linecap='round'><path d='M18 6L6 18M6 6l12 12'/></svg>");
+  }
   *{box-sizing:border-box;margin:0;padding:0;}
   body{background:var(--bg);color:var(--ink);font-family:'Montserrat',Arial,sans-serif;font-weight:500;min-height:100dvh;display:flex;flex-direction:column;}
   a{color:inherit;text-decoration:none;}
@@ -92,8 +97,10 @@
   .con-ojo input{padding-right:48px;}
   .ojo{
     position:absolute;right:6px;top:50%;transform:translateY(-50%);
-    background:none;border:none;padding:10px;cursor:pointer;font-size:17px;line-height:1;
+    background:none;border:none;padding:10px;cursor:pointer;line-height:0;color:var(--gray);
   }
+  .ojo:hover{color:var(--primario);}
+  .ojo svg{width:19px;height:19px;display:block;}
   .fuerza{height:4px;border-radius:3px;background:var(--line);margin-top:8px;overflow:hidden;}
   .fuerza div{height:100%;width:0;background:var(--primario);transition:width .25s;}
 
@@ -107,11 +114,20 @@
   .plan .precio{font-size:22px;font-weight:800;color:var(--primario);margin:4px 0 10px;}
   .plan .precio small{font-size:12px;color:var(--gray);font-weight:700;}
   .plan ul{list-style:none;font-size:13px;line-height:1.75;color:var(--gray);font-weight:600;}
-  .plan li::before{content:"✓";color:var(--primario);font-weight:800;margin-right:7px;}
-  .plan li.no::before{content:"·";color:#c0392b;}
+  /* La palomita va dibujada, no como caracter: cada fuente la dibuja de su
+     propio tamaño y en algunos sistemas sale como emoji a color. */
+  .plan li{display:flex;align-items:flex-start;gap:8px;}
+  .plan li::before{
+    content:"";flex-shrink:0;width:15px;height:15px;margin-top:3px;
+    background:currentColor;color:var(--primario);
+    -webkit-mask:var(--palomita) center/contain no-repeat;
+            mask:var(--palomita) center/contain no-repeat;
+  }
+  .plan li.no::before{color:#c0392b;--palomita:var(--tache);}
 
   .listo{text-align:center;}
-  .listo .palomita{width:64px;height:64px;border-radius:50%;background:var(--claro);color:var(--primario);font-size:32px;display:flex;align-items:center;justify-content:center;margin:0 auto 20px;}
+  .listo .palomita{width:64px;height:64px;border-radius:50%;background:var(--claro);color:var(--primario);display:flex;align-items:center;justify-content:center;margin:0 auto 20px;}
+  .listo .palomita svg{width:30px;height:30px;}
 </style>
 </head>
 <body>
@@ -278,14 +294,14 @@
     <label for="password">Contraseña</label>
     <div class="con-ojo">
       <input type="password" id="password" autocomplete="new-password" minlength="8" placeholder="Mínimo 8 caracteres">
-      <button type="button" class="ojo" onclick="verContrasena('password', this)" aria-label="Mostrar contraseña">👁</button>
+      <button type="button" class="ojo" onclick="verContrasena('password', this)" aria-label="Mostrar contraseña"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg></button>
     </div>
     <div class="fuerza"><div id="barraFuerza"></div></div>
 
     <label for="password2">Repite tu contraseña</label>
     <div class="con-ojo">
       <input type="password" id="password2" autocomplete="new-password" placeholder="La misma de arriba">
-      <button type="button" class="ojo" onclick="verContrasena('password2', this)" aria-label="Mostrar contraseña">👁</button>
+      <button type="button" class="ojo" onclick="verContrasena('password2', this)" aria-label="Mostrar contraseña"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg></button>
     </div>
     <p class="pista" id="pistaCoincide"></p>
 
@@ -307,7 +323,9 @@
 
   <!-- 10. Listo -->
   <section class="paso listo" data-paso="10">
-    <div class="palomita">✓</div>
+    <div class="palomita">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
+    </div>
     <h1>Tu cuenta <em>quedó creada</em></h1>
     <p class="dice" id="textoFinal">
       Falta que revisemos tu cédula para activarla. Te avisamos por correo, normalmente el mismo día.
@@ -635,7 +653,14 @@ function verContrasena(id, boton){
   const campo = document.getElementById(id);
   const oculta = campo.type === 'password';
   campo.type = oculta ? 'text' : 'password';
-  boton.textContent = oculta ? '🙈' : '👁';
+
+  // El ojo tachado indica "tocar para ocultar", que es lo que hace ahora.
+  const ojoAbierto = '<path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/>';
+  const ojoTachado = '<path d="M17.9 17.9A10.4 10.4 0 0 1 12 19c-6.4 0-10-7-10-7a18.5 18.5 0 0 1 5.1-5.9"/>'
+    + '<path d="M9.9 4.2A9.1 9.1 0 0 1 12 4c6.4 0 10 7 10 7a18.4 18.4 0 0 1-2.2 3.2"/>'
+    + '<path d="M14.1 14.1a3 3 0 1 1-4.2-4.2"/><line x1="2" y1="2" x2="22" y2="22"/>';
+
+  boton.querySelector('svg').innerHTML = oculta ? ojoTachado : ojoAbierto;
   boton.setAttribute('aria-label', oculta ? 'Ocultar contraseña' : 'Mostrar contraseña');
 }
 window.verContrasena = verContrasena;

@@ -31,7 +31,7 @@
   .tarjetas-rol{display:flex;flex-direction:column;gap:14px;}
   .tarjeta-rol{width:100%;margin-top:0;text-align:left;background:#fff;border:1.5px solid var(--line);border-radius:16px;padding:20px;display:flex;flex-direction:column;gap:2px;color:var(--ink);}
   .tarjeta-rol:hover{border-color:var(--primario);background:#FAFAF8;}
-  .tr-icono{font-size:26px;margin-bottom:6px;}
+  .tr-icono{width:28px;height:28px;margin:0 auto 8px;display:block;color:var(--primario);}
   .tr-titulo{font-size:15.5px;font-weight:800;}
   .tr-desc{font-size:12.5px;color:var(--gray);font-weight:600;}
   .btn-volver{width:auto;margin:0 0 18px;padding:0;background:none;color:var(--gray);font-size:13px;font-weight:700;text-align:left;}
@@ -69,12 +69,12 @@
 
     <div class="tarjetas-rol">
       <button class="tarjeta-rol" id="btnRolPsicologo">
-        <span class="tr-icono">🧑‍⚕️</span>
+        <svg class="tr-icono" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a5 5 0 0 0-5 5v1a5 5 0 0 0 10 0V7a5 5 0 0 0-5-5z"/><path d="M6 14a6 6 0 0 0-3 5.2V21h18v-1.8A6 6 0 0 0 18 14"/><path d="M12 14v4"/><path d="M10 16h4"/></svg>
         <span class="tr-titulo">Soy psicólogo</span>
         <span class="tr-desc">Llevo mi consultorio en Praxia</span>
       </button>
       <button class="tarjeta-rol" id="btnRolPaciente">
-        <span class="tr-icono">🧑</span>
+        <svg class="tr-icono" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21v-1a6 6 0 0 1 6-6h4a6 6 0 0 1 6 6v1"/></svg>
         <span class="tr-titulo">Soy paciente</span>
         <span class="tr-desc">Vengo a ver a mi psicólogo</span>
       </button>

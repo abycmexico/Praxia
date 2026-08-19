@@ -107,7 +107,9 @@
   .ilc-cabecera strong{font-size:14px;flex:1;}
   .ilc-fecha{font-size:11.5px;color:var(--gray);}
   .ilc-meta{font-size:11px;color:var(--gray);margin-top:4px;}
-  .btn-eliminar-mini{background:none;border:none;color:var(--gray);cursor:pointer;font-size:14px;padding:2px 6px;border-radius:6px;}
+  .btn-eliminar-mini{background:none;border:none;color:var(--gray);cursor:pointer;padding:4px;border-radius:6px;line-height:0;}
+  .btn-eliminar-mini svg{width:14px;height:14px;}
+  .alerta-icono{width:17px;height:17px;vertical-align:-3px;margin-right:5px;}
   .btn-eliminar-mini:hover{background:#FBEAEA;color:var(--err);}
   .tag-objetivo{font-size:10px;font-weight:800;letter-spacing:.4px;text-transform:uppercase;padding:3px 9px;border-radius:12px;}
   .tag-objetivo.tag-pendiente{background:#f2f2f2;color:#666;}
@@ -264,7 +266,7 @@
         </div>
 
         <div class="tarjeta-resumen" id="resAlertaCard" style="display:none;">
-          <h4>⚠ Alerta clínica documentada</h4>
+          <h4><svg class="alerta-icono" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M10.3 3.9L1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12" y2="17"/></svg>Alerta clínica documentada</h4>
           <p id="resAlerta" class="res-texto res-alerta"></p>
         </div>
 
@@ -1427,7 +1429,7 @@ async function cargarEvaluacionesPrueba(){
       <div class="ilc-cabecera">
         <strong>${escapar(ev.nombre_prueba)}</strong>
         <span class="ilc-fecha">${ev.fecha_aplicacion ? new Date(ev.fecha_aplicacion+'T12:00:00').toLocaleDateString('es-MX') : 'Sin fecha'}</span>
-        <button type="button" class="btn-eliminar-mini" onclick="eliminarEvaluacionPrueba('${ev.id}')" title="Eliminar">✕</button>
+        <button type="button" class="btn-eliminar-mini" onclick="eliminarEvaluacionPrueba('${ev.id}')" title="Eliminar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg></button>
       </div>
       ${ev.motivo ? `<p><em>Motivo:</em> ${escapar(ev.motivo)}</p>` : ''}
       ${ev.resultado ? `<p><em>Resultado:</em> ${escapar(ev.resultado)}</p>` : ''}
@@ -1511,7 +1513,7 @@ async function cargarObjetivos(){
       <div class="ilc-cabecera">
         <strong>${escapar(o.objetivo)}</strong>
         <span class="tag-objetivo tag-${o.estado}">${etiquetasEstado[o.estado] || o.estado}</span>
-        <button type="button" class="btn-eliminar-mini" onclick="eliminarObjetivo('${o.id}')" title="Eliminar">✕</button>
+        <button type="button" class="btn-eliminar-mini" onclick="eliminarObjetivo('${o.id}')" title="Eliminar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg></button>
       </div>
       ${o.descripcion ? `<p>${escapar(o.descripcion)}</p>` : ''}
       <div class="ilc-meta">
@@ -1600,7 +1602,7 @@ async function cargarMedicamentos(){
       <div class="ilc-cabecera">
         <strong>${escapar(m.nombre)}</strong>
         <span class="ilc-fecha">${m.dosis ? escapar(m.dosis) : ''}</span>
-        <button type="button" class="btn-eliminar-mini" onclick="eliminarMedicamento('${m.id}')" title="Eliminar">✕</button>
+        <button type="button" class="btn-eliminar-mini" onclick="eliminarMedicamento('${m.id}')" title="Eliminar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg></button>
       </div>
       ${m.frecuencia ? `<p><em>Frecuencia:</em> ${escapar(m.frecuencia)}</p>` : ''}
       ${m.medico_prescribe ? `<p><em>Prescrito por:</em> ${escapar(m.medico_prescribe)}</p>` : ''}
@@ -1892,12 +1894,22 @@ async function cargarDocumentos(){
   `).join('');
 }
 
+/* Iconos de linea, del mismo trazo que el resto de la interfaz. Un emoji
+   trae su propio color y se dibuja distinto en cada sistema operativo. */
 function iconoPara(mime){
-  if(!mime) return '📄';
-  if(mime.includes('pdf')) return '📕';
-  if(mime.includes('image')) return '🖼️';
-  if(mime.includes('word') || mime.includes('document')) return '📝';
-  return '📄';
+  const svg = (contenido)=>
+    `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"
+      stroke-linecap="round" stroke-linejoin="round" style="width:19px;height:19px;">${contenido}</svg>`;
+
+  const hoja = '<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/>';
+
+  if(mime && mime.includes('pdf'))
+    return svg(hoja + '<path d="M9 15h1.5a1.5 1.5 0 0 0 0-3H9v6"/><path d="M14 18v-6h1a2 2 0 0 1 0 4h-1"/>');
+  if(mime && mime.includes('image'))
+    return svg('<rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/>');
+  if(mime && (mime.includes('word') || mime.includes('document')))
+    return svg(hoja + '<path d="M8 13h8"/><path d="M8 17h5"/>');
+  return svg(hoja);
 }
 
 function formatoTamano(bytes){
