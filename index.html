@@ -250,8 +250,14 @@ header .acciones .btn{padding:11px 20px;font-size:13px;}
   background:#fff;border:var(--trazo) solid var(--linea);border-radius:var(--r);
   overflow:hidden;display:flex;flex-direction:column;
 }
-.persona-foto{background:var(--claro);display:flex;align-items:flex-end;justify-content:center;min-height:260px;}
-.persona-foto img{width:100%;height:auto;}
+/* Las fotos son panoramicas y muy anchas: a lo ancho completo la persona
+   sale diminuta. Se recorta a una proporcion mas cerrada y se encuadra un
+   poco arriba del centro, que es donde queda la cara. */
+.persona-foto{
+  background:var(--claro);display:flex;align-items:center;justify-content:center;
+  aspect-ratio:16/10;overflow:hidden;
+}
+.persona-foto img{width:100%;height:100%;object-fit:cover;object-position:center 32%;}
 .persona-foto .falta{padding:40px 20px;text-align:center;color:var(--gris);font-size:12.5px;font-weight:700;line-height:1.7;align-self:center;}
 .persona-texto{padding:24px;}
 .persona-texto h3{font-size:18px;color:var(--tinta);margin-bottom:8px;}
@@ -659,8 +665,8 @@ footer a{color:var(--acento);font-weight:800;}
   <div class="wrap gente entra">
     <div class="persona">
       <div class="persona-foto">
-        <img src="./assets/foto-psicologa.png" alt="Psicóloga en consulta" class="captura">
-        <div class="falta">Aquí va la foto de la psicóloga<br>(assets/foto-psicologa.png)</div>
+        <img src="./assets/foto-psicologa.jpg" alt="Psicóloga en consulta" class="captura">
+        <div class="falta">Aquí va la foto de la psicóloga<br>(assets/foto-psicologa.jpg)</div>
       </div>
       <div class="persona-texto">
         <h3>Si trabajas por tu cuenta</h3>
@@ -674,8 +680,8 @@ footer a{color:var(--acento);font-weight:800;}
 
     <div class="persona">
       <div class="persona-foto">
-        <img src="./assets/foto-psicologo.png" alt="Psicólogo en su consultorio" class="captura">
-        <div class="falta">Aquí va la foto del psicólogo<br>(assets/foto-psicologo.png)</div>
+        <img src="./assets/foto-psicologo.jpg" alt="Psicólogo en su consultorio" class="captura">
+        <div class="falta">Aquí va la foto del psicólogo<br>(assets/foto-psicologo.jpg)</div>
       </div>
       <div class="persona-texto">
         <h3>Si tienes consultorio</h3>
