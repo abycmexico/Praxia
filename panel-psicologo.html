@@ -440,6 +440,30 @@
   .campo textarea:focus{outline:none;border-color:var(--primario);}
   .sub-titulo{font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.6px;color:var(--gris);margin:20px 0 10px;}
   .opcional{font-weight:600;text-transform:none;letter-spacing:0;color:var(--gris);}
+
+  /* Bloques que se abren al tocarlos. Dieciocho campos abiertos de golpe
+     abruman y hacen ver la pantalla como un tramite; cerrados se ve lo que
+     hay y se entra solo a lo que se va a cambiar.
+
+     Va con <details> y no con JavaScript: asi funciona con el teclado y no
+     depende de que un script cargue. */
+  .plegable{padding:0;overflow:hidden;}
+  .plegable > summary{
+    list-style:none;cursor:pointer;padding:18px 20px;
+    display:flex;align-items:center;justify-content:space-between;gap:14px;
+  }
+  .plegable > summary::-webkit-details-marker{display:none;}
+  .plegable > summary:hover{background:var(--claro);}
+  .pleg-titulo{display:block;font-size:15.5px;font-weight:800;}
+  .pleg-pista{display:block;font-size:12.5px;color:var(--gris);font-weight:600;margin-top:2px;}
+  .pleg-flecha{width:19px;height:19px;color:var(--gris);flex-shrink:0;transition:transform .2s;}
+  .plegable[open] > summary{border-bottom:1.5px solid var(--line);}
+  .plegable[open] .pleg-flecha{transform:rotate(180deg);}
+  /* Todo lo que va dentro se separa del borde; el summary trae su propio
+     relleno para que la zona clickeable llegue a las orillas. */
+  .plegable > *:not(summary){margin-left:20px;margin-right:20px;}
+  .plegable > *:last-child{margin-bottom:18px;}
+  .plegable > .bh{margin-top:16px;}
   textarea.alto{min-height:130px;}
   .barra-guardar{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;margin-top:4px;}
   @media(max-width:640px){.rejilla{grid-template-columns:1fr;}}
@@ -966,8 +990,15 @@
           </button>
         </div>
 
-        <div class="bloque" style="margin-top:22px;">
-          <h3>Identidad de tu consultorio</h3>
+        <details class="bloque plegable" style="margin-top:22px;">
+          <summary>
+            <span>
+              <span class="pleg-titulo">Identidad de tu consultorio</span>
+              <span class="pleg-pista" id="pistaConsultorio">Nombre, lema, contacto y horario</span>
+            </span>
+            <svg class="pleg-flecha" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
+          </summary>
+
           <p class="bh">Esto es lo que ve tu paciente al entrar a su panel, y lo que se imprime en las constancias e informes que él entrega en su escuela o su trabajo.</p>
 
           <div class="campo">
@@ -1013,10 +1044,17 @@
 
           <button class="btn btn-primary" id="btnGuardarNombreConsultorio" style="width:auto;margin-top:14px;">Guardar</button>
           <p class="msg" id="msgNombreConsultorio"></p>
-        </div>
+        </details>
 
-        <div class="bloque">
-          <h3>Tu perfil profesional</h3>
+        <details class="bloque plegable">
+          <summary>
+            <span>
+              <span class="pleg-titulo">Tu perfil profesional</span>
+              <span class="pleg-pista" id="pistaPerfil">Cómo te ven tus pacientes</span>
+            </span>
+            <svg class="pleg-flecha" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
+          </summary>
+
           <p class="bh">Cómo te presentas ante tus pacientes. Tu nombre y tu cédula aparecen en cada documento que firmas.</p>
 
           <div class="rejilla-alta">
@@ -1061,7 +1099,7 @@
 
           <button class="btn btn-primary" id="btnGuardarMiPerfil" style="width:auto;margin-top:14px;">Guardar mi perfil</button>
           <p class="msg" id="msgMiPerfil"></p>
-        </div>
+        </details>
 
         <div class="bloque" id="bloqueEquipo">
           <h3>Equipo del consultorio</h3>
@@ -4363,6 +4401,8 @@ async function cargarMiConsultorio(){
     if(el) el.value = yo[columna] ?? '';
   });
 
+  pintarPistasPlegables();
+
   const logo = document.getElementById('logoPreview');
   if(config.logo_url){
     logo.style.backgroundImage = `url(${config.logo_url})`;
@@ -4370,6 +4410,26 @@ async function cargarMiConsultorio(){
   } else {
     logo.textContent = (config.nombre_consultorio || yo.nombre || '?').charAt(0).toUpperCase();
   }
+}
+
+/* Cerrado, el bloque enseña lo que ya tiene dentro. Un titulo solo obliga a
+   abrirlo para averiguar si falta algo, que es justo lo que se queria
+   evitar al plegarlo. */
+function pintarPistasPlegables(){
+  const resumir = (partes, vacio)=>{
+    const hay = partes.filter(p=> p && String(p).trim());
+    return hay.length ? hay.slice(0, 3).join(' · ') : vacio;
+  };
+
+  const c = document.getElementById('pistaConsultorio');
+  if(c) c.textContent = resumir(
+    [config.nombre_consultorio, config.lema, config.telefono_contacto],
+    'Sin llenar — tu paciente no ve nada de esto todavía');
+
+  const p = document.getElementById('pistaPerfil');
+  if(p) p.textContent = resumir(
+    [[yo.titulo_profesional, yo.nombre].filter(Boolean).join(' '), yo.especialidad, yo.enfoque],
+    'Sin llenar');
 }
 
 /* ---------- guardar mi perfil profesional ---------- */
@@ -4413,6 +4473,7 @@ document.getElementById('btnGuardarMiPerfil')?.addEventListener('click', async (
     const cual = h < 12 ? 'Buenos días' : h < 19 ? 'Buenas tardes' : 'Buenas noches';
     saludo.textContent = `${cual}, ${yo.nombre.split(' ')[0]}`;
   }
+  pintarPistasPlegables();
   msg.textContent = 'Guardado.';
   msg.className = 'msg ok';
   btn.disabled = false;
@@ -4446,6 +4507,7 @@ document.getElementById('btnGuardarNombreConsultorio').addEventListener('click',
   // pantalla sigue mostrando el anterior hasta recargar.
   const espejo = document.getElementById('nombreConsultorio');
   if(espejo) espejo.value = cambios.nombre_consultorio || '';
+  pintarPistasPlegables();
   msg.textContent = 'Guardado.';
   msg.className = 'msg ok';
   btn.disabled = false;
