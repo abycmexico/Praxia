@@ -133,6 +133,74 @@
   .eq-kpis strong{color:var(--ink);font-weight:800;}
   @media(max-width:700px){ .eq-totales{grid-template-columns:repeat(2,1fr);} }
 
+  /* --- buscador y cambio de vista --- */
+  .eq-barra{display:flex;gap:10px;align-items:center;margin-top:18px;}
+  .eq-busca{flex:1;position:relative;display:flex;align-items:center;}
+  .eq-busca svg{position:absolute;left:13px;width:16px;height:16px;color:var(--gris);pointer-events:none;}
+  .eq-busca input{
+    width:100%;padding:11px 14px 11px 38px;border:1.5px solid var(--line);border-radius:11px;
+    font-family:inherit;font-size:14px;background:#fff;color:var(--ink);
+  }
+  .eq-busca input:focus{outline:none;border-color:var(--primario);}
+  .eq-vistas{display:flex;gap:4px;background:#fff;border:1.5px solid var(--line);border-radius:11px;padding:3px;}
+  .eq-vista{background:none;border:none;padding:7px 9px;border-radius:8px;cursor:pointer;color:var(--gris);line-height:0;}
+  .eq-vista svg{width:18px;height:18px;}
+  .eq-vista.activa{background:var(--claro);color:var(--primario);}
+  @media(max-width:560px){ .eq-barra{flex-wrap:wrap;} }
+
+  /* --- organigrama --- */
+  /* Praxia tiene un solo nivel: responsable y equipo. Se dibuja con lineas
+     reales en vez de sangrias, porque una jerarquia se entiende de un
+     vistazo cuando se ve el trazo que une. */
+  .organigrama{padding:26px 4px 8px;overflow-x:auto;}
+  .org-nivel{display:flex;justify-content:center;}
+  .org-conector{height:26px;border-left:1.5px solid var(--line);width:0;margin:0 auto;}
+  /* Sin salto de linea a proposito: si los nodos se acomodaran en dos filas,
+     los tramos verticales de la segunda quedarian colgando en el aire, sin
+     nada de donde bajar. Se desliza de lado, como un organigrama de verdad. */
+  .org-hijos{
+    display:flex;gap:16px;justify-content:center;flex-wrap:nowrap;
+    border-top:1.5px solid var(--line);padding-top:26px;position:relative;
+    min-width:min-content;
+  }
+  /* Cada hijo cuelga de la linea horizontal con su propio tramo vertical. */
+  .org-hijos .org-nodo::before{
+    content:"";position:absolute;top:-26px;left:50%;width:1.5px;height:26px;background:var(--line);
+  }
+
+  /* En pantalla angosta el arbol se vuelve una rama vertical: obligar a
+     desplazar de lado para ver a tu propio equipo seria peor que cambiar el
+     dibujo. */
+  @media(max-width:760px){
+    .org-nivel{justify-content:flex-start;}
+    .org-conector{margin:0 0 0 28px;}
+    .org-hijos{
+      flex-direction:column;align-items:flex-start;gap:12px;
+      border-top:none;border-left:1.5px solid var(--line);
+      margin-left:28px;padding-top:0;padding-left:24px;
+    }
+    .org-hijos .org-nodo::before{
+      top:50%;left:-24px;width:24px;height:1.5px;
+    }
+    .org-nodo{width:100%;}
+  }
+  .org-nodo{
+    position:relative;display:flex;align-items:center;gap:11px;
+    background:#fff;border:1.5px solid var(--line);border-radius:40px;
+    padding:8px 20px 8px 8px;min-width:190px;transition:border-color .15s, transform .15s;
+  }
+  .org-nodo:hover{border-color:var(--primario);transform:translateY(-2px);}
+  .org-nodo.jefe{background:var(--primario);border-color:var(--primario);color:#fff;}
+  .org-nodo.jefe .org-puesto{color:#cfe6cd;}
+  .org-nodo.jefe .org-avatar{background:#fff;color:var(--primario);}
+  .org-avatar{
+    width:40px;height:40px;border-radius:50%;background:var(--claro);color:var(--primario);
+    display:flex;align-items:center;justify-content:center;font-weight:800;font-size:13px;flex-shrink:0;
+  }
+  .org-texto{display:flex;flex-direction:column;min-width:0;}
+  .org-nombre{font-size:13.5px;font-weight:800;white-space:nowrap;}
+  .org-puesto{font-size:11.5px;color:var(--gris);font-weight:600;white-space:nowrap;}
+
   /* permiso de expedientes: interruptor del colaborador */
   .permiso-caja{display:flex;align-items:center;gap:16px;justify-content:space-between;background:#fff;border:1.5px solid var(--line);border-radius:14px;padding:16px 18px;margin-top:16px;}
   .permiso-caja.activo{border-color:var(--primario-suave);background:#F7FAF6;}
@@ -361,6 +429,17 @@
   .bloque .bh{font-size:12px;color:var(--gray);margin-bottom:18px;line-height:1.6;}
   .rejilla{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
   .campo{margin-bottom:0;}
+  /* Los bloques de identidad tienen varios campos seguidos, no uno suelto. */
+  .bloque .campo + .campo,
+  .bloque .rejilla-alta + .campo,
+  .bloque .campo + .rejilla-alta{margin-top:14px;}
+  .campo textarea{
+    width:100%;padding:12px 14px;border:1.5px solid var(--line);border-radius:10px;
+    font-family:inherit;font-size:14px;line-height:1.6;resize:vertical;background:#fff;color:var(--ink);
+  }
+  .campo textarea:focus{outline:none;border-color:var(--primario);}
+  .sub-titulo{font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.6px;color:var(--gris);margin:20px 0 10px;}
+  .opcional{font-weight:600;text-transform:none;letter-spacing:0;color:var(--gris);}
   textarea.alto{min-height:130px;}
   .barra-guardar{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;margin-top:4px;}
   @media(max-width:640px){.rejilla{grid-template-columns:1fr;}}
@@ -888,13 +967,100 @@
         </div>
 
         <div class="bloque" style="margin-top:22px;">
-          <h3>Nombre del consultorio</h3>
-          <p class="bh">Es lo primero que ve tu paciente al entrar a su panel.</p>
+          <h3>Identidad de tu consultorio</h3>
+          <p class="bh">Esto es lo que ve tu paciente al entrar a su panel, y lo que se imprime en las constancias e informes que él entrega en su escuela o su trabajo.</p>
+
           <div class="campo">
+            <label for="nombreConsultorioTab">Nombre</label>
             <input type="text" id="nombreConsultorioTab" placeholder="Ej. Consultorio de la Dra. Ana Ruiz">
           </div>
+
+          <div class="campo">
+            <label for="lemaConsultorio">Lema <span class="opcional">(una línea)</span></label>
+            <input type="text" id="lemaConsultorio" maxlength="90" placeholder="Ej. Acompañarte a estar mejor">
+          </div>
+
+          <div class="campo">
+            <label for="descConsultorio">Descripción <span class="opcional">(un párrafo)</span></label>
+            <textarea id="descConsultorio" rows="3" maxlength="400" placeholder="Quiénes son, a quién atienden y cómo trabajan."></textarea>
+          </div>
+
+          <h4 class="sub-titulo">Cómo te contactan</h4>
+          <div class="rejilla-alta">
+            <div>
+              <label for="telConsultorio">Teléfono</label>
+              <input type="tel" id="telConsultorio" placeholder="55 1234 5678">
+            </div>
+            <div>
+              <label for="correoConsultorio">Correo</label>
+              <input type="email" id="correoConsultorio" placeholder="contacto@tuconsultorio.mx">
+            </div>
+            <div>
+              <label for="webConsultorio">Sitio o redes</label>
+              <input type="text" id="webConsultorio" placeholder="tuconsultorio.mx">
+            </div>
+            <div>
+              <label for="horarioConsultorio">Horario</label>
+              <input type="text" id="horarioConsultorio" placeholder="Lun a vie, 9am a 7pm">
+            </div>
+          </div>
+
+          <div class="campo">
+            <label for="dirConsultorio">Dirección</label>
+            <input type="text" id="dirConsultorio" placeholder="Calle, número, colonia, ciudad">
+            <p class="bh" style="margin-top:6px;">Si atiendes solo en línea, déjala vacía.</p>
+          </div>
+
           <button class="btn btn-primary" id="btnGuardarNombreConsultorio" style="width:auto;margin-top:14px;">Guardar</button>
           <p class="msg" id="msgNombreConsultorio"></p>
+        </div>
+
+        <div class="bloque">
+          <h3>Tu perfil profesional</h3>
+          <p class="bh">Cómo te presentas ante tus pacientes. Tu nombre y tu cédula aparecen en cada documento que firmas.</p>
+
+          <div class="rejilla-alta">
+            <div>
+              <label for="miTitulo">Título</label>
+              <input type="text" id="miTitulo" maxlength="20" placeholder="Psic., Mtro., Dr.">
+            </div>
+            <div>
+              <label for="miNombre">Nombre completo</label>
+              <input type="text" id="miNombre">
+            </div>
+            <div>
+              <label for="miEspecialidad">Especialidad</label>
+              <input type="text" id="miEspecialidad" placeholder="Ej. Psicología infantil">
+            </div>
+            <div>
+              <label for="miEnfoque">Enfoque</label>
+              <input type="text" id="miEnfoque" placeholder="Ej. Cognitivo-conductual">
+            </div>
+            <div>
+              <label for="miCedula">Cédula profesional</label>
+              <input type="text" id="miCedula" inputmode="numeric">
+            </div>
+            <div>
+              <label for="miAnios">Años de experiencia</label>
+              <input type="number" id="miAnios" min="0" max="70">
+            </div>
+            <div>
+              <label for="miTelefono">Teléfono</label>
+              <input type="tel" id="miTelefono">
+            </div>
+            <div>
+              <label for="miCiudad">Ciudad</label>
+              <input type="text" id="miCiudad">
+            </div>
+          </div>
+
+          <div class="campo">
+            <label for="miBio">Sobre ti <span class="opcional">(lo lee tu paciente)</span></label>
+            <textarea id="miBio" rows="4" maxlength="600" placeholder="Tu formación, con quién trabajas y cómo es una sesión contigo."></textarea>
+          </div>
+
+          <button class="btn btn-primary" id="btnGuardarMiPerfil" style="width:auto;margin-top:14px;">Guardar mi perfil</button>
+          <p class="msg" id="msgMiPerfil"></p>
         </div>
 
         <div class="bloque" id="bloqueEquipo">
@@ -2551,6 +2717,11 @@ async function pintarEquipoDueno(cont){
       <div class="eq-total"><div class="eq-total-num">${dinero(totalIngresos)}</div><div class="eq-total-etq">Cobrado este mes</div></div>
     </div>`;
 
+  // Se guardan para que el buscador y el cambio de vista no tengan que
+  // volver a preguntarle todo a la base cada vez que se teclea una letra.
+  equipoCache = equipo || [];
+  kpisCache = { sesionesPor, ingresosPor, pacientesPor };
+
   cont.innerHTML = `
     <div class="eq-caja">
       <div class="eq-caja-titulo">${escapar(miConsultorio?.nombre || 'Mi consultorio')}</div>
@@ -2559,7 +2730,22 @@ async function pintarEquipoDueno(cont){
 
     ${resumen}
 
-    <div style="margin-top:18px;">${filas || '<p class="empty">Todavía no hay nadie más en el equipo.</p>'}</div>
+    <div class="eq-barra">
+      <div class="eq-busca">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+        <input type="search" id="buscaEquipo" placeholder="Buscar por nombre, correo o área..." autocomplete="off">
+      </div>
+      <div class="eq-vistas">
+        <button type="button" class="eq-vista activa" data-vista="lista" title="Ver como lista">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg>
+        </button>
+        <button type="button" class="eq-vista" data-vista="organigrama" title="Ver como organigrama">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="2" width="6" height="5" rx="1"/><rect x="2" y="17" width="6" height="5" rx="1"/><rect x="16" y="17" width="6" height="5" rx="1"/><path d="M12 7v4M5 17v-2h14v2M12 11v4"/></svg>
+        </button>
+      </div>
+    </div>
+
+    <div id="equipoVista" style="margin-top:16px;">${filas || '<p class="empty">Todavía no hay nadie más en el equipo.</p>'}</div>
 
     <button class="btn btn-primary" id="btnMostrarAlta" style="width:auto;margin-top:16px;">Dar de alta a un psicólogo</button>
 
@@ -2597,6 +2783,145 @@ async function pintarEquipoDueno(cont){
     document.getElementById('altaNombre').focus();
   });
   document.getElementById('btnInvitar').addEventListener('click', generarInvitacion);
+
+  document.getElementById('buscaEquipo').addEventListener('input', pintarVistaEquipo);
+  document.querySelectorAll('.eq-vista').forEach(b=>{
+    b.addEventListener('click', ()=>{
+      document.querySelectorAll('.eq-vista').forEach(x=> x.classList.remove('activa'));
+      b.classList.add('activa');
+      vistaEquipo = b.dataset.vista;
+      pintarVistaEquipo();
+    });
+  });
+}
+
+/* ---------- las dos formas de ver al equipo ---------- */
+/* La lista sirve para trabajar -pedir accesos, retirar a alguien-, y el
+   organigrama para entender de un vistazo como esta armado el consultorio.
+   Son la misma informacion; lo que cambia es la pregunta que responden. */
+
+let equipoCache = [];
+let kpisCache = { sesionesPor:{}, ingresosPor:{}, pacientesPor:{} };
+let vistaEquipo = 'lista';
+
+// Busca sin acentos: quien escribe "nino" debe encontrar "Psicología infantil
+// del niño", y quien teclea rapido rara vez pone acentos.
+function sinTildes(t){
+  return String(t || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+}
+
+function tarjetaDeMiembro(p){
+  const dinero = n => '$' + Number(n||0).toLocaleString('es-MX');
+  const { sesionesPor, ingresosPor, pacientesPor } = kpisCache;
+
+  return `
+    <div class="eq-miembro">
+      <a class="eq-perfil-link" href="./psicologo-consultorio.html?id=${escapar(p.id)}" title="Ver perfil de ${escapar(p.nombre)}">
+        <div class="eq-avatar">${escapar(iniciales(p.nombre))}</div>
+        <div class="eq-datos">
+          <div class="eq-nombre">${escapar(p.nombre)}${p.id === yo.id ? ' (tú)' : ''}</div>
+          <div class="eq-correo">${escapar(p.correo)}</div>
+          <div class="eq-kpis">
+            <span><strong>${pacientesPor[p.id] || 0}</strong> pacientes</span>
+            <span><strong>${sesionesPor[p.id] || 0}</strong> sesiones</span>
+            <span><strong>${dinero(ingresosPor[p.id])}</strong> cobrado</span>
+          </div>
+        </div>
+      </a>
+      <div class="eq-acciones">
+        <span class="eq-rol ${p.rol_consultorio === 'dueno' ? '' : 'colaborador'}">${p.rol_consultorio === 'dueno' ? 'Responsable' : 'Colaborador'}</span>
+        ${p.rol_consultorio === 'dueno' ? '' : (
+          p.comparte_expedientes
+            ? '<span class="eq-acceso si">Comparte expedientes</span>'
+            : `<button type="button" class="eq-pedir" data-id="${escapar(p.id)}" data-nombre="${escapar(p.nombre)}">Pedir acceso a expedientes</button>`
+        )}
+        ${p.rol_consultorio === 'dueno' ? '' : `<button type="button" class="eq-quitar" data-id="${escapar(p.id)}" data-nombre="${escapar(p.nombre)}">Retirar</button>`}
+      </div>
+    </div>`;
+}
+
+function pintarVistaEquipo(){
+  const cont = document.getElementById('equipoVista');
+  if(!cont) return;
+
+  const busca = sinTildes(document.getElementById('buscaEquipo')?.value.trim());
+  const lista = equipoCache.filter(p=> !busca
+    || sinTildes(p.nombre).includes(busca)
+    || sinTildes(p.correo).includes(busca)
+    || sinTildes(p.especialidad).includes(busca));
+
+  if(!lista.length){
+    cont.innerHTML = busca
+      ? `<p class="empty">Nadie en tu equipo coincide con “${escapar(document.getElementById('buscaEquipo').value.trim())}”.</p>`
+      : '<p class="empty">Todavía no hay nadie más en el equipo.</p>';
+    return;
+  }
+
+  cont.innerHTML = vistaEquipo === 'organigrama'
+    ? pintarOrganigrama(lista)
+    : pintarListaPorArea(lista);
+
+  // Los botones se vuelven a crear en cada pintada, asi que se reconectan.
+  cont.querySelectorAll('.eq-quitar').forEach(b=>
+    b.addEventListener('click', ()=> retirarDelConsultorio(b.dataset.id, b.dataset.nombre)));
+  cont.querySelectorAll('.eq-pedir').forEach(b=>
+    b.addEventListener('click', ()=> pedirAccesoExpedientes(b.dataset.id, b.dataset.nombre)));
+}
+window.pintarVistaEquipo = pintarVistaEquipo;
+
+function pintarListaPorArea(lista){
+  const porArea = {};
+  lista.forEach(p=>{
+    const area = (p.especialidad || '').trim() || 'Sin especialidad definida';
+    (porArea[area] = porArea[area] || []).push(p);
+  });
+
+  return Object.keys(porArea).sort((a,b)=>{
+    if(a === 'Sin especialidad definida') return 1;
+    if(b === 'Sin especialidad definida') return -1;
+    return a.localeCompare(b, 'es');
+  }).map(area=> `
+    <div class="eq-area">
+      <div class="eq-area-titulo">${escapar(area)} <span>${porArea[area].length}</span></div>
+      ${porArea[area]
+        .sort((a,b)=> (a.rol_consultorio === 'dueno' ? -1 : 1) - (b.rol_consultorio === 'dueno' ? -1 : 1))
+        .map(tarjetaDeMiembro).join('')}
+    </div>`).join('');
+}
+
+/* El organigrama es un arbol de verdad, con el responsable arriba y una
+   linea que baja hacia cada colaborador. Praxia tiene un solo nivel de
+   jerarquia -responsable y equipo-, asi que dibujarlo con mas niveles seria
+   inventar una estructura que no existe. */
+function pintarOrganigrama(lista){
+  const jefe = lista.find(p=> p.rol_consultorio === 'dueno');
+  const equipo = lista.filter(p=> p.rol_consultorio !== 'dueno')
+    .sort((a,b)=> a.nombre.localeCompare(b.nombre, 'es'));
+
+  const nodo = (p, tipo)=> `
+    <a class="org-nodo ${tipo}" href="./psicologo-consultorio.html?id=${escapar(p.id)}"
+       title="Ver perfil de ${escapar(p.nombre)}">
+      <span class="org-avatar">${escapar(iniciales(p.nombre))}</span>
+      <span class="org-texto">
+        <span class="org-nombre">${escapar(p.nombre)}${p.id === yo.id ? ' (tú)' : ''}</span>
+        <span class="org-puesto">${escapar(p.especialidad || (tipo === 'jefe' ? 'Responsable' : 'Psicólogo'))}</span>
+      </span>
+    </a>`;
+
+  if(!jefe){
+    // Puede pasar si el filtro escondio al responsable: se dibuja plano en
+    // vez de inventar un arbol sin raiz.
+    return `<div class="organigrama"><div class="org-hijos">${equipo.map(p=> nodo(p,'hijo')).join('')}</div></div>`;
+  }
+
+  return `
+    <div class="organigrama">
+      <div class="org-nivel">${nodo(jefe, 'jefe')}</div>
+      ${equipo.length ? `
+        <div class="org-conector"></div>
+        <div class="org-hijos">${equipo.map(p=> nodo(p,'hijo')).join('')}</div>
+      ` : '<p class="empty" style="margin-top:14px;">Todavía trabajas solo en tu consultorio.</p>'}
+    </div>`;
 }
 
 function pintarEquipoColaborador(cont){
@@ -3999,9 +4324,44 @@ const CAMPOS_CONFIG = {
 };
 
 /* ---------- Mi consultorio ---------- */
+/* Cada campo de la pantalla y su columna en la base. Tenerlos en un solo
+   lugar evita que se agregue un campo al formulario y se olvide guardarlo:
+   un campo que se llena y no se guarda es peor que no tenerlo. */
+const CAMPOS_IDENTIDAD = {
+  nombreConsultorioTab: 'nombre_consultorio',
+  lemaConsultorio:      'lema',
+  descConsultorio:      'descripcion',
+  telConsultorio:       'telefono_contacto',
+  correoConsultorio:    'correo_contacto',
+  webConsultorio:       'sitio_web',
+  horarioConsultorio:   'horario_atencion',
+  dirConsultorio:       'direccion_consultorio',
+};
+
+const CAMPOS_MI_PERFIL = {
+  miTitulo:       'titulo_profesional',
+  miNombre:       'nombre',
+  miEspecialidad: 'especialidad',
+  miEnfoque:      'enfoque',
+  miCedula:       'cedula_profesional',
+  miAnios:        'anios_experiencia',
+  miTelefono:     'telefono',
+  miCiudad:       'ciudad',
+  miBio:          'bio',
+};
+
 async function cargarMiConsultorio(){
   document.getElementById('tituloConsultorio').textContent = config.nombre_consultorio || 'Mi consultorio';
-  document.getElementById('nombreConsultorioTab').value = config.nombre_consultorio || '';
+
+  Object.entries(CAMPOS_IDENTIDAD).forEach(([campo, columna])=>{
+    const el = document.getElementById(campo);
+    if(el) el.value = config[columna] || '';
+  });
+
+  Object.entries(CAMPOS_MI_PERFIL).forEach(([campo, columna])=>{
+    const el = document.getElementById(campo);
+    if(el) el.value = yo[columna] ?? '';
+  });
 
   const logo = document.getElementById('logoPreview');
   if(config.logo_url){
@@ -4012,15 +4372,30 @@ async function cargarMiConsultorio(){
   }
 }
 
-document.getElementById('btnGuardarNombreConsultorio').addEventListener('click', async ()=>{
-  const btn = document.getElementById('btnGuardarNombreConsultorio');
-  const msg = document.getElementById('msgNombreConsultorio');
+/* ---------- guardar mi perfil profesional ---------- */
+document.getElementById('btnGuardarMiPerfil')?.addEventListener('click', async ()=>{
+  const btn = document.getElementById('btnGuardarMiPerfil');
+  const msg = document.getElementById('msgMiPerfil');
   btn.disabled = true;
   msg.className = 'msg';
   msg.textContent = 'Guardando...';
 
-  const nuevoNombre = document.getElementById('nombreConsultorioTab').value.trim() || null;
-  const { error } = await sb.from('configuracion').update({ nombre_consultorio: nuevoNombre }).eq('psicologo_id', yo.id);
+  const cambios = {};
+  Object.entries(CAMPOS_MI_PERFIL).forEach(([campo, columna])=>{
+    const v = (document.getElementById(campo)?.value || '').trim();
+    cambios[columna] = v || null;
+  });
+
+  // El nombre no puede quedar vacio: es lo que firma sus documentos.
+  if(!cambios.nombre){
+    msg.textContent = 'Tu nombre no puede quedar vacío: es el que firma tus documentos.';
+    msg.className = 'msg err';
+    btn.disabled = false;
+    return;
+  }
+  cambios.anios_experiencia = parseInt(cambios.anios_experiencia, 10) || null;
+
+  const { error } = await sb.from('psicologos').update(cambios).eq('id', yo.id);
 
   if(error){
     msg.textContent = 'No se pudo guardar: ' + error.message;
@@ -4029,9 +4404,48 @@ document.getElementById('btnGuardarNombreConsultorio').addEventListener('click',
     return;
   }
 
-  config.nombre_consultorio = nuevoNombre;
-  document.getElementById('tituloConsultorio').textContent = nuevoNombre || 'Mi consultorio';
-  document.getElementById('nombreConsultorio').value = nuevoNombre || ''; // mismo campo en Configuración
+  Object.assign(yo, cambios);
+  // El saludo del inicio y las iniciales del menu llevan su nombre: si no se
+  // refrescan, cambiarlo aqui parece que no hizo nada.
+  const saludo = document.getElementById('saludoNombre');
+  if(saludo){
+    const h = new Date().getHours();
+    const cual = h < 12 ? 'Buenos días' : h < 19 ? 'Buenas tardes' : 'Buenas noches';
+    saludo.textContent = `${cual}, ${yo.nombre.split(' ')[0]}`;
+  }
+  msg.textContent = 'Guardado.';
+  msg.className = 'msg ok';
+  btn.disabled = false;
+});
+
+document.getElementById('btnGuardarNombreConsultorio').addEventListener('click', async ()=>{
+  const btn = document.getElementById('btnGuardarNombreConsultorio');
+  const msg = document.getElementById('msgNombreConsultorio');
+  btn.disabled = true;
+  msg.className = 'msg';
+  msg.textContent = 'Guardando...';
+
+  const cambios = {};
+  Object.entries(CAMPOS_IDENTIDAD).forEach(([campo, columna])=>{
+    const v = (document.getElementById(campo)?.value || '').trim();
+    cambios[columna] = v || null;
+  });
+
+  const { error } = await sb.from('configuracion').update(cambios).eq('psicologo_id', yo.id);
+
+  if(error){
+    msg.textContent = 'No se pudo guardar: ' + error.message;
+    msg.className = 'msg err';
+    btn.disabled = false;
+    return;
+  }
+
+  Object.assign(config, cambios);
+  document.getElementById('tituloConsultorio').textContent = cambios.nombre_consultorio || 'Mi consultorio';
+  // El mismo nombre vive tambien en Configuracion: si no se refresca, esa
+  // pantalla sigue mostrando el anterior hasta recargar.
+  const espejo = document.getElementById('nombreConsultorio');
+  if(espejo) espejo.value = cambios.nombre_consultorio || '';
   msg.textContent = 'Guardado.';
   msg.className = 'msg ok';
   btn.disabled = false;
