@@ -335,36 +335,41 @@
   .mid-desc{font-size:11.5px;color:var(--gray);margin-top:6px;line-height:1.5;}
   /* Menu de acciones de UN paciente. Antes el "+" abria la lista completa y
      habia que volver a elegir a la persona cuya tarjeta acababas de tocar. */
-  /* Anclado a la tarjeta y no a la pantalla. Con position:fixed habia que
-     calcular a mano si cabia abajo o arriba, y ese calculo no se pudo
-     comprobar de forma confiable. Aqui la posicion es correcta por
-     construccion: cuelga de la tarjeta que lo abrio y se desplaza con ella. */
-  #menuPaciente{
-    position:absolute;top:calc(100% + 6px);right:14px;z-index:200;
-    background:#fff;border:1.5px solid var(--line);
-    border-radius:12px;padding:6px;min-width:230px;display:none;
-    box-shadow:0 8px 28px rgba(0,0,0,.14);
+  /* Ventana centrada, encima de todo. Antes colgaba de la tarjeta: empujaba
+     el diseño en vez de flotar. Y la version con coordenadas a mano no se
+     pudo comprobar. Centrado no hay nada que calcular: siempre queda bien y
+     siempre por encima. */
+  #fondoMenuPaciente{
+    position:fixed;inset:0;z-index:199;display:none;
+    background:rgba(12,36,18,.45);
+    align-items:center;justify-content:center;padding:20px;
   }
-  #menuPaciente.abierto{display:block;}
+  #fondoMenuPaciente.abierto{display:flex;}
+  #menuPaciente{
+    background:#fff;border-radius:14px;padding:8px;
+    width:100%;max-width:330px;max-height:86vh;overflow-y:auto;
+  }
   .mp-titulo{
-    font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.5px;
-    color:var(--gray);padding:8px 12px 6px;
+    font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.6px;
+    color:var(--gray);padding:10px 12px 9px;border-bottom:1.5px solid var(--line);
+    margin-bottom:6px;
   }
   #menuPaciente button, #menuPaciente a{
-    display:flex;align-items:center;gap:10px;width:100%;background:none;border:none;
-    padding:10px 12px;border-radius:8px;font-family:inherit;font-size:13.5px;
+    display:flex;align-items:center;gap:12px;width:100%;background:none;border:none;
+    padding:13px 12px;border-radius:9px;font-family:inherit;font-size:14px;
     font-weight:700;color:var(--ink);cursor:pointer;text-align:left;
   }
   #menuPaciente button:hover, #menuPaciente a:hover{background:var(--claro,#EDF5EC);color:var(--primario);}
-  #menuPaciente svg{width:16px;height:16px;flex-shrink:0;color:var(--gray);}
+  #menuPaciente svg{width:17px;height:17px;flex-shrink:0;color:var(--gray);}
   #menuPaciente button:hover svg, #menuPaciente a:hover svg{color:var(--primario);}
-  #menuPaciente hr{border:none;border-top:1px solid var(--line);margin:5px 8px;}
-  /* Capa para cerrar al tocar fuera. No lleva color: solo captura el toque. */
-  #fondoMenuPaciente{position:fixed;inset:0;z-index:199;display:none;}
-  /* La tarjeta con el menu abierto se pone por encima de las demas, para que
-     el menu no quede tapado por la tarjeta de al lado. */
-  .pac-card:has(#menuPaciente.abierto){z-index:201;}
-  #fondoMenuPaciente.abierto{display:block;}
+  .mp-cerrar{margin-top:6px;border-top:1.5px solid var(--line);padding-top:6px;}
+  .mp-cerrar button{justify-content:center;color:var(--gray) !important;font-weight:800;}
+
+  /* En el celular sube desde abajo, que es donde alcanza el pulgar. */
+  @media(max-width:560px){
+    #fondoMenuPaciente{align-items:flex-end;padding:0;}
+    #menuPaciente{max-width:none;border-radius:16px 16px 0 0;padding:8px 8px 22px;}
+  }
 
   .pac-busca{position:relative;display:flex;align-items:center;margin-bottom:14px;}
   .pac-busca svg{position:absolute;left:14px;width:17px;height:17px;color:var(--gray);pointer-events:none;}
@@ -981,8 +986,7 @@
       <button class="btn btn-ghost" id="btnCopiarMiId">Copiar</button>
     </div>
 
-    <div id="fondoMenuPaciente"></div>
-  <div id="menuPaciente"></div>
+    <div id="fondoMenuPaciente"><div id="menuPaciente"></div></div>
 
   <div class="pac-busca">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
@@ -5822,7 +5826,6 @@ window.crearSesionDesdeTarjeta = crearSesionDesdeTarjeta;
    Ahora abre lo que se puede hacer con ESE paciente. */
 
 function cerrarMenuPaciente(){
-  document.getElementById('menuPaciente').classList.remove('abierto');
   document.getElementById('fondoMenuPaciente').classList.remove('abierto');
 }
 window.cerrarMenuPaciente = cerrarMenuPaciente;
@@ -5877,25 +5880,22 @@ function abrirMenuPaciente(pacienteId, boton){
       Enviar correo</a>`);
   }
 
-  menu.innerHTML = `<div class="mp-titulo">${nombreCorto}</div>` + opciones.join('');
+  // Nombre completo en el título: al ser una ventana centrada, ya no se ve
+  // la tarjeta de la que salió y hay que decir de quién se trata.
+  menu.innerHTML =
+    `<div class="mp-titulo">${escapar(p.nombre)}</div>`
+    + opciones.join('')
+    + `<div class="mp-cerrar"><button type="button" onclick="cerrarMenuPaciente()">Cerrar</button></div>`;
 
-  // Se mete dentro de la tarjeta que lo abrió: así cuelga de ella, se
-  // desplaza con ella y no hay que calcular coordenadas de pantalla.
-  const tarjeta = boton.closest('.pac-card');
-  if(tarjeta) tarjeta.appendChild(menu);
-
-  menu.classList.add('abierto');
   document.getElementById('fondoMenuPaciente').classList.add('abierto');
-
-  // Si la tarjeta está pegada al borde derecho, el menú se abre hacia el
-  // otro lado para no salirse.
-  const caja = menu.getBoundingClientRect();
-  menu.style.right = caja.right > innerWidth - 8 ? 'auto' : '14px';
-  menu.style.left  = caja.right > innerWidth - 8 ? '14px' : 'auto';
 }
 window.abrirMenuPaciente = abrirMenuPaciente;
 
-document.getElementById('fondoMenuPaciente')?.addEventListener('click', cerrarMenuPaciente);
+// Solo cierra al tocar el fondo. Sin el filtro, tocar cualquier opción del
+// menú también cerraría, porque el clic sube hasta aquí.
+document.getElementById('fondoMenuPaciente')?.addEventListener('click', (e)=>{
+  if(e.target.id === 'fondoMenuPaciente') cerrarMenuPaciente();
+});
 addEventListener('keydown', e=>{ if(e.key === 'Escape') cerrarMenuPaciente(); });
 
 /* ---------- cobrar una sesión con una liga ---------- */
