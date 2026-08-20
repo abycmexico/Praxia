@@ -22,6 +22,16 @@
   .volver:hover{color:var(--primario);}
 
   .perfil{display:flex;gap:18px;align-items:center;background:#fff;border:1.5px solid var(--line);border-radius:18px;padding:24px 26px;margin-bottom:16px;}
+  .contacto{display:inline-flex;gap:5px;}
+  .contacto a{
+    display:inline-flex;align-items:center;justify-content:center;
+    width:32px;height:32px;border-radius:8px;border:1.5px solid var(--line);
+    color:var(--gray);background:#fff;
+  }
+  .contacto a:hover{border-color:var(--primario);color:var(--primario);}
+  .contacto a.wa:hover{border-color:#25913F;color:#25913F;}
+  .contacto svg{width:16px;height:16px;}
+
   .perfil-avatar{width:64px;height:64px;border-radius:50%;background:#EDF6EC;color:var(--primario);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:22px;flex-shrink:0;}
   .perfil-nombre{font-size:22px;font-weight:800;line-height:1.2;}
   .perfil-esp{font-size:13px;color:var(--primario);font-weight:700;margin-top:3px;}
@@ -176,6 +186,9 @@ async function pintar(){
           Cédula profesional ${escapar(psicologo.cedula_profesional || 'no registrada')} ·
           ${psicologo.rol_consultorio === 'dueno' ? 'Responsable del consultorio' : 'Colaborador'}
         </div>
+        <div style="margin-top:10px;">
+          ${botonesContacto(psicologo.nombre, psicologo.telefono, psicologo.correo)}
+        </div>
       </div>
     </div>
 
@@ -200,6 +213,24 @@ async function pintar(){
   cont.querySelectorAll('.btn-ver').forEach(b=>{
     b.addEventListener('click', ()=> verExpediente(b.dataset.id, b.dataset.nombre));
   });
+}
+
+/* Mismo criterio que en el panel y el expediente: si falta el dato, el botón
+   no se dibuja. Un botón que no lleva a ningún lado se toca una vez y ya no
+   se vuelve a confiar en él. */
+function botonesContacto(nombre, telefono, correo){
+  const tel = String(telefono || '').replace(/\D/g, '');
+  const wa = tel.length === 10 ? '52' + tel : (tel.length > 10 ? tel : '');
+  const texto = encodeURIComponent(`Hola ${String(nombre||'').split(' ')[0]}, `);
+
+  const iconoWa = '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a10 10 0 0 0-8.6 15L2 22l5.1-1.3A10 10 0 1 0 12 2zm0 18a8 8 0 0 1-4.1-1.1l-.3-.2-3 .8.8-2.9-.2-.3A8 8 0 1 1 12 20zm4.4-5.9c-.2-.1-1.4-.7-1.6-.8-.2-.1-.4-.1-.5.1l-.7.9c-.1.2-.3.2-.5.1a6.5 6.5 0 0 1-3.2-2.8c-.1-.2 0-.4.1-.5l.4-.5c.1-.2.1-.3 0-.5l-.7-1.7c-.2-.4-.4-.4-.5-.4h-.5c-.2 0-.4.1-.6.3a2.7 2.7 0 0 0-.8 2 4.7 4.7 0 0 0 1 2.5 10.7 10.7 0 0 0 4.1 3.6c1.4.6 2 .6 2.7.5.4 0 1.4-.6 1.6-1.1.2-.6.2-1 .1-1.1z"/></svg>';
+  const iconoMail = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m2 7 10 6 10-6"/></svg>';
+
+  const partes = [];
+  if(wa) partes.push(`<a class="wa" href="https://wa.me/${wa}?text=${texto}" target="_blank" rel="noopener" title="Escribir por WhatsApp a ${escapar(nombre||'')}">${iconoWa}</a>`);
+  if(correo) partes.push(`<a href="mailto:${escapar(correo)}" title="Enviar correo a ${escapar(nombre||'')}">${iconoMail}</a>`);
+
+  return partes.length ? `<span class="contacto">${partes.join('')}</span>` : '';
 }
 
 async function verExpediente(id, nombre){

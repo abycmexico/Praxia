@@ -333,6 +333,27 @@
   .mid-label{font-size:10.5px;letter-spacing:1px;text-transform:uppercase;color:var(--gray);font-weight:800;margin-bottom:4px;}
   .mid-valor{font-family:monospace;font-size:13px;font-weight:700;word-break:break-all;}
   .mid-desc{font-size:11.5px;color:var(--gray);margin-top:6px;line-height:1.5;}
+  .pac-busca{position:relative;display:flex;align-items:center;margin-bottom:14px;}
+  .pac-busca svg{position:absolute;left:14px;width:17px;height:17px;color:var(--gray);pointer-events:none;}
+  .pac-busca input{
+    width:100%;padding:12px 15px 12px 40px;border:1.5px solid var(--line);border-radius:11px;
+    font-family:inherit;font-size:14px;background:#fff;color:var(--ink);
+  }
+  .pac-busca input:focus{outline:none;border-color:var(--primario);}
+
+  /* Botones de contacto: llamar por WhatsApp o escribir un correo, con los
+     datos que la persona dio al registrarse. Van chicos y juntos porque son
+     acciones de apoyo, no la accion principal de la tarjeta. */
+  .contacto{display:inline-flex;gap:5px;}
+  .contacto a{
+    display:inline-flex;align-items:center;justify-content:center;
+    width:30px;height:30px;border-radius:8px;border:1.5px solid var(--line);
+    color:var(--gray);background:#fff;
+  }
+  .contacto a:hover{border-color:var(--primario);color:var(--primario);}
+  .contacto a.wa:hover{border-color:#25913F;color:#25913F;}
+  .contacto svg{width:15px;height:15px;}
+
   .pac-toolbar{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:18px;}
   .select-orden{width:auto;min-width:200px;padding:9px 12px;font-size:12.5px;}
 
@@ -925,6 +946,11 @@
         <p class="mid-desc">Compártelo con tus pacientes para que se registren directo, sin necesitar un link.</p>
       </div>
       <button class="btn btn-ghost" id="btnCopiarMiId">Copiar</button>
+    </div>
+
+    <div class="pac-busca">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+      <input type="search" id="buscaPacientes" placeholder="Buscar por nombre, correo, teléfono o motivo de consulta..." autocomplete="off">
     </div>
 
     <div class="pac-toolbar">
@@ -2670,7 +2696,7 @@ async function crearConsultorio(){
 
 async function pintarEquipoDueno(cont){
   const { data: equipo, error } = await sb.from('psicologos')
-    .select('id, nombre, correo, estado, rol_consultorio, especialidad, comparte_expedientes')
+    .select('id, nombre, correo, telefono, estado, rol_consultorio, especialidad, comparte_expedientes')
     .eq('consultorio_id', yo.consultorio_id);
 
   if(error){ cont.innerHTML = `<p class="empty">No se pudo cargar el equipo: ${escapar(error.message)}</p>`; return; }
@@ -2717,6 +2743,7 @@ async function pintarEquipoDueno(cont){
         </div>
       </a>
       <div class="eq-acciones">
+        ${p.id === yo.id ? '' : botonesContacto(p.nombre, p.telefono, p.correo)}
         <span class="eq-rol ${p.rol_consultorio === 'dueno' ? '' : 'colaborador'}">${p.rol_consultorio === 'dueno' ? 'Responsable' : 'Colaborador'}</span>
         ${p.rol_consultorio === 'dueno' ? '' : (
           p.comparte_expedientes
@@ -2868,6 +2895,7 @@ function tarjetaDeMiembro(p){
         </div>
       </a>
       <div class="eq-acciones">
+        ${p.id === yo.id ? '' : botonesContacto(p.nombre, p.telefono, p.correo)}
         <span class="eq-rol ${p.rol_consultorio === 'dueno' ? '' : 'colaborador'}">${p.rol_consultorio === 'dueno' ? 'Responsable' : 'Colaborador'}</span>
         ${p.rol_consultorio === 'dueno' ? '' : (
           p.comparte_expedientes
@@ -3817,6 +3845,32 @@ function listaOrdenada(lista){
   return copia;
 }
 
+/* ---------- contactar ---------- */
+/* Escribirle a alguien es de las cosas que más se hacen y estaba obligando a
+   salir de Praxia para buscar el número en otro lado. Se arma con lo que la
+   persona dio al registrarse.
+
+   Si falta el dato, el botón no se dibuja: un botón que no lleva a ningún
+   lado se toca una vez y ya no se vuelve a confiar en él. */
+function botonesContacto(nombre, telefono, correo, mensaje){
+  const tel = String(telefono || '').replace(/\D/g, '');
+  // Diez dígitos es un número mexicano sin lada de país.
+  const wa = tel.length === 10 ? '52' + tel : (tel.length > 10 ? tel : '');
+  const texto = encodeURIComponent(mensaje || `Hola ${String(nombre||'').split(' ')[0]}, `);
+
+  const iconoWa = '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a10 10 0 0 0-8.6 15L2 22l5.1-1.3A10 10 0 1 0 12 2zm0 18a8 8 0 0 1-4.1-1.1l-.3-.2-3 .8.8-2.9-.2-.3A8 8 0 1 1 12 20zm4.4-5.9c-.2-.1-1.4-.7-1.6-.8-.2-.1-.4-.1-.5.1l-.7.9c-.1.2-.3.2-.5.1a6.5 6.5 0 0 1-3.2-2.8c-.1-.2 0-.4.1-.5l.4-.5c.1-.2.1-.3 0-.5l-.7-1.7c-.2-.4-.4-.4-.5-.4h-.5c-.2 0-.4.1-.6.3a2.7 2.7 0 0 0-.8 2 4.7 4.7 0 0 0 1 2.5 10.7 10.7 0 0 0 4.1 3.6c1.4.6 2 .6 2.7.5.4 0 1.4-.6 1.6-1.1.2-.6.2-1 .1-1.1z"/></svg>';
+  const iconoMail = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m2 7 10 6 10-6"/></svg>';
+
+  const partes = [];
+  if(wa) partes.push(`<a class="wa" href="https://wa.me/${wa}?text=${texto}" target="_blank" rel="noopener" title="Escribir por WhatsApp a ${escapar(nombre||'')}" onclick="event.stopPropagation()">${iconoWa}</a>`);
+  if(correo) partes.push(`<a href="mailto:${escapar(correo)}" title="Enviar correo a ${escapar(nombre||'')}" onclick="event.stopPropagation()">${iconoMail}</a>`);
+
+  return partes.length ? `<span class="contacto">${partes.join('')}</span>` : '';
+}
+window.botonesContacto = botonesContacto;
+
+document.getElementById('buscaPacientes')?.addEventListener('input', ()=> pintarPacientes());
+
 function pintarPacientes(){
   const cont = document.getElementById('listaPacientes');
 
@@ -3825,12 +3879,22 @@ function pintarPacientes(){
     return;
   }
 
+  // Busca sin acentos: quien teclea rápido rara vez los pone.
+  const busca = sinTildes(document.getElementById('buscaPacientes')?.value.trim() || '');
+
   const lista = listaOrdenada(pacientesCache
     .filter(p=> p.estado === filtroPacientes)
-    .filter(p=> filtroModalidad === 'todos' || (p.modalidad_atencion || 'presencial') === filtroModalidad));
+    .filter(p=> filtroModalidad === 'todos' || (p.modalidad_atencion || 'presencial') === filtroModalidad)
+    .filter(p=> !busca
+      || sinTildes(p.nombre).includes(busca)
+      || sinTildes(p.correo).includes(busca)
+      || String(p.telefono || '').replace(/\D/g,'').includes(busca.replace(/\D/g,'') || ' ')
+      || sinTildes(p.motivo_consulta).includes(busca)));
 
   if(!lista.length){
-    cont.innerHTML = '<p class="empty">No tienes pacientes en esta categoría.</p>';
+    cont.innerHTML = busca
+      ? `<p class="empty">Ningún paciente coincide con “${escapar(document.getElementById('buscaPacientes').value.trim())}”.</p>`
+      : '<p class="empty">No tienes pacientes en esta categoría.</p>';
     return;
   }
 
@@ -3866,6 +3930,7 @@ function pintarPacientes(){
         <p class="pac-motivo">${p.motivo_consulta ? escapar(recortar(p.motivo_consulta, 90)) : 'Sin motivo de consulta registrado.'}</p>
         <p style="font-size:11px;color:var(--gray);margin-bottom:12px;">${agg.sesiones} sesión(es) · $${agg.ingresos.toLocaleString('es-MX')} generados</p>
         <div class="pac-acciones">
+          ${botonesContacto(p.nombre, p.telefono, p.correo)}
           <a class="pac-btn" href="./expediente.html?id=${p.id}">Expediente</a>
           ${!p.auth_user_id ? `<button class="pac-btn" onclick="darAccesoPaciente('${p.id}')">Dar acceso</button>` : ''}
           <button class="pac-btn" onclick="abrirMensualidadPaciente('${p.id}', '${escapar(p.nombre).replace(/'/g, "\\'")}')">Mensualidad</button>
