@@ -444,8 +444,21 @@
 
   .grid-pacientes{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:14px;}
   .pac-card{position:relative;background:#fff;border:1.5px solid var(--line);border-radius:16px;padding:18px;cursor:grab;transition:box-shadow .15s,border-color .15s,opacity .15s;}
-  .pac-btn-mas{position:absolute;top:12px;right:12px;width:26px;height:26px;border-radius:50%;background:var(--primario);color:#fff;border:none;font-size:16px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;}
-  .pac-btn-mas:hover{background:var(--primario-claro);}
+  /* El boton de acciones: era un circulito verde de 26px que se perdia
+     contra la tarjeta. Ahora es mas grande, con borde propio y tres puntos
+     en vez de un mas: un mas sugiere "agregar algo", y lo que abre es un
+     menu de acciones sobre ese paciente. */
+  .pac-btn-mas{
+    position:absolute;top:12px;right:12px;width:34px;height:34px;
+    border-radius:10px;background:#fff;color:var(--gray);
+    border:1.5px solid var(--line);cursor:pointer;padding:0;
+    display:flex;align-items:center;justify-content:center;
+    transition:background .12s,border-color .12s,color .12s;
+  }
+  .pac-btn-mas svg{width:17px;height:17px;}
+  .pac-btn-mas:hover{background:var(--primario);border-color:var(--primario);color:#fff;}
+  /* Al pasar por la tarjeta se tiñe, para que se note que esta ahi. */
+  .pac-card:hover .pac-btn-mas{border-color:var(--primario-suave);color:var(--primario);}
   .pac-card:active{cursor:grabbing;}
   .pac-card.arrastrando{opacity:.4;}
   .pac-card.zona-drop{border-color:var(--primario);border-style:dashed;}
@@ -4085,14 +4098,9 @@ function pintarCarpetas(){
       pintarPacientes();
     });
 
-    // Clic derecho sobre una carpeta: renombrarla o borrarla.
+    // El clic derecho sobre carpetas lo atiende el listener del documento,
+    // que ya distingue entre una carpeta real y "Todos" o "Sin carpeta".
     if(id && id !== 'sueltos'){
-      b.addEventListener('contextmenu', (e)=>{
-        e.preventDefault();
-        e.stopPropagation();
-        abrirMenuContexto(e, menuDeCarpeta(id));
-      });
-
       // Soltar un paciente encima la asigna.
       b.addEventListener('dragover', (e)=>{ e.preventDefault(); b.classList.add('recibiendo'); });
       b.addEventListener('dragleave', ()=> b.classList.remove('recibiendo'));
@@ -4240,12 +4248,30 @@ function menuDeCarpeta(id){
       Borrar carpeta</button>`;
 }
 
-// Clic derecho en cualquier parte de Mis pacientes. Sobre una tarjeta abre
-// las acciones de ese paciente; en el espacio vacío, las de la sección.
-document.getElementById('tab-pacientes')?.addEventListener('contextmenu', (e)=>{
+/* Clic derecho en cualquier parte de la pantalla, mientras Mis pacientes
+   esté abierto.
+
+   Va en el documento y no en la sección: colgado de la sección, el clic
+   derecho en los márgenes —que es justo donde uno lo hace para "crear algo
+   aquí"— caía fuera y salía el menú del navegador.
+
+   Antes de esto, además, el clic derecho sobre "Todos" o "Sin carpeta"
+   también se escapaba: esas dos no tienen menú propio y el código salía sin
+   cancelar el del navegador. */
+addEventListener('contextmenu', (e)=>{
+  const seccion = document.getElementById('tab-pacientes');
+  if(!seccion || !seccion.classList.contains('active')) return;
+
+  // En campos de texto no se toca: ahí se espera copiar y pegar, y
+  // quitárselo a alguien es peor que no tener menú propio.
+  if(e.target.closest('input, textarea, select, [contenteditable="true"]')) return;
+
+  // Ventanas abiertas: tampoco. Su contenido tiene sus propias reglas.
+  if(e.target.closest('.modal-bg.show, #fondoMenuPaciente.abierto')) return;
+
   const tarjeta = e.target.closest('.pac-card');
   const carpeta = e.target.closest('.carpeta');
-  if(carpeta) return;                       // ya lo atiende la carpeta
+
   e.preventDefault();
 
   if(tarjeta){
@@ -4253,6 +4279,15 @@ document.getElementById('tab-pacientes')?.addEventListener('contextmenu', (e)=>{
     abrirMenuPaciente(tarjeta.dataset.id, tarjeta);
     return;
   }
+
+  // Una carpeta de verdad tiene su menú; "Todos" y "Sin carpeta" no son
+  // carpetas, así que abren el del fondo.
+  const id = carpeta?.dataset.carpeta;
+  if(id && id !== 'sueltos'){
+    abrirMenuContexto(e, menuDeCarpeta(id));
+    return;
+  }
+
   abrirMenuContexto(e, menuDeFondo());
 });
 
@@ -4330,7 +4365,7 @@ function pintarPacientes(){
 
     return `
       <div class="pac-card" draggable="true" data-id="${p.id}" data-reordenable="${arrastrable}">
-        <button class="pac-btn-mas" onclick="event.stopPropagation();abrirMenuPaciente('${p.id}', this)" title="Acciones para ${escapar(p.nombre)}" aria-label="Acciones para ${escapar(p.nombre)}">＋</button>
+        <button class="pac-btn-mas" onclick="event.stopPropagation();abrirMenuPaciente('${p.id}', this)" title="Acciones para ${escapar(p.nombre)}" aria-label="Acciones para ${escapar(p.nombre)}"><svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="19" r="2"/></svg></button>
         <div class="pac-card-top">
           <div class="pac-avatar" ${avatarEstilo}>${p.foto_url ? '' : inicial}</div>
           <div style="min-width:0;">
