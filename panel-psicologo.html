@@ -418,6 +418,52 @@
   }
   #menuContexto hr{border:none;border-top:1px solid var(--line);margin:5px 6px;}
 
+  /* ── ventanas de Praxia ──────────────────────────────────────────
+     Reemplazan a las del navegador. No es solo estetica: las del
+     navegador dicen "abycmexico.github.io dice", congelan la pagina y no
+     se pueden escribir con el tono del producto. En una app donde se
+     borran expedientes, el aviso importa tanto como la accion. */
+  #dialogo{
+    position:fixed;inset:0;z-index:400;display:none;
+    background:rgba(12,36,18,.5);
+    align-items:center;justify-content:center;padding:20px;
+  }
+  #dialogo.abierto{display:flex;}
+  .dlg{
+    background:#fff;border-radius:16px;padding:26px;width:100%;max-width:400px;
+    animation:dlgEntra .16s ease;
+  }
+  @keyframes dlgEntra{from{opacity:0;transform:translateY(10px) scale(.98);}to{opacity:1;transform:none;}}
+  .dlg h3{font-size:18px;font-weight:800;margin-bottom:8px;color:var(--ink);}
+  .dlg p{font-size:14px;line-height:1.65;color:var(--gray);font-weight:600;white-space:pre-line;}
+  .dlg input[type=text], .dlg input[type=number]{
+    width:100%;margin-top:16px;padding:13px 14px;border:1.5px solid var(--line);
+    border-radius:10px;font-family:inherit;font-size:15px;background:#fff;color:var(--ink);
+  }
+  .dlg input:focus{outline:none;border-color:var(--primario);}
+  .dlg-error{font-size:12.5px;color:var(--err);font-weight:700;margin-top:8px;min-height:16px;}
+  .dlg-acciones{display:flex;gap:9px;justify-content:flex-end;margin-top:20px;flex-wrap:wrap;}
+  .dlg-acciones button{
+    padding:12px 20px;border-radius:10px;font-family:inherit;font-size:13.5px;
+    font-weight:800;cursor:pointer;border:1.5px solid transparent;
+  }
+  .dlg-si{background:var(--primario);color:#fff;border-color:var(--primario);}
+  .dlg-si:hover{background:var(--primario-claro);}
+  .dlg-si.peligro{background:var(--err);border-color:var(--err);}
+  .dlg-si.peligro:hover{background:#a31515;border-color:#a31515;}
+  .dlg-no{background:#fff;color:var(--gray);border-color:var(--line);}
+  .dlg-no:hover{border-color:var(--gray);color:var(--ink);}
+  /* Lista para elegir, en vez de pedir que escriban un número. */
+  .dlg-opciones{display:flex;flex-direction:column;gap:6px;margin-top:16px;max-height:44vh;overflow-y:auto;}
+  .dlg-opcion{
+    display:flex;align-items:center;gap:10px;padding:13px 14px;border-radius:10px;
+    border:1.5px solid var(--line);background:#fff;font-family:inherit;font-size:14px;
+    font-weight:700;color:var(--ink);cursor:pointer;text-align:left;
+  }
+  .dlg-opcion:hover{border-color:var(--primario);background:var(--claro,#EDF5EC);color:var(--primario);}
+  .dlg-opcion.marcada{border-color:var(--primario);background:var(--claro,#EDF5EC);color:var(--primario);}
+  .dlg-opcion small{display:block;font-size:11.5px;font-weight:600;color:var(--gray);margin-top:2px;}
+
   .pac-busca{position:relative;display:flex;align-items:center;margin-bottom:14px;}
   .pac-busca svg{position:absolute;left:14px;width:17px;height:17px;color:var(--gray);pointer-events:none;}
   .pac-busca input{
@@ -1497,6 +1543,10 @@
     </form>
   </section>
     </main>
+
+<!-- Ventanas de Praxia. Reemplazan las del navegador, que dicen el dominio
+     y no se pueden escribir con el tono del producto. -->
+<div id="dialogo"><div class="dlg" id="dlgCaja"></div></div>
   </div>
 </div>
 
@@ -1942,13 +1992,13 @@ async function cargarEstadoCobros(){
     btnRev.textContent = 'Preguntándole a Stripe...';
     const r = await revisarCobrosConStripe();
     if(!r){
-      alert('No pudimos consultar tu estado con Stripe. Inténtalo en un momento.');
+      avisar('No pudimos consultar tu estado con Stripe. Inténtalo en un momento.');
       btnRev.disabled = false; btnRev.textContent = 'Ya lo terminé, revisar';
       return;
     }
     if(r.cobros_activos){ await cargarEstadoCobros(); return; }
     // Decirle qué falta es más útil que repetirle que no puede cobrar.
-    alert(r.pendiente?.length
+    avisar(r.pendiente?.length
       ? 'Stripe todavía te pide: ' + r.pendiente.join(', ') + '.\nEntra a "Continuar mi alta" para completarlo.'
       : 'Stripe aún está revisando tu cuenta. Suele tardar unos minutos.');
     btnRev.disabled = false; btnRev.textContent = 'Ya lo terminé, revisar';
@@ -1972,13 +2022,13 @@ async function conectarCobros(){
     const datos = await r.json();
 
     if(!r.ok || !datos.url){
-      alert('No se pudo iniciar el alta: ' + (datos.error || 'error desconocido'));
+      avisar('No se pudo iniciar el alta: ' + (datos.error || 'error desconocido'));
       btn.disabled = false; btn.textContent = 'Conectar mi cuenta';
       return;
     }
     location.href = datos.url;
   }catch(e){
-    alert('No se pudo iniciar el alta: ' + e.message);
+    avisar('No se pudo iniciar el alta: ' + e.message);
     btn.disabled = false; btn.textContent = 'Conectar mi cuenta';
   }
 }
@@ -2010,9 +2060,9 @@ function avisarRegresoDeCobros(){
     // llega, el psicólogo se queda con los cobros apagados sin saberlo y su
     // paciente nunca ve el botón de pagar.
     revisarCobrosConStripe().then(cargarEstadoCobros);
-    alert('Terminaste tu registro con Stripe. Estamos confirmando que ya quedó.');
+    avisar('Terminaste tu registro con Stripe. Estamos confirmando que ya quedó.');
   } else {
-    alert('Tu alta quedó incompleta. Puedes retomarla cuando quieras desde Cobros.');
+    avisar('Tu alta quedó incompleta. Puedes retomarla cuando quieras desde Cobros.');
   }
 }
 
@@ -2126,10 +2176,10 @@ function editarPlan(plan){
       .select('id', { count: 'exact', head: true }).eq('plan_id', plan.id);
 
     if(count > 0){
-      const seguir = confirm(
-        `${count} paciente(s) tienen este plan.\n\n` +
-        `Al guardar, el cambio aplica también para ellos: el nuevo precio se cobra en su próxima renovación ` +
-        `y las sesiones incluidas cambian desde ya.\n\n¿Continuar?`
+      const seguir = await confirmar(
+        `${count} paciente(s) tienen este plan. Al guardar, el cambio aplica también para ellos: ` +
+        `el nuevo precio se cobra en su próxima renovación y las sesiones incluidas cambian desde ya.`,
+        { titulo: 'El cambio les aplica a ellos también', aceptar: 'Sí, guardar' }
       );
       if(!seguir) return;
     }
@@ -2207,7 +2257,7 @@ async function cargarMensualidades(){
 
   cont.querySelectorAll('[data-renovar]').forEach(b=>{
     b.addEventListener('click', async ()=>{
-      if(!confirm('¿Renovar el mes?\n\nEl contador de sesiones vuelve a cero y el periodo se recorre un mes. Hazlo cuando ya recibiste el pago.')) return;
+      if(!await confirmar('El contador de sesiones vuelve a cero y el periodo se recorre un mes. Hazlo cuando ya recibiste el pago.', { titulo: '¿Renovar el mes?', aceptar: 'Sí, renovar' })) return;
       const { data, error } = await sb.rpc('renovar_mensualidad_paciente', { p_paciente_id: b.dataset.renovar });
       const r = Array.isArray(data) ? data[0] : data;
       const msg = document.getElementById('msgMensualidad');
@@ -2283,18 +2333,18 @@ async function abrirMensualidadPaciente(pacienteId, nombre){
   if(actual){
     const plan = actual.planes_paciente || {};
     const restantes = Math.max(0, (plan.sesiones_incluidas || 0) - actual.sesiones_usadas);
-    const quitar = confirm(
-      `${nombre} ya tiene mensualidad.\n\n` +
+    const quitar = await confirmar(
       `Plan: ${plan.nombre} — ${pesos(plan.precio)}/mes\n` +
       `Sesiones: ${actual.sesiones_usadas} usadas, le quedan ${restantes}\n` +
       `Periodo hasta: ${new Date(actual.periodo_fin).toLocaleDateString('es-MX')}\n\n` +
-      `¿Quitarle la mensualidad? Volvería a cobrarse por sesión.`
+      `Si se la quitas, vuelve a cobrarse por sesión.`,
+      { titulo: `${nombre} ya tiene mensualidad`, aceptar: 'Quitarle la mensualidad', peligro: true }
     );
     if(!quitar) return;
 
     const { error } = await sb.from('suscripciones_paciente').delete().eq('id', actual.id);
-    if(error){ alert('No se pudo quitar: ' + error.message); return; }
-    alert('Se le quitó la mensualidad. A partir de ahora se le cobra por sesión.');
+    if(error){ avisar('No se pudo quitar: ' + error.message); return; }
+    avisar('Se le quitó la mensualidad. A partir de ahora se le cobra por sesión.');
     cargarPacientes();
     cargarCobros();
     return;
@@ -2389,7 +2439,7 @@ function abrirModalPlanPaciente(pacienteId, nombre){
     }
 
     caja.classList.remove('show');
-    alert(r.mensaje);
+    avisar(r.mensaje);
     cargarPacientes();
     cargarCobros();
   });
@@ -2671,7 +2721,7 @@ async function canjearCodigo(codigo, silencioso = false){
     return false;
   }
 
-  if(!silencioso) alert(r.mensaje);
+  if(!silencioso) avisar(r.mensaje);
   cargarPlan();
   return true;
 }
@@ -2725,7 +2775,7 @@ async function contratarPlan(planId, boton){
 }
 
 async function cancelarPlan(){
-  if(!confirm('¿Cancelar la renovación automática?\n\nConservas el acceso hasta que termine el periodo que ya pagaste, y no se te vuelve a cobrar. Puedes reactivarlo antes de esa fecha.')) return;
+  if(!await confirmar('Conservas el acceso hasta que termine el periodo que ya pagaste, y no se te vuelve a cobrar. Puedes reactivarlo antes de esa fecha.', { titulo: '¿Cancelar la renovación automática?', aceptar: 'Sí, cancelar la renovación' })) return;
   const { data, error } = await sb.rpc('cancelar_renovacion');
   const r = Array.isArray(data) ? data[0] : data;
   const msg = document.getElementById('msgPlan');
@@ -2734,7 +2784,7 @@ async function cancelarPlan(){
     msg.className = 'msg err';
     return;
   }
-  alert(r.mensaje);
+  avisar(r.mensaje);
   cargarPlan();
 }
 
@@ -2758,7 +2808,7 @@ function avisarRegresoDeStripe(){
   history.replaceState({}, '', location.pathname);
   if(estado === 'ok'){
     setTimeout(cargarPlan, 2500);
-    alert('¡Listo! Tu pago se está registrando. Si tu plan no aparece actualizado en unos segundos, recarga la página.');
+    avisar('¡Listo! Tu pago se está registrando. Si tu plan no aparece actualizado en unos segundos, recarga la página.');
   }
 }
 
@@ -3187,7 +3237,7 @@ async function cambiarPermisoExpedientes(activar){
     const aviso = '¿Compartir tus expedientes con el responsable del consultorio?\n\n' +
       'Podrá leer las notas de sesión y los expedientes de tus pacientes.\n\n' +
       'Tú sigues siendo el responsable de esa información, y puedes apagarlo cuando quieras.';
-    if(!confirm(aviso)) return;
+    if(!await confirmar(aviso, { titulo: '¿Confirmas el cambio?', peligro: true })) return;
   }
 
   const { data, error } = await sb.rpc('definir_acceso_expedientes', { p_compartir: activar });
@@ -3205,7 +3255,7 @@ async function cambiarPermisoExpedientes(activar){
 
 async function pedirAccesoExpedientes(id, nombre){
   const msg = document.getElementById('msgEquipo');
-  if(!confirm(`¿Pedirle a ${nombre} acceso a los expedientes de sus pacientes?\n\nLe llega una notificación y decide ella. Tú no puedes activarlo por tu cuenta.`)) return;
+  if(!await confirmar(`Le llega una notificación y decide ${nombre}. Tú no puedes activarlo por tu cuenta.`, { titulo: 'Pedir acceso a los expedientes', aceptar: 'Sí, pedirle acceso' })) return;
 
   const { data, error } = await sb.rpc('solicitar_acceso_expedientes', { p_psicologo_id: id });
   const r = Array.isArray(data) ? data[0] : data;
@@ -3220,7 +3270,7 @@ async function retirarDelConsultorio(id, nombre){
   const aviso = `¿Retirar a ${nombre} de tu consultorio?\n\n` +
     `Conserva su cuenta, sus pacientes y sus expedientes: solo deja de pertenecer al consultorio ` +
     `y dejarás de ver su agenda.\n\nPuedes volver a darlo de alta con una liga nueva.`;
-  if(!confirm(aviso)) return;
+  if(!await confirmar(aviso, { titulo: '¿Confirmas el cambio?', peligro: true })) return;
 
   const { data, error } = await sb.rpc('quitar_del_consultorio', { p_psicologo_id: id });
   const r = Array.isArray(data) ? data[0] : data;
@@ -3233,7 +3283,7 @@ async function retirarDelConsultorio(id, nombre){
   }
 
   // El mensaje avisa si se va con pacientes, que es lo que hay que resolver.
-  alert(r.mensaje);
+  avisar(r.mensaje);
   cargarEquipo();
 }
 
@@ -3292,9 +3342,9 @@ async function procesarInvitacionPendiente(){
   const r = Array.isArray(data) ? data[0] : data;
 
   if(error || !r || !r.ok){
-    alert('No se pudo unir al consultorio: ' + (error?.message || r?.mensaje || 'error desconocido'));
+    avisar('No se pudo unir al consultorio: ' + (error?.message || r?.mensaje || 'error desconocido'));
   } else {
-    alert(r.mensaje);
+    avisar(r.mensaje);
     const { data: psi } = await sb.from('psicologos').select('*').eq('id', yo.id).maybeSingle();
     if(psi) yo = psi;
   }
@@ -3855,8 +3905,13 @@ document.getElementById('btnDispPreset10a18').addEventListener('click', ()=>{
   pintarDispGrid();
 });
 
-document.getElementById('btnDispLimpiar').addEventListener('click', ()=>{
-  if(!confirm('¿Borrar toda tu disponibilidad marcada?')) return;
+document.getElementById('btnDispLimpiar').addEventListener('click', async ()=>{
+  const ok = await confirmar('Vas a dejar la semana en blanco. Tendrás que volver a marcar tus horarios.', {
+    titulo: '¿Borrar tu disponibilidad?',
+    aceptar: 'Sí, borrar todo',
+    peligro: true,
+  });
+  if(!ok) return;
   dispEstado = dispEstadoVacio();
   pintarDispGrid();
 });
@@ -3969,7 +4024,7 @@ async function cambiarModalidadPaciente(id, modalidad, select){
   select.disabled = false;
 
   if(error){
-    alert('No se pudo actualizar: ' + error.message);
+    avisar('No se pudo actualizar: ' + error.message);
     return;
   }
 
@@ -4027,6 +4082,144 @@ function listaOrdenada(lista){
   // 'manual' respeta el orden que ya trae (columna orden).
   return copia;
 }
+
+/* ---------- ventanas de Praxia ---------- */
+/* Reemplazan a alert, confirm y prompt del navegador. No es solo estética:
+   las del navegador anuncian el dominio -"abycmexico.github.io dice"-,
+   congelan la página entera y no se pueden escribir con el tono del
+   producto. En una app donde se borran expedientes, cómo está redactado el
+   aviso importa tanto como lo que hace el botón.
+
+   Las tres devuelven una promesa, así que se usan con await y el código se
+   lee igual que antes. */
+
+let cerrarDialogoActual = null;
+
+function montarDialogo(contenido, alCerrar){
+  const fondo = document.getElementById('dialogo');
+  const caja = document.getElementById('dlgCaja');
+  caja.innerHTML = contenido;
+  fondo.classList.add('abierto');
+
+  const cerrar = (valor)=>{
+    fondo.classList.remove('abierto');
+    caja.innerHTML = '';
+    cerrarDialogoActual = null;
+    document.removeEventListener('keydown', porTecla);
+    alCerrar(valor);
+  };
+
+  // Escape cancela y Enter acepta, como en cualquier ventana del sistema.
+  const porTecla = (e)=>{
+    if(e.key === 'Escape'){ e.preventDefault(); cerrar(null); }
+    if(e.key === 'Enter' && !e.shiftKey){
+      const ok = caja.querySelector('.dlg-si');
+      if(ok){ e.preventDefault(); ok.click(); }
+    }
+  };
+  document.addEventListener('keydown', porTecla);
+  cerrarDialogoActual = cerrar;
+  return cerrar;
+}
+
+// Solo informa. No devuelve nada que haya que esperar, pero se puede
+// esperar si hace falta encadenar.
+function avisar(texto, titulo){
+  return new Promise(resolver=>{
+    const cerrar = montarDialogo(`
+      <h3>${escapar(titulo || 'Aviso')}</h3>
+      <p>${escapar(texto)}</p>
+      <div class="dlg-acciones"><button class="dlg-si" id="dlgOk">Entendido</button></div>`,
+      ()=> resolver());
+    document.getElementById('dlgOk').onclick = ()=> cerrar();
+    document.getElementById('dlgOk').focus();
+  });
+}
+window.avisar = avisar;
+
+// Pregunta de sí o no. `peligro` pinta el botón en rojo, para lo que borra.
+function confirmar(texto, opciones = {}){
+  return new Promise(resolver=>{
+    const cerrar = montarDialogo(`
+      <h3>${escapar(opciones.titulo || '¿Seguro?')}</h3>
+      <p>${escapar(texto)}</p>
+      <div class="dlg-acciones">
+        <button class="dlg-no" id="dlgNo">${escapar(opciones.cancelar || 'Cancelar')}</button>
+        <button class="dlg-si ${opciones.peligro ? 'peligro' : ''}" id="dlgSi">${escapar(opciones.aceptar || 'Sí, continuar')}</button>
+      </div>`,
+      (v)=> resolver(v === true));
+    document.getElementById('dlgSi').onclick = ()=> cerrar(true);
+    document.getElementById('dlgNo').onclick = ()=> cerrar(false);
+    // El foco arranca en cancelar cuando la acción destruye algo: que la
+    // tecla Enter no borre un expediente sin querer.
+    document.getElementById(opciones.peligro ? 'dlgNo' : 'dlgSi').focus();
+  });
+}
+window.confirmar = confirmar;
+
+// Pide un dato. Devuelve el texto, o null si canceló.
+function preguntar(texto, opciones = {}){
+  return new Promise(resolver=>{
+    const cerrar = montarDialogo(`
+      <h3>${escapar(opciones.titulo || 'Praxia')}</h3>
+      ${texto ? `<p>${escapar(texto)}</p>` : ''}
+      <input type="${opciones.tipo === 'numero' ? 'number' : 'text'}" id="dlgCampo"
+             value="${escapar(opciones.valor ?? '')}"
+             placeholder="${escapar(opciones.pista || '')}"
+             ${opciones.tipo === 'numero' ? 'min="0" step="any"' : ''}>
+      <p class="dlg-error" id="dlgError"></p>
+      <div class="dlg-acciones">
+        <button class="dlg-no" id="dlgNo">Cancelar</button>
+        <button class="dlg-si" id="dlgSi">${escapar(opciones.aceptar || 'Guardar')}</button>
+      </div>`,
+      (v)=> resolver(v ?? null));
+
+    const campo = document.getElementById('dlgCampo');
+    const error = document.getElementById('dlgError');
+
+    document.getElementById('dlgSi').onclick = ()=>{
+      const v = campo.value.trim();
+      // Se valida aquí adentro: mandar a la persona a cerrar la ventana y
+      // volver a abrirla para corregir un dato es peor que decírselo aquí.
+      const problema = opciones.validar ? opciones.validar(v) : (v ? null : 'Escribe algo para continuar.');
+      if(problema){ error.textContent = problema; campo.focus(); return; }
+      cerrar(v);
+    };
+    document.getElementById('dlgNo').onclick = ()=> cerrar(null);
+
+    campo.focus();
+    campo.select();
+  });
+}
+window.preguntar = preguntar;
+
+// Lista de opciones. Devuelve el valor elegido, o null si canceló.
+function elegir(texto, opciones, config = {}){
+  return new Promise(resolver=>{
+    const lista = opciones.map((o, i)=> `
+      <button class="dlg-opcion ${o.marcada ? 'marcada' : ''}" data-i="${i}">
+        <span>${escapar(o.texto)}${o.nota ? `<small>${escapar(o.nota)}</small>` : ''}</span>
+      </button>`).join('');
+
+    const cerrar = montarDialogo(`
+      <h3>${escapar(config.titulo || 'Elige una opción')}</h3>
+      ${texto ? `<p>${escapar(texto)}</p>` : ''}
+      <div class="dlg-opciones">${lista}</div>
+      <div class="dlg-acciones"><button class="dlg-no" id="dlgNo">Cancelar</button></div>`,
+      (v)=> resolver(v ?? null));
+
+    document.querySelectorAll('#dlgCaja .dlg-opcion').forEach(b=>{
+      b.onclick = ()=> cerrar(opciones[Number(b.dataset.i)].valor);
+    });
+    document.getElementById('dlgNo').onclick = ()=> cerrar(null);
+  });
+}
+window.elegir = elegir;
+
+// Tocar fuera cancela, igual que en el resto de las ventanas de Praxia.
+document.getElementById('dialogo')?.addEventListener('click', (e)=>{
+  if(e.target.id === 'dialogo' && cerrarDialogoActual) cerrarDialogoActual(null);
+});
 
 /* ---------- carpetas de pacientes ---------- */
 /* Con veinte o treinta pacientes una sola rejilla deja de servir. Cada
@@ -4134,7 +4327,7 @@ async function moverPacienteACarpeta(pacienteId, carpetaId){
   const r = Array.isArray(data) ? data[0] : data;
 
   if(error || !r || !r.ok){
-    alert('No se pudo mover: ' + (error?.message || r?.mensaje || 'error'));
+    avisar('No se pudo mover: ' + (error?.message || r?.mensaje || 'error'));
     return;
   }
 
@@ -4147,18 +4340,22 @@ async function moverPacienteACarpeta(pacienteId, carpetaId){
 window.moverPacienteACarpeta = moverPacienteACarpeta;
 
 async function crearCarpeta(){
-  const nombre = prompt('¿Cómo se va a llamar la carpeta?');
+  const nombre = await preguntar('Puedes agrupar por día de atención, por tipo de caso, o como te acomode.', {
+    titulo: 'Nueva carpeta',
+    pista: 'Lunes y miércoles',
+    aceptar: 'Crear carpeta',
+    validar: (v)=> v ? null : 'La carpeta necesita un nombre.',
+  });
   if(nombre === null) return;
-  if(!nombre.trim()){ alert('La carpeta necesita un nombre.'); return; }
 
   const { error } = await sb.from('carpetas_pacientes')
-    .insert({ psicologo_id: yo.id, nombre: nombre.trim() });
+    .insert({ psicologo_id: yo.id, nombre });
 
   if(error){
     // El nombre repetido tiene mensaje propio: el de la base no se entiende.
-    alert(error.message.includes('carpetas_nombre_unico')
+    await avisar(error.message.includes('carpetas_nombre_unico')
       ? 'Ya tienes una carpeta con ese nombre.'
-      : 'No se pudo crear la carpeta: ' + error.message);
+      : 'No se pudo crear la carpeta: ' + error.message, 'No se creó');
     return;
   }
   await cargarCarpetas();
@@ -4168,12 +4365,17 @@ window.crearCarpeta = crearCarpeta;
 async function renombrarCarpeta(id){
   const c = carpetasCache.find(x=> x.id === id);
   if(!c) return;
-  const nombre = prompt('Nuevo nombre de la carpeta:', c.nombre);
-  if(nombre === null || !nombre.trim()) return;
+
+  const nombre = await preguntar('', {
+    titulo: 'Cambiar el nombre',
+    valor: c.nombre,
+    validar: (v)=> v ? null : 'La carpeta necesita un nombre.',
+  });
+  if(nombre === null) return;
 
   const { error } = await sb.from('carpetas_pacientes')
-    .update({ nombre: nombre.trim() }).eq('id', id);
-  if(error){ alert('No se pudo renombrar: ' + error.message); return; }
+    .update({ nombre }).eq('id', id);
+  if(error){ await avisar('No se pudo cambiar el nombre: ' + error.message); return; }
   await cargarCarpetas();
 }
 window.renombrarCarpeta = renombrarCarpeta;
@@ -4186,12 +4388,18 @@ async function borrarCarpeta(id){
   // Se dice qué pasa con los pacientes: borrar una carpeta suena a borrar
   // lo que tiene dentro, y no es el caso.
   const aviso = dentro
-    ? `¿Borrar la carpeta "${c.nombre}"?\n\nSus ${dentro} paciente(s) NO se borran: quedan fuera de las carpetas.`
-    : `¿Borrar la carpeta "${c.nombre}"?`;
-  if(!confirm(aviso)) return;
+    ? `Sus ${dentro} paciente${dentro === 1 ? '' : 's'} no se borra${dentro === 1 ? '' : 'n'}: quedan fuera de las carpetas y los sigues viendo en «Todos».`
+    : 'Está vacía, así que no se pierde nada.';
+
+  const ok = await confirmar(aviso, {
+    titulo: `¿Borrar «${c.nombre}»?`,
+    aceptar: 'Sí, borrar la carpeta',
+    peligro: true,
+  });
+  if(!ok) return;
 
   const { error } = await sb.from('carpetas_pacientes').delete().eq('id', id);
-  if(error){ alert('No se pudo borrar: ' + error.message); return; }
+  if(error){ await avisar('No se pudo borrar: ' + error.message); return; }
 
   if(carpetaActiva === id) carpetaActiva = null;
   pacientesCache.forEach(p=>{ if(p.carpeta_id === id) p.carpeta_id = null; });
@@ -4394,27 +4602,35 @@ function pintarPacientes(){
 
 /* Mover a una carpeta desde el menú, para quien prefiere no arrastrar o
    está en el celular, donde arrastrar es incómodo. */
-function abrirMoverCarpeta(pacienteId){
+async function abrirMoverCarpeta(pacienteId){
   const p = pacientesCache.find(x=> x.id === pacienteId);
   if(!p) return;
 
   if(!carpetasCache.length){
-    if(confirm('Todavía no tienes carpetas. ¿Creamos una?')) crearCarpeta();
+    const ok = await confirmar('Todavía no tienes ninguna. Las carpetas sirven para agrupar a tus pacientes como te acomode.', {
+      titulo: 'No hay carpetas',
+      aceptar: 'Crear una carpeta',
+    });
+    if(ok) await crearCarpeta();
     return;
   }
 
-  const opciones = carpetasCache.map((c, i)=> `${i + 1}. ${c.nombre}`).join('\n');
-  const actual = carpetasCache.find(c=> c.id === p.carpeta_id);
+  // Lista con las carpetas, en vez de pedir que escriban un número.
+  const opciones = carpetasCache.map(c=> ({
+    texto: c.nombre,
+    valor: c.id,
+    marcada: c.id === p.carpeta_id,
+    nota: c.id === p.carpeta_id ? 'Aquí está ahora' : null,
+  }));
 
-  const resp = prompt(
-    `¿A qué carpeta mueves a ${p.nombre}?\n\n${opciones}\n0. Sacarlo de las carpetas`
-    + (actual ? `\n\nAhora está en: ${actual.nombre}` : ''), '');
+  if(p.carpeta_id){
+    opciones.push({ texto: 'Sacarlo de las carpetas', valor: '__ninguna', nota: 'Queda suelto en «Todos»' });
+  }
 
-  if(resp === null) return;
-  const n = parseInt(resp, 10);
-  if(isNaN(n) || n < 0 || n > carpetasCache.length){ alert('Escribe uno de los números de la lista.'); return; }
+  const elegida = await elegir('', opciones, { titulo: `¿A dónde mueves a ${p.nombre}?` });
+  if(elegida === null) return;
 
-  moverPacienteACarpeta(pacienteId, n === 0 ? null : carpetasCache[n - 1].id);
+  await moverPacienteACarpeta(pacienteId, elegida === '__ninguna' ? null : elegida);
 }
 window.abrirMoverCarpeta = abrirMoverCarpeta;
 
@@ -4441,15 +4657,15 @@ function botonesEstado(p){
 
 async function cambiarEstadoPaciente(id, nuevoEstado){
   const { error } = await sb.from('pacientes').update({estado: nuevoEstado}).eq('id', id);
-  if(error){ alert('Error: ' + error.message); return; }
+  if(error){ avisar('Error: ' + error.message); return; }
   cargarPacientes();
 }
 window.cambiarEstadoPaciente = cambiarEstadoPaciente;
 
 async function archivarPaciente(id){
-  if(!confirm('¿Eliminar este paciente de tu lista? No se borra su historial clínico, solo se archiva y deja de aparecer en tus pestañas normales.')) return;
+  if(!await confirmar('No se borra su historial clínico: se archiva y deja de aparecer en tus pestañas normales.', { titulo: '¿Quitarlo de tu lista?', aceptar: 'Sí, archivar', peligro: true })) return;
   const { error } = await sb.from('pacientes').update({estado:'archivado'}).eq('id', id);
-  if(error){ alert('Error: ' + error.message); return; }
+  if(error){ avisar('Error: ' + error.message); return; }
   cargarPacientes();
 }
 window.archivarPaciente = archivarPaciente;
@@ -5270,7 +5486,7 @@ document.getElementById('btnConectarGoogle').addEventListener('click', async ()=
 
   const { data: state, error } = await sb.rpc('crear_estado_oauth_google');
   if(error || !state){
-    alert('No se pudo iniciar la conexión: ' + (error?.message || 'intenta de nuevo'));
+    avisar('No se pudo iniciar la conexión: ' + (error?.message || 'intenta de nuevo'));
     btn.disabled = false;
     btn.textContent = 'Conectar con Google Calendar';
     return;
@@ -5287,7 +5503,7 @@ document.getElementById('btnConectarGoogle').addEventListener('click', async ()=
 });
 
 document.getElementById('btnDesconectarGoogle').addEventListener('click', async ()=>{
-  if(!confirm('¿Desconectar Google Calendar? Las videollamadas ya creadas siguen funcionando, pero las nuevas no se crearán hasta que vuelvas a conectar.')) return;
+  if(!await confirmar('Las videollamadas ya creadas siguen funcionando, pero las nuevas no se crearán hasta que vuelvas a conectar.', { titulo: '¿Desconectar Google Calendar?', aceptar: 'Sí, desconectar', peligro: true })) return;
   await sb.rpc('desconectar_google_calendar');
   cargarEstadoGoogle();
 });
@@ -6082,7 +6298,7 @@ async function entrarVideollamada(citaId, boton){
 
   const { data: { session } } = await sb.auth.getSession();
   if(!session){
-    alert('Tu sesión expiró, vuelve a iniciar sesión.');
+    avisar('Tu sesión expiró, vuelve a iniciar sesión.');
     boton.disabled = false; boton.textContent = textoOriginal;
     return;
   }
@@ -6100,7 +6316,7 @@ async function entrarVideollamada(citaId, boton){
     const data = await res.json();
 
     if(!res.ok || !data.ok){
-      alert('No se pudo conectar la videollamada: ' + (data.error || 'error desconocido'));
+      avisar('No se pudo conectar la videollamada: ' + (data.error || 'error desconocido'));
       boton.disabled = false; boton.textContent = textoOriginal;
       return;
     }
@@ -6108,7 +6324,7 @@ async function entrarVideollamada(citaId, boton){
     window.open(data.url, '_blank');
     boton.disabled = false; boton.textContent = textoOriginal;
   } catch(e){
-    alert('No se pudo conectar la videollamada: ' + e.message);
+    avisar('No se pudo conectar la videollamada: ' + e.message);
     boton.disabled = false; boton.textContent = textoOriginal;
   }
 }
@@ -6118,9 +6334,9 @@ window.entrarVideollamada = entrarVideollamada;
 /* ---------- aprobar/rechazar solicitudes del paciente ---------- */
 async function aprobarSolicitud(citaId){
   const { data, error } = await sb.rpc('aprobar_solicitud_paciente', { p_cita_id: citaId });
-  if(error){ alert('Error: ' + error.message); return; }
+  if(error){ avisar('Error: ' + error.message); return; }
   const r = Array.isArray(data) ? data[0] : data;
-  if(!r || !r.ok){ alert(r ? r.mensaje : 'No se pudo aprobar.'); return; }
+  if(!r || !r.ok){ avisar(r ? r.mensaje : 'No se pudo aprobar.'); return; }
   cargarCitas();
   cargarResumen();
   cargarCalendario();
@@ -6128,12 +6344,12 @@ async function aprobarSolicitud(citaId){
 window.aprobarSolicitud = aprobarSolicitud;
 
 async function rechazarSolicitud(citaId){
-  const motivo = prompt('¿Por qué no puedes en ese horario? (opcional, tu paciente lo verá)');
+  const motivo = await preguntar('Tu paciente lo verá. Puedes dejarlo en blanco.', { titulo: '¿Por qué no puedes en ese horario?', pista: 'Opcional', aceptar: 'Rechazar la solicitud' });
   if(motivo === null) return; // canceló el prompt
   const { data, error } = await sb.rpc('rechazar_solicitud_paciente', { p_cita_id: citaId, p_motivo: motivo || null });
-  if(error){ alert('Error: ' + error.message); return; }
+  if(error){ avisar('Error: ' + error.message); return; }
   const r = Array.isArray(data) ? data[0] : data;
-  if(!r || !r.ok){ alert(r ? r.mensaje : 'No se pudo rechazar.'); return; }
+  if(!r || !r.ok){ avisar(r ? r.mensaje : 'No se pudo rechazar.'); return; }
   cargarCitas();
   cargarResumen();
   cargarCalendario();
@@ -6141,10 +6357,10 @@ async function rechazarSolicitud(citaId){
 window.rechazarSolicitud = rechazarSolicitud;
 
 async function marcarComoPagada(citaId){
-  if(!confirm('Esto es provisional mientras Stripe no está conectado: confirma que ya recibiste el pago fuera de la plataforma. ¿Continuar?')) return;
+  if(!await confirmar('Es provisional mientras Stripe no está conectado. Confirma que ya recibiste el pago fuera de la plataforma.', { titulo: '¿Marcar como pagada?', aceptar: 'Sí, ya me pagaron' })) return;
 
   const { error } = await sb.from('citas').update({ estado: 'confirmada' }).eq('id', citaId);
-  if(error){ alert('Error: ' + error.message); return; }
+  if(error){ avisar('Error: ' + error.message); return; }
 
   cargarCitas();
   cargarResumen();
@@ -6372,7 +6588,12 @@ document.getElementById('btnCopiarCobroLiga')?.addEventListener('click', async (
     document.getElementById('btnCopiarCobroLiga').textContent = 'Copiada';
     setTimeout(()=> document.getElementById('btnCopiarCobroLiga').textContent = 'Copiar liga', 1800);
   }catch(e){
-    prompt('Copia la liga:', liga);
+    // Si el navegador no deja copiar solo, al menos se la damos seleccionable.
+    await preguntar('Tu navegador no dejó copiarla sola. Selecciónala y cópiala a mano.', {
+      titulo: 'Copia la liga',
+      valor: liga,
+      aceptar: 'Listo',
+    });
   }
 });
 
@@ -6382,14 +6603,24 @@ async function registrarPagoPaciente(pacienteId){
   const p = pacientesCache.find(x=> x.id === pacienteId);
   if(!p) return;
 
-  const texto = prompt(`¿Cuánto te pagó ${p.nombre}?`, '');
+  const texto = await preguntar(`Se suma a su estado de cuenta.`, {
+    titulo: `¿Cuánto te pagó ${p.nombre.split(' ')[0]}?`,
+    tipo: 'numero',
+    pista: String(config?.precio_sesion || 300),
+    aceptar: 'Continuar',
+    validar: (v)=> Number(v) > 0 ? null : 'Escribe un monto mayor a cero.',
+  });
   if(texto === null) return;
-
   const monto = Number(texto);
-  if(!(monto > 0)){ alert('Escribe un monto válido.'); return; }
 
-  const metodo = confirm(`${pesos(monto)} de ${p.nombre}\n\n¿Fue en efectivo?\n\nAceptar = efectivo · Cancelar = transferencia`)
-    ? 'efectivo' : 'transferencia';
+  // Los tres métodos a la vista, en vez de "aceptar = efectivo,
+  // cancelar = transferencia", que obligaba a leer dos veces.
+  const metodo = await elegir(`${pesos(monto)} de ${p.nombre}`, [
+    { texto: 'En efectivo', valor: 'efectivo' },
+    { texto: 'Por transferencia', valor: 'transferencia' },
+    { texto: 'Con tarjeta', valor: 'tarjeta' },
+  ], { titulo: '¿Cómo te pagó?' });
+  if(metodo === null) return;
 
   const { data, error } = await sb.rpc('registrar_pago', {
     p_paciente_id: pacienteId, p_monto: monto, p_metodo: metodo
@@ -6397,11 +6628,11 @@ async function registrarPagoPaciente(pacienteId){
   const r = Array.isArray(data) ? data[0] : data;
 
   if(error || !r || !r.ok){
-    alert('No se pudo registrar: ' + (error?.message || r?.mensaje || 'error desconocido'));
+    await avisar('No se pudo registrar: ' + (error?.message || r?.mensaje || 'error desconocido'), 'No se registró');
     return;
   }
 
-  alert(`Registrado: ${pesos(monto)} de ${p.nombre}.`);
+  await avisar(`${pesos(monto)} de ${p.nombre}, ya quedó en su cuenta.`, 'Pago registrado');
   cargarCobros();
 }
 window.registrarPagoPaciente = registrarPagoPaciente;
