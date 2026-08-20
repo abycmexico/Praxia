@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow">
+<title>Pagar tu sesión</title>
+<link rel="icon" type="image/png" href="./assets/praxia-isotipo.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@500;600;700;800;900&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+/* Pagina publica: la abre alguien que no tiene cuenta, muchas veces desde el
+   celular y desde un enlace de WhatsApp. Tiene que entenderse en tres
+   segundos: de quien es el cobro, por que, cuanto, y el boton. */
+:root{
+  --primario:#2E7D32; --acento:#7BC043; --suave:#A8C99B; --claro:#EDF5EC;
+  --hondo:#0C2412; --hueso:#F7F9F6; --tinta:#1A1A1A; --gris:#666;
+  --linea:#DDE4DB; --err:#c62828; --r:8px; --trazo:2.5px;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{
+  background:var(--hondo);color:var(--hueso);
+  font-family:'Montserrat',Arial,sans-serif;font-weight:600;
+  min-height:100dvh;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;padding:24px 20px;
+}
+.caja{
+  background:var(--hueso);color:var(--tinta);border-radius:var(--r);
+  border:var(--trazo) solid var(--hueso);width:100%;max-width:420px;
+  padding:32px 28px;text-align:center;
+}
+.logo{
+  width:74px;height:74px;border-radius:var(--r);margin:0 auto 18px;
+  background:var(--claro);color:var(--primario);
+  display:flex;align-items:center;justify-content:center;
+  font-size:30px;font-weight:900;background-size:cover;background-position:center;
+}
+.de{font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.8px;color:var(--gris);}
+h1{font-size:21px;font-weight:900;line-height:1.25;margin:5px 0 22px;}
+.concepto{
+  background:#fff;border:1.5px solid var(--linea);border-radius:var(--r);
+  padding:16px;margin-bottom:18px;
+}
+.concepto-etq{font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.6px;color:var(--gris);}
+.concepto-txt{font-size:15px;font-weight:700;margin-top:5px;line-height:1.45;}
+.monto{font-size:44px;font-weight:900;letter-spacing:-2px;line-height:1;margin-bottom:4px;}
+.moneda{font-size:12.5px;font-weight:700;color:var(--gris);margin-bottom:24px;}
+.btn{
+  display:block;width:100%;padding:16px;border-radius:var(--r);border:none;
+  background:var(--primario);color:#fff;font-family:inherit;font-size:15.5px;
+  font-weight:800;cursor:pointer;
+}
+.btn:hover{background:#37963C;}
+.btn:disabled{opacity:.55;cursor:default;}
+.nota{font-size:11.5px;color:var(--gris);font-weight:600;line-height:1.6;margin-top:16px;}
+.aviso{
+  background:#FFF6E5;border:1.5px solid #F0D9A8;border-radius:var(--r);
+  padding:16px;font-size:13.5px;line-height:1.6;color:#7a5600;font-weight:700;
+}
+.aviso.ok{background:var(--claro);border-color:var(--primario);color:var(--primario);}
+.aviso.mal{background:#FDECEC;border-color:#E8CFCF;color:#A31515;}
+.marca{margin-top:22px;opacity:.5;}
+.marca img{height:17px;margin:0 auto;filter:brightness(0) invert(1);}
+.cargando{color:var(--suave);font-size:13.5px;font-weight:700;}
+</style>
+</head>
+<body>
+
+<div id="pantalla" class="cargando">Cargando tu cobro...</div>
+
+<div class="marca"><img src="./assets/praxia-logo-completo.png" alt="Praxia"></div>
+
+<script>
+const SUPABASE_URL = 'https://uxbpfyeahqpertamhdxt.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_xaaA4lYAQZjdcMFRhMGtuQ_fvIeJKv7';
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+const pantalla = document.getElementById('pantalla');
+const params = new URLSearchParams(location.search);
+const cobroId = params.get('c');
+
+function escapar(t){
+  return String(t ?? '').replace(/[&<>"']/g, c =>
+    ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+const pesos = (n)=> '$' + Number(n || 0).toLocaleString('es-MX', { minimumFractionDigits:2 });
+
+function mostrarAviso(texto, tipo){
+  pantalla.className = '';
+  pantalla.innerHTML = `<div class="caja"><div class="aviso ${tipo||''}">${escapar(texto)}</div></div>`;
+}
+
+async function iniciar(){
+  if(!cobroId){
+    mostrarAviso('Esta liga de pago no es válida. Pídele una nueva a tu psicólogo.', 'mal');
+    return;
+  }
+
+  // Al volver de Stripe. El pago se registra por el webhook, que puede
+  // tardar un momento: por eso se avisa en vez de afirmar que ya quedó.
+  if(params.get('pago') === 'ok'){
+    mostrarAviso('¡Listo! Tu pago se está registrando. Tu psicólogo lo verá en unos segundos.', 'ok');
+    return;
+  }
+
+  const { data, error } = await sb.rpc('cobro_publico', { p_id: cobroId });
+  const c = Array.isArray(data) ? data[0] : data;
+
+  if(error){
+    mostrarAviso('No pudimos cargar el cobro: ' + error.message, 'mal');
+    return;
+  }
+  if(!c || !c.existe){
+    mostrarAviso('Esta liga de pago no existe. Pídele una nueva a tu psicólogo.', 'mal');
+    return;
+  }
+
+  const quien = c.consultorio || c.psicologo || 'Tu psicólogo';
+  const inicial = escapar(quien.charAt(0).toUpperCase());
+  const logo = c.logo_url
+    ? `<div class="logo" style="background-image:url(${escapar(c.logo_url)})"></div>`
+    : `<div class="logo">${inicial}</div>`;
+
+  // Si ya no se puede cobrar, se dice por qué en vez de mostrar un botón
+  // que va a fallar.
+  if(!c.cobrable){
+    pantalla.className = '';
+    pantalla.innerHTML = `
+      <div class="caja">
+        ${logo}
+        <div class="de">Pago a</div>
+        <h1>${escapar(quien)}</h1>
+        <div class="aviso ${c.estado === 'pagado' ? 'ok' : ''}">${escapar(c.mensaje || 'Este cobro ya no está disponible.')}</div>
+      </div>`;
+    return;
+  }
+
+  pantalla.className = '';
+  pantalla.innerHTML = `
+    <div class="caja">
+      ${logo}
+      <div class="de">Pago a</div>
+      <h1>${escapar(quien)}</h1>
+
+      <div class="concepto">
+        <div class="concepto-etq">Concepto</div>
+        <div class="concepto-txt">${escapar(c.concepto)}</div>
+      </div>
+
+      <div class="monto">${pesos(c.monto)}</div>
+      <div class="moneda">Pesos mexicanos</div>
+
+      <button class="btn" id="btnPagar">Pagar con tarjeta</button>
+      <p class="msg" id="msg" style="color:var(--err);font-size:13px;margin-top:12px;min-height:16px;"></p>
+
+      <p class="nota">
+        El cobro lo procesa Stripe y el dinero llega directo a tu psicólogo.
+        Praxia no guarda los datos de tu tarjeta.
+      </p>
+    </div>`;
+
+  document.getElementById('btnPagar').addEventListener('click', pagar);
+}
+
+async function pagar(){
+  const btn = document.getElementById('btnPagar');
+  const msg = document.getElementById('msg');
+  btn.disabled = true;
+  btn.textContent = 'Abriendo pago seguro...';
+  msg.textContent = '';
+
+  try{
+    const base = `${location.origin}${location.pathname}`;
+    const r = await fetch(`${SUPABASE_URL}/functions/v1/cobrar-con-liga`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', apikey: SUPABASE_KEY },
+      body: JSON.stringify({ cobro_id: cobroId, url_retorno: base })
+    });
+    const datos = await r.json();
+
+    if(!r.ok || !datos.url){
+      msg.textContent = datos.error || 'No se pudo abrir el pago.';
+      btn.disabled = false;
+      btn.textContent = 'Pagar con tarjeta';
+      return;
+    }
+    location.href = datos.url;
+  }catch(e){
+    msg.textContent = 'No se pudo abrir el pago: ' + e.message;
+    btn.disabled = false;
+    btn.textContent = 'Pagar con tarjeta';
+  }
+}
+
+iniciar();
+</script>
+
+</body>
+</html>

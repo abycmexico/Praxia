@@ -1669,6 +1669,54 @@
   </div>
 </div>
 
+<div class="modal-bg" id="modalCobroLiga">
+  <div class="modal">
+    <h3>Cobrar una sesión</h3>
+    <p class="modal-sub">
+      Genera una liga de pago para <b id="clNombre">—</b>. La abre desde su
+      celular y paga con tarjeta, sin necesitar cuenta ni contraseña.
+    </p>
+
+    <div id="clFormulario">
+      <div class="rejilla-alta">
+        <div>
+          <label for="clMonto">Monto (MXN)</label>
+          <input type="number" id="clMonto" min="1" step="50" placeholder="300">
+        </div>
+        <div>
+          <label for="clConcepto">Concepto</label>
+          <input type="text" id="clConcepto" maxlength="80" placeholder="Sesión del 19 de agosto">
+        </div>
+      </div>
+      <p class="bh" style="margin-top:10px;">
+        La liga sirve una sola vez y vence en 7 días. No muestra el nombre de
+        tu paciente: si se reenvía, nadie se entera de quién es.
+      </p>
+      <p class="msg" id="msgCobroLiga"></p>
+      <div class="modal-actions">
+        <button type="button" class="btn btn-ghost" onclick="cerrarModal('modalCobroLiga')">Cancelar</button>
+        <button type="button" class="btn btn-primary" id="btnGenerarCobroLiga">Generar liga</button>
+      </div>
+    </div>
+
+    <div id="clResultado" style="display:none;">
+      <div class="invite-box">
+        <p class="mid-label">Liga de pago</p>
+        <p class="mid-valor" id="clLiga"></p>
+      </div>
+      <p class="bh" id="clSinTelefono" style="display:none;margin-top:10px;">
+        Este paciente no tiene teléfono registrado, así que no se puede mandar
+        por WhatsApp. Copia la liga y mándasela como prefieras.
+      </p>
+      <div class="modal-actions">
+        <button type="button" class="btn btn-ghost" id="btnCopiarCobroLiga">Copiar liga</button>
+        <a class="btn btn-primary" id="clWhatsapp" href="#" target="_blank" rel="noopener">Mandar por WhatsApp</a>
+        <button type="button" class="btn btn-ghost" onclick="cerrarModal('modalCobroLiga')">Listo</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <div class="modal-bg" id="modalConsultaRapida">
   <div class="modal">
     <div id="crPasoTipo">
@@ -5793,9 +5841,12 @@ function abrirMenuPaciente(pacienteId, boton){
     `<button onclick="cerrarMenuPaciente();crearSesionDesdeTarjeta('${p.id}')">
        ${icono('<rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18M12 14v4M10 16h4"/>')}
        Crear consulta</button>`,
+    `<button onclick="cerrarMenuPaciente();abrirCobroLiga('${p.id}','${nombreJS}')">
+       ${icono('<path d="M10 13a5 5 0 0 0 7 0l3-3a5 5 0 0 0-7-7l-1 1"/><path d="M14 11a5 5 0 0 0-7 0l-3 3a5 5 0 0 0 7 7l1-1"/>')}
+       Cobrar una sesión</button>`,
     `<button onclick="cerrarMenuPaciente();registrarPagoPaciente('${p.id}')">
        ${icono('<rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/>')}
-       Registrar un pago</button>`,
+       Registrar un pago recibido</button>`,
     `<button onclick="cerrarMenuPaciente();abrirMensualidadPaciente('${p.id}','${nombreJS}')">
        ${icono('<path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>')}
        Asignar mensualidad</button>`,
@@ -5846,6 +5897,95 @@ window.abrirMenuPaciente = abrirMenuPaciente;
 
 document.getElementById('fondoMenuPaciente')?.addEventListener('click', cerrarMenuPaciente);
 addEventListener('keydown', e=>{ if(e.key === 'Escape') cerrarMenuPaciente(); });
+
+/* ---------- cobrar una sesión con una liga ---------- */
+/* Genera una liga que el paciente abre sin cuenta y sin contraseña. Hasta
+   ahora pagar en línea exigía tener cuenta, y en Praxia la mayoría de los
+   pacientes tienen expediente pero no cuenta. */
+
+let cobroLigaPaciente = null;
+
+async function abrirCobroLiga(pacienteId, nombre){
+  const p = pacientesCache.find(x=> x.id === pacienteId);
+  if(!p) return;
+
+  cobroLigaPaciente = p;
+  document.getElementById('clNombre').textContent = nombre;
+  document.getElementById('clMonto').value = config?.precio_sesion || '';
+  document.getElementById('clConcepto').value =
+    'Sesión del ' + new Date().toLocaleDateString('es-MX', { day:'numeric', month:'long' });
+  document.getElementById('clResultado').style.display = 'none';
+  document.getElementById('clFormulario').style.display = 'block';
+  document.getElementById('msgCobroLiga').textContent = '';
+  abrirModal('modalCobroLiga');
+  document.getElementById('clMonto').focus();
+}
+window.abrirCobroLiga = abrirCobroLiga;
+
+document.getElementById('btnGenerarCobroLiga')?.addEventListener('click', async ()=>{
+  const btn = document.getElementById('btnGenerarCobroLiga');
+  const msg = document.getElementById('msgCobroLiga');
+  const monto = parseFloat(document.getElementById('clMonto').value);
+  const concepto = document.getElementById('clConcepto').value.trim();
+
+  if(!(monto > 0)){
+    msg.textContent = 'Escribe un monto mayor a cero.';
+    msg.className = 'msg err';
+    return;
+  }
+
+  btn.disabled = true;
+  msg.textContent = 'Generando la liga...';
+  msg.className = 'msg';
+
+  const { data, error } = await sb.rpc('crear_cobro_liga', {
+    p_paciente_id: cobroLigaPaciente.id,
+    p_monto: monto,
+    p_concepto: concepto || null,
+  });
+  const r = Array.isArray(data) ? data[0] : data;
+
+  if(error || !r || !r.ok){
+    msg.textContent = error?.message || r?.mensaje || 'No se pudo generar la liga.';
+    msg.className = 'msg err';
+    btn.disabled = false;
+    return;
+  }
+
+  const liga = `${location.origin}${location.pathname.replace(/[^/]+$/,'')}pagar.html?c=${r.cobro_id}`;
+  document.getElementById('clLiga').textContent = liga;
+
+  const texto = encodeURIComponent(
+    `Hola ${cobroLigaPaciente.nombre.split(' ')[0]}, aquí puedes pagar tu sesión: ${liga}`);
+  const tel = String(cobroLigaPaciente.telefono || '').replace(/\D/g, '');
+  const wa = document.getElementById('clWhatsapp');
+
+  if(tel){
+    wa.href = `https://wa.me/${tel.length === 10 ? '52' + tel : tel}?text=${texto}`;
+    wa.style.display = '';
+  } else {
+    // Sin teléfono no se puede mandar por WhatsApp: se dice, en vez de
+    // dejar un botón que no lleva a ningún lado.
+    wa.style.display = 'none';
+  }
+  document.getElementById('clSinTelefono').style.display = tel ? 'none' : 'block';
+
+  document.getElementById('clFormulario').style.display = 'none';
+  document.getElementById('clResultado').style.display = 'block';
+  msg.textContent = '';
+  btn.disabled = false;
+});
+
+document.getElementById('btnCopiarCobroLiga')?.addEventListener('click', async ()=>{
+  const liga = document.getElementById('clLiga').textContent;
+  try{
+    await navigator.clipboard.writeText(liga);
+    document.getElementById('btnCopiarCobroLiga').textContent = 'Copiada';
+    setTimeout(()=> document.getElementById('btnCopiarCobroLiga').textContent = 'Copiar liga', 1800);
+  }catch(e){
+    prompt('Copia la liga:', liga);
+  }
+});
 
 /* Registrar un pago recibido en efectivo o por transferencia. Existía en la
    app del celular pero no en el panel, donde también hace falta. */

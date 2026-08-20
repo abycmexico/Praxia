@@ -107,6 +107,17 @@ Deno.serve(async (req) => {
               notas: dato.metadata.concepto === 'mensualidad' ? 'Mensualidad' : 'Saldo pendiente',
             });
 
+            // Si vino de una liga de cobro, se marca usada. Sin esto la
+            // misma liga se podria pagar dos veces: basta con volver a
+            // abrirla.
+            if (dato.metadata.cobro_id) {
+              await sb.from('cobros_liga').update({
+                estado: 'pagado',
+                pagado_en: new Date().toISOString(),
+                stripe_payment_id: dato.payment_intent || dato.id,
+              }).eq('id', dato.metadata.cobro_id);
+            }
+
             // Si pago su mes, el periodo se recorre y las sesiones vuelven
             // a estar disponibles.
             if (dato.metadata.concepto === 'mensualidad') {
