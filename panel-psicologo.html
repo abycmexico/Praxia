@@ -333,6 +333,39 @@
   .mid-label{font-size:10.5px;letter-spacing:1px;text-transform:uppercase;color:var(--gray);font-weight:800;margin-bottom:4px;}
   .mid-valor{font-family:monospace;font-size:13px;font-weight:700;word-break:break-all;}
   .mid-desc{font-size:11.5px;color:var(--gray);margin-top:6px;line-height:1.5;}
+  /* Menu de acciones de UN paciente. Antes el "+" abria la lista completa y
+     habia que volver a elegir a la persona cuya tarjeta acababas de tocar. */
+  /* Anclado a la tarjeta y no a la pantalla. Con position:fixed habia que
+     calcular a mano si cabia abajo o arriba, y ese calculo no se pudo
+     comprobar de forma confiable. Aqui la posicion es correcta por
+     construccion: cuelga de la tarjeta que lo abrio y se desplaza con ella. */
+  #menuPaciente{
+    position:absolute;top:calc(100% + 6px);right:14px;z-index:200;
+    background:#fff;border:1.5px solid var(--line);
+    border-radius:12px;padding:6px;min-width:230px;display:none;
+    box-shadow:0 8px 28px rgba(0,0,0,.14);
+  }
+  #menuPaciente.abierto{display:block;}
+  .mp-titulo{
+    font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.5px;
+    color:var(--gray);padding:8px 12px 6px;
+  }
+  #menuPaciente button, #menuPaciente a{
+    display:flex;align-items:center;gap:10px;width:100%;background:none;border:none;
+    padding:10px 12px;border-radius:8px;font-family:inherit;font-size:13.5px;
+    font-weight:700;color:var(--ink);cursor:pointer;text-align:left;
+  }
+  #menuPaciente button:hover, #menuPaciente a:hover{background:var(--claro,#EDF5EC);color:var(--primario);}
+  #menuPaciente svg{width:16px;height:16px;flex-shrink:0;color:var(--gray);}
+  #menuPaciente button:hover svg, #menuPaciente a:hover svg{color:var(--primario);}
+  #menuPaciente hr{border:none;border-top:1px solid var(--line);margin:5px 8px;}
+  /* Capa para cerrar al tocar fuera. No lleva color: solo captura el toque. */
+  #fondoMenuPaciente{position:fixed;inset:0;z-index:199;display:none;}
+  /* La tarjeta con el menu abierto se pone por encima de las demas, para que
+     el menu no quede tapado por la tarjeta de al lado. */
+  .pac-card:has(#menuPaciente.abierto){z-index:201;}
+  #fondoMenuPaciente.abierto{display:block;}
+
   .pac-busca{position:relative;display:flex;align-items:center;margin-bottom:14px;}
   .pac-busca svg{position:absolute;left:14px;width:17px;height:17px;color:var(--gray);pointer-events:none;}
   .pac-busca input{
@@ -948,7 +981,10 @@
       <button class="btn btn-ghost" id="btnCopiarMiId">Copiar</button>
     </div>
 
-    <div class="pac-busca">
+    <div id="fondoMenuPaciente"></div>
+  <div id="menuPaciente"></div>
+
+  <div class="pac-busca">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
       <input type="search" id="buscaPacientes" placeholder="Buscar por nombre, correo, teléfono o motivo de consulta..." autocomplete="off">
     </div>
@@ -3234,6 +3270,10 @@ async function iniciar(){
   cargarCalendario();
   cargarNotificaciones();
   setInterval(cargarNotificaciones, 25000);
+
+  // Se restaura al final: todas las secciones ya cargaron sus datos arriba,
+  // así que abrir cualquiera es seguro.
+  restaurarPestana();
 }
 
 document.getElementById('btnSalir').addEventListener('click', async ()=>{
@@ -3242,14 +3282,39 @@ document.getElementById('btnSalir').addEventListener('click', async ()=>{
 });
 
 /* ---------- pestañas ---------- */
+/* La pestaña abierta se guarda en la dirección. Antes, recargar desde
+   Cobros o Mis pacientes devolvía siempre a Mi consultorio, que es molesto
+   justo cuando uno recarga para ver un cambio en la sección donde está.
+
+   Va en el hash y no en memoria para que además funcione compartir o
+   guardar la liga de una sección, y para que el botón de atrás del
+   navegador haga lo que se espera. */
+function abrirPestana(nombre, guardar = true){
+  const boton = document.querySelector(`nav.tabs button[data-tab="${nombre}"]`);
+  const seccion = document.getElementById('tab-' + nombre);
+  if(!boton || !seccion) return false;
+
+  document.querySelectorAll('nav.tabs button').forEach(x=> x.classList.remove('active'));
+  document.querySelectorAll('main section').forEach(s=> s.classList.remove('active'));
+  boton.classList.add('active');
+  seccion.classList.add('active');
+
+  if(guardar) history.replaceState(null, '', '#' + nombre);
+  return true;
+}
+window.abrirPestana = abrirPestana;
+
 document.querySelectorAll('nav.tabs button').forEach(b=>{
-  b.addEventListener('click', ()=>{
-    document.querySelectorAll('nav.tabs button').forEach(x=>x.classList.remove('active'));
-    document.querySelectorAll('main section').forEach(s=>s.classList.remove('active'));
-    b.classList.add('active');
-    document.getElementById('tab-' + b.dataset.tab).classList.add('active');
-  });
+  b.addEventListener('click', ()=> abrirPestana(b.dataset.tab));
 });
+
+// Al cargar se restaura la que estaba abierta. Si el hash no corresponde a
+// ninguna sección, se queda la de inicio en vez de dejar la pantalla vacía.
+function restaurarPestana(){
+  const nombre = decodeURIComponent(location.hash.replace('#',''));
+  if(nombre) abrirPestana(nombre, false);
+}
+addEventListener('hashchange', restaurarPestana);
 
 /* ---------- modales ---------- */
 function abrirModal(id){ document.getElementById(id).classList.add('show'); }
@@ -3909,7 +3974,7 @@ function pintarPacientes(){
 
     return `
       <div class="pac-card" draggable="${arrastrable}" data-id="${p.id}">
-        <button class="pac-btn-mas" onclick="crearSesionDesdeTarjeta('${p.id}')" title="Crear consulta rápida con ${escapar(p.nombre)}">＋</button>
+        <button class="pac-btn-mas" onclick="event.stopPropagation();abrirMenuPaciente('${p.id}', this)" title="Acciones para ${escapar(p.nombre)}" aria-label="Acciones para ${escapar(p.nombre)}">＋</button>
         <div class="pac-card-top">
           <div class="pac-avatar" ${avatarEstilo}>${p.foto_url ? '' : inicial}</div>
           <div style="min-width:0;">
@@ -5697,8 +5762,120 @@ function crearSesionDesdeTarjeta(pacienteId){
   document.getElementById('crBtnCrear').style.display = 'inline-block';
   crMostrarPaso('crPasoExistente');
   abrirModal('modalConsultaRapida');
+  // Se elige de nuevo para que se pinte el costo y quede marcado: sin esto
+  // la lista salia completa y habia que volver a tocar a la misma persona.
+  crElegirPaciente(pacienteId);
 }
 window.crearSesionDesdeTarjeta = crearSesionDesdeTarjeta;
+
+/* ---------- menú de acciones de un paciente ---------- */
+/* El "+" de la tarjeta abría la lista de todos los pacientes, o sea que
+   había que volver a elegir a la persona cuya tarjeta acababas de tocar.
+   Ahora abre lo que se puede hacer con ESE paciente. */
+
+function cerrarMenuPaciente(){
+  document.getElementById('menuPaciente').classList.remove('abierto');
+  document.getElementById('fondoMenuPaciente').classList.remove('abierto');
+}
+window.cerrarMenuPaciente = cerrarMenuPaciente;
+
+function abrirMenuPaciente(pacienteId, boton){
+  const p = pacientesCache.find(x=> x.id === pacienteId);
+  if(!p) return;
+
+  const menu = document.getElementById('menuPaciente');
+  const nombreCorto = escapar((p.nombre || '').split(' ')[0]);
+  const nombreJS = escapar(p.nombre).replace(/'/g, "\\'");
+
+  const icono = (d)=> `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">${d}</svg>`;
+
+  const opciones = [
+    `<button onclick="cerrarMenuPaciente();crearSesionDesdeTarjeta('${p.id}')">
+       ${icono('<rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18M12 14v4M10 16h4"/>')}
+       Crear consulta</button>`,
+    `<button onclick="cerrarMenuPaciente();registrarPagoPaciente('${p.id}')">
+       ${icono('<rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/>')}
+       Registrar un pago</button>`,
+    `<button onclick="cerrarMenuPaciente();abrirMensualidadPaciente('${p.id}','${nombreJS}')">
+       ${icono('<path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>')}
+       Asignar mensualidad</button>`,
+    `<a href="./expediente.html?id=${p.id}">
+       ${icono('<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/>')}
+       Abrir expediente</a>`,
+  ];
+
+  if(!p.auth_user_id){
+    opciones.push(`<button onclick="cerrarMenuPaciente();darAccesoPaciente('${p.id}')">
+      ${icono('<path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><path d="M10 17l5-5-5-5M15 12H3"/>')}
+      Enviarle su acceso</button>`);
+  }
+
+  // Contactar solo si hay con qué. Un botón que no lleva a ningún lado se
+  // toca una vez y ya no se vuelve a confiar en él.
+  const tel = String(p.telefono || '').replace(/\D/g, '');
+  if(tel){
+    const wa = tel.length === 10 ? '52' + tel : tel;
+    const texto = encodeURIComponent(`Hola ${(p.nombre||'').split(' ')[0]}, `);
+    opciones.push(`<a href="https://wa.me/${wa}?text=${texto}" target="_blank" rel="noopener">
+      ${icono('<path d="M21 15v4a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 1 3.2 2 2 0 0 1 3 1h4a2 2 0 0 1 2 1.7c.1 1 .4 1.9.7 2.8a2 2 0 0 1-.5 2.1L8.1 8.9a16 16 0 0 0 6 6l1.3-1.1a2 2 0 0 1 2.1-.5c.9.3 1.8.6 2.8.7A2 2 0 0 1 21 15z"/>')}
+      Escribir por WhatsApp</a>`);
+  }
+  if(p.correo){
+    opciones.push(`<a href="mailto:${escapar(p.correo)}">
+      ${icono('<rect x="2" y="4" width="20" height="16" rx="2"/><path d="m2 7 10 6 10-6"/>')}
+      Enviar correo</a>`);
+  }
+
+  menu.innerHTML = `<div class="mp-titulo">${nombreCorto}</div>` + opciones.join('');
+
+  // Se mete dentro de la tarjeta que lo abrió: así cuelga de ella, se
+  // desplaza con ella y no hay que calcular coordenadas de pantalla.
+  const tarjeta = boton.closest('.pac-card');
+  if(tarjeta) tarjeta.appendChild(menu);
+
+  menu.classList.add('abierto');
+  document.getElementById('fondoMenuPaciente').classList.add('abierto');
+
+  // Si la tarjeta está pegada al borde derecho, el menú se abre hacia el
+  // otro lado para no salirse.
+  const caja = menu.getBoundingClientRect();
+  menu.style.right = caja.right > innerWidth - 8 ? 'auto' : '14px';
+  menu.style.left  = caja.right > innerWidth - 8 ? '14px' : 'auto';
+}
+window.abrirMenuPaciente = abrirMenuPaciente;
+
+document.getElementById('fondoMenuPaciente')?.addEventListener('click', cerrarMenuPaciente);
+addEventListener('keydown', e=>{ if(e.key === 'Escape') cerrarMenuPaciente(); });
+
+/* Registrar un pago recibido en efectivo o por transferencia. Existía en la
+   app del celular pero no en el panel, donde también hace falta. */
+async function registrarPagoPaciente(pacienteId){
+  const p = pacientesCache.find(x=> x.id === pacienteId);
+  if(!p) return;
+
+  const texto = prompt(`¿Cuánto te pagó ${p.nombre}?`, '');
+  if(texto === null) return;
+
+  const monto = Number(texto);
+  if(!(monto > 0)){ alert('Escribe un monto válido.'); return; }
+
+  const metodo = confirm(`${pesos(monto)} de ${p.nombre}\n\n¿Fue en efectivo?\n\nAceptar = efectivo · Cancelar = transferencia`)
+    ? 'efectivo' : 'transferencia';
+
+  const { data, error } = await sb.rpc('registrar_pago', {
+    p_paciente_id: pacienteId, p_monto: monto, p_metodo: metodo
+  });
+  const r = Array.isArray(data) ? data[0] : data;
+
+  if(error || !r || !r.ok){
+    alert('No se pudo registrar: ' + (error?.message || r?.mensaje || 'error desconocido'));
+    return;
+  }
+
+  alert(`Registrado: ${pesos(monto)} de ${p.nombre}.`);
+  cargarCobros();
+}
+window.registrarPagoPaciente = registrarPagoPaciente;
 
 document.getElementById('crBtnExistente').addEventListener('click', ()=>{
   crPacienteSel = null;
