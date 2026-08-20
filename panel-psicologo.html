@@ -35,6 +35,51 @@
   .sidebar-user-info{min-width:0;}
   .sidebar-user-nombre{font-size:12.5px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
   .sidebar-user-rol{font-size:10.5px;color:var(--gray);}
+  /* Submenu de la barra lateral. Va indentado y con una linea a la
+     izquierda, que es como se lee "esto cuelga de lo de arriba" sin
+     necesidad de flechitas ni de que se despliegue y se cierre. */
+  .sidebar-sub{margin:2px 0 2px 14px;padding-left:12px;border-left:1.5px solid rgba(255,255,255,.16);}
+  .sidebar-sub button{font-size:12.5px !important;padding-top:8px !important;padding-bottom:8px !important;}
+
+  /* mis psicologos: tarjetas del equipo */
+  .mp-cab{display:flex;justify-content:space-between;align-items:flex-end;gap:16px;flex-wrap:wrap;margin-bottom:4px;}
+  /* El min() es lo que deja que la tarjeta baje de 330px en un celular. Sin
+     el, la columna se planta en 330 aunque la pantalla mida 319 y la
+     tarjeta se sale por la derecha. */
+  .mp-rejilla{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(330px,100%),1fr));gap:14px;margin-top:16px;}
+  .mp-card{border:1.5px solid var(--line);border-radius:14px;padding:16px 17px;background:#fff;display:flex;flex-direction:column;gap:12px;}
+  .mp-card.suspendido{background:#FCFAFA;border-color:#E8D8D8;}
+  .mp-arriba{display:flex;align-items:flex-start;gap:12px;}
+  .mp-avatar{width:46px;height:46px;border-radius:50%;background:#EDF6EC;color:var(--primario);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:15px;flex-shrink:0;overflow:hidden;}
+  .mp-avatar img{width:100%;height:100%;object-fit:cover;}
+  .mp-ident{flex:1;min-width:0;}
+  .mp-nombre{font-size:14.5px;font-weight:800;line-height:1.3;}
+  .mp-sub{font-size:11.5px;color:var(--gray);font-weight:600;margin-top:2px;}
+  .mp-etqs{display:flex;gap:6px;flex-wrap:wrap;margin-top:7px;}
+  .mp-etq{font-size:10px;font-weight:800;letter-spacing:.4px;text-transform:uppercase;padding:3px 8px;border-radius:20px;background:#F2F6F1;color:var(--primario);white-space:nowrap;}
+  .mp-etq.gris{background:#F4F4F4;color:var(--gray);}
+  .mp-etq.roja{background:#FBEDEC;color:#A2453C;}
+  /* El punto de conexion: verde si entro hoy, ambar si hace mas de una
+     semana, gris si nunca. Se acompaña SIEMPRE del texto, porque un color
+     solo no se lee si no distingues verde de ambar. */
+  .mp-punto{width:8px;height:8px;border-radius:50%;flex-shrink:0;display:inline-block;}
+  .mp-punto.hoy{background:#3E9B57;}
+  .mp-punto.tibio{background:#C79A2E;}
+  .mp-punto.frio{background:#C9CCC8;}
+  .mp-conexion{display:flex;align-items:center;gap:6px;font-size:11.5px;font-weight:700;color:var(--gray);}
+  .mp-kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;padding:11px 0;border-top:1px solid var(--line);border-bottom:1px solid var(--line);}
+  .mp-kpi{text-align:center;}
+  .mp-kpi-num{font-size:17px;font-weight:800;color:var(--ink);line-height:1.2;}
+  .mp-kpi-etq{font-size:10px;font-weight:700;color:var(--gray);text-transform:uppercase;letter-spacing:.3px;margin-top:2px;line-height:1.3;}
+  .mp-prox{font-size:11.5px;font-weight:700;color:var(--ink);display:flex;align-items:center;gap:7px;}
+  .mp-prox svg{width:14px;height:14px;color:var(--gray);flex-shrink:0;}
+  .mp-prox.vacio{color:var(--gray);font-weight:600;}
+  .mp-acciones{display:flex;gap:7px;flex-wrap:wrap;margin-top:auto;padding-top:2px;}
+  .mp-btn{font-size:11.5px;font-weight:700;padding:7px 12px;border-radius:9px;border:1.5px solid var(--line);background:#fff;color:var(--ink);cursor:pointer;font-family:inherit;}
+  .mp-btn:hover{border-color:var(--primario);color:var(--primario);}
+  .mp-btn.peligro:hover{border-color:#A2453C;color:#A2453C;}
+  .mp-vacio{border:1.5px dashed var(--line);border-radius:14px;padding:30px 20px;text-align:center;color:var(--gray);font-size:12.5px;font-weight:600;}
+
   /* equipo del consultorio */
   .eq-miembro{display:flex;align-items:center;gap:13px;padding:13px 0;border-bottom:1px solid var(--line);}
   .eq-perfil-link{display:flex;align-items:center;gap:13px;flex:1;min-width:0;border-radius:12px;padding:6px 8px;margin:-6px -8px;transition:background .15s;}
@@ -825,6 +870,17 @@
         <svg class="icono-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18"></path><path d="M5 21V7l8-4v18"></path><path d="M19 21V11l-6-4"></path><path d="M9 9v.01"></path><path d="M9 13v.01"></path><path d="M9 17v.01"></path></svg>
         Mi consultorio
       </button>
+
+      <!-- Submenu de Mi consultorio. Aparece solo si esta cuenta dirige un
+           consultorio con equipo: a quien trabaja solo, "Mis psicólogos" no
+           le dice nada y le estorba. Lo enciende cargarMisPsicologos(). -->
+      <div class="sidebar-sub" id="subConsultorio" hidden>
+        <button data-tab="psicologos">
+          <svg class="icono-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.2"></circle><path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6"></path><circle cx="17.5" cy="9" r="2.2"></circle><path d="M16.5 13.6c2.3.5 3.9 2.5 3.9 4.9"></path></svg>
+          Mis psicólogos
+        </button>
+      </div>
+
       <button data-tab="resumen">
         <svg class="icono-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="12" width="4" height="8"></rect><rect x="10" y="7" width="4" height="13"></rect><rect x="17" y="3" width="4" height="17"></rect></svg>
         Resumen
@@ -1308,6 +1364,15 @@
         </div>
       </aside>
     </div>
+  </section>
+
+  <!-- Mis psicologos: la vista de quien dirige el consultorio. Vive aparte
+       de Mi consultorio porque responde otra pregunta: alli se configura el
+       consultorio, aqui se dirige a la gente. -->
+  <section id="tab-psicologos">
+    <h2>Mis psicólogos</h2>
+    <p class="sub">Quién está en tu consultorio, cómo va cada quien y quién puede entrar.</p>
+    <div id="mpContenido"><p class="empty">Cargando...</p></div>
   </section>
 
   <section id="tab-cobros">
@@ -2841,6 +2906,267 @@ function pintarBajaConsultorio(psi){
   });
 }
 
+/* ---------- mis psicólogos ---------- */
+/* La vista de quien dirige un consultorio. Mi consultorio sirve para
+   configurarlo -datos, identidad, dar de alta-; esto sirve para dirigirlo:
+   quién está, cómo va cada quien, y quién puede entrar.
+
+   Todo sale de una sola llamada, equipo_de_mi_consultorio(), porque la
+   última conexión vive en auth.users y el navegador no puede leer esa tabla
+   ni debe. Ahí están los correos y tokens de todos.
+
+   Lo que NO aparece, y no es olvido: nombres de pacientes, notas, motivos de
+   consulta. Dirigir un consultorio no da acceso clínico a los pacientes de
+   otro psicólogo. Para eso está el permiso de expedientes, que cada quien
+   concede por su cuenta y puede retirar. */
+
+let misPsicologosCache = [];
+let vistaMisPsicologos = 'tarjetas';
+
+async function cargarMisPsicologos(){
+  // Sin consultorio o sin ser el responsable, la sección no existe: no se
+  // muestra vacía ni deshabilitada, simplemente no está en el menú.
+  if(!yo.consultorio_id || yo.rol_consultorio !== 'dueno') return;
+
+  const { data, error } = await sb.rpc('equipo_de_mi_consultorio');
+  if(error){
+    console.warn('No se pudo cargar el equipo:', error.message);
+    return;
+  }
+
+  misPsicologosCache = data || [];
+
+  // El submenú aparece solo si de verdad hay un equipo que dirigir. A quien
+  // trabaja solo, "Mis psicólogos" le estorba y no le dice nada.
+  if(misPsicologosCache.length > 1){
+    document.getElementById('subConsultorio').hidden = false;
+  }
+
+  pintarMisPsicologos();
+}
+
+/* Cuándo entró por última vez. No es "conectado ahora": eso pediría
+   presencia en vivo, y para dirigir un consultorio importa más saber quién
+   lleva tres semanas sin abrir Praxia que quién tiene la pestaña abierta. */
+function comoAnda(fecha){
+  if(!fecha) return { clase:'frio', texto:'Nunca ha entrado' };
+
+  const dias = Math.floor((Date.now() - new Date(fecha)) / 86400000);
+  if(dias <= 0)  return { clase:'hoy',   texto:'Entró hoy' };
+  if(dias === 1) return { clase:'hoy',   texto:'Entró ayer' };
+  if(dias < 7)   return { clase:'hoy',   texto:`Entró hace ${dias} días` };
+  if(dias < 30)  return { clase:'tibio', texto:`Hace ${Math.floor(dias/7)} semana${dias<14?'':'s'} que no entra` };
+  return { clase:'frio', texto:`Hace ${Math.floor(dias/30)} mes${dias<60?'':'es'} que no entra` };
+}
+
+function cuandoEs(fecha){
+  if(!fecha) return null;
+  const d = new Date(fecha);
+  const hoy = new Date(); hoy.setHours(0,0,0,0);
+  const dia = new Date(d);  dia.setHours(0,0,0,0);
+  const dias = Math.round((dia - hoy) / 86400000);
+  const hora = d.toLocaleTimeString('es-MX', { hour:'2-digit', minute:'2-digit' });
+
+  if(dias === 0) return `Hoy a las ${hora}`;
+  if(dias === 1) return `Mañana a las ${hora}`;
+  if(dias < 7)   return `${d.toLocaleDateString('es-MX',{ weekday:'long' })} a las ${hora}`;
+  return `${d.toLocaleDateString('es-MX',{ day:'numeric', month:'short' })} a las ${hora}`;
+}
+
+function tarjetaPsicologo(p){
+  const soyYo     = p.id === yo.id;
+  const esDueno   = p.rol_consultorio === 'dueno';
+  const suspendido= p.estado === 'suspendido';
+  const conexion  = comoAnda(p.ultima_conexion);
+  const dinero    = n => '$' + Number(n||0).toLocaleString('es-MX');
+  const prox      = cuandoEs(p.proxima_sesion);
+
+  const foto = p.foto_url
+    ? `<img src="${escapar(p.foto_url)}" alt="">`
+    : escapar(iniciales(p.nombre));
+
+  // Debajo del nombre va lo que identifica profesionalmente: especialidad,
+  // edad y cédula. La cédula importa: es lo que vuelve verificable a quien
+  // ejerce, y quien dirige un consultorio responde por eso.
+  const sub = [
+    p.especialidad || 'Sin especialidad definida',
+    p.edad ? `${p.edad} años` : null,
+    p.cedula_profesional ? `Céd. ${escapar(p.cedula_profesional)}` : null,
+  ].filter(Boolean).join(' · ');
+
+  const acciones = [];
+  if(!soyYo){
+    if(!esDueno){
+      acciones.push(p.comparte_expedientes
+        ? '<span class="mp-etq">Comparte expedientes</span>'
+        : `<button type="button" class="mp-btn" data-accion="pedir" data-id="${escapar(p.id)}" data-nombre="${escapar(p.nombre)}">Pedir acceso a expedientes</button>`);
+
+      acciones.push(suspendido
+        ? `<button type="button" class="mp-btn" data-accion="reactivar" data-id="${escapar(p.id)}" data-nombre="${escapar(p.nombre)}">Devolverle el acceso</button>`
+        : `<button type="button" class="mp-btn peligro" data-accion="suspender" data-id="${escapar(p.id)}" data-nombre="${escapar(p.nombre)}">Quitarle el acceso</button>`);
+
+      acciones.push(`<button type="button" class="mp-btn peligro" data-accion="retirar" data-id="${escapar(p.id)}" data-nombre="${escapar(p.nombre)}">Retirar del consultorio</button>`);
+    }
+  }
+
+  return `
+    <div class="mp-card ${suspendido ? 'suspendido' : ''}">
+      <div class="mp-arriba">
+        <div class="mp-avatar">${foto}</div>
+        <div class="mp-ident">
+          <div class="mp-nombre">${escapar(p.nombre)}${soyYo ? ' (tú)' : ''}</div>
+          <div class="mp-sub">${sub}</div>
+          <div class="mp-etqs">
+            <span class="mp-etq ${esDueno ? '' : 'gris'}">${esDueno ? 'Responsable' : 'Colaborador'}</span>
+            ${suspendido ? '<span class="mp-etq roja">Sin acceso</span>' : ''}
+          </div>
+        </div>
+        ${soyYo ? '' : botonesContacto(p.nombre, p.telefono, p.correo)}
+      </div>
+
+      <div class="mp-conexion">
+        <span class="mp-punto ${conexion.clase}"></span>${escapar(conexion.texto)}
+      </div>
+
+      <div class="mp-kpis">
+        <div class="mp-kpi">
+          <div class="mp-kpi-num">${p.pacientes_activos || 0}</div>
+          <div class="mp-kpi-etq">Pacientes activos</div>
+        </div>
+        <div class="mp-kpi">
+          <div class="mp-kpi-num">${p.sesiones_mes || 0}</div>
+          <div class="mp-kpi-etq">Sesiones este mes</div>
+        </div>
+        <div class="mp-kpi">
+          <div class="mp-kpi-num">${dinero(p.cobrado_mes)}</div>
+          <div class="mp-kpi-etq">Cobrado este mes</div>
+        </div>
+      </div>
+
+      <div class="mp-prox ${prox ? '' : 'vacio'}">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+        ${prox
+          ? `Próxima sesión: ${escapar(prox)}${p.sesiones_proximas > 1 ? ` · ${p.sesiones_proximas} agendadas` : ''}`
+          : 'Sin sesiones agendadas'}
+      </div>
+
+      ${acciones.length ? `<div class="mp-acciones">${acciones.join('')}</div>` : ''}
+    </div>`;
+}
+
+function pintarMisPsicologos(){
+  const cont = document.getElementById('mpContenido');
+  if(!cont) return;
+
+  const campo = document.getElementById('mpBusca');
+  const busca = (campo?.value || '').trim().toLowerCase();
+
+  const lista = misPsicologosCache.filter(p=> !busca || [
+    p.nombre, p.correo, p.especialidad, p.telefono, p.ciudad,
+  ].some(x=> String(x || '').toLowerCase().includes(busca)));
+
+  const dinero = n => '$' + Number(n||0).toLocaleString('es-MX');
+  const suma = (campo)=> misPsicologosCache.reduce((a,p)=> a + Number(p[campo] || 0), 0);
+  const sinAcceso = misPsicologosCache.filter(p=> p.estado === 'suspendido').length;
+
+  const cuerpo = !lista.length
+    ? `<div class="mp-vacio">Nadie de tu equipo coincide con “${escapar(campo?.value.trim() || '')}”.</div>`
+    : vistaMisPsicologos === 'organigrama'
+      ? pintarOrganigrama(lista)
+      : `<div class="mp-rejilla">${lista.map(tarjetaPsicologo).join('')}</div>`;
+
+  // El buscador y el cambio de vista se redibujan enteros, así que el foco
+  // y el cursor del campo se pierden. Se guardan y se devuelven, o escribir
+  // en el buscador sería imposible.
+  const teniaFoco = document.activeElement === campo;
+  const cursor    = campo?.selectionStart;
+
+  cont.innerHTML = `
+    <div class="eq-totales">
+      <div class="eq-total"><div class="eq-total-num">${misPsicologosCache.length}</div><div class="eq-total-etq">Psicólogos</div></div>
+      <div class="eq-total"><div class="eq-total-num">${suma('pacientes_activos')}</div><div class="eq-total-etq">Pacientes activos</div></div>
+      <div class="eq-total"><div class="eq-total-num">${suma('sesiones_mes')}</div><div class="eq-total-etq">Sesiones este mes</div></div>
+      <div class="eq-total"><div class="eq-total-num">${dinero(suma('cobrado_mes'))}</div><div class="eq-total-etq">Cobrado este mes</div></div>
+    </div>
+
+    ${sinAcceso ? `<div class="eq-caja" style="border-color:#E8D8D8;background:#FCFAFA;">
+      <div class="eq-caja-titulo">${sinAcceso} ${sinAcceso === 1 ? 'psicólogo no puede entrar' : 'psicólogos no pueden entrar'}</div>
+      <div class="eq-caja-texto">Sus expedientes y su historial siguen intactos. Puedes devolverles el acceso cuando quieras.</div>
+    </div>` : ''}
+
+    <div class="eq-barra">
+      <div class="eq-busca">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+        <input type="search" id="mpBusca" placeholder="Buscar por nombre, correo, especialidad o ciudad..." autocomplete="off" value="${escapar(campo?.value || '')}">
+      </div>
+      <div class="eq-vistas">
+        <button type="button" class="eq-vista ${vistaMisPsicologos === 'tarjetas' ? 'activa' : ''}" data-vista="tarjetas" title="Ver como tarjetas">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>
+        </button>
+        <button type="button" class="eq-vista ${vistaMisPsicologos === 'organigrama' ? 'activa' : ''}" data-vista="organigrama" title="Ver como organigrama">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="2" width="6" height="5" rx="1"/><rect x="2" y="17" width="6" height="5" rx="1"/><rect x="16" y="17" width="6" height="5" rx="1"/><path d="M12 7v4M5 17v-2h14v2M12 11v4"/></svg>
+        </button>
+      </div>
+    </div>
+
+    ${cuerpo}
+
+    <p class="eq-aviso-privacidad">
+      Cada psicólogo es responsable de los datos de sus propios pacientes. Por eso ves cuántos
+      atiende y cómo va su operación, pero no sus notas de sesión ni sus expedientes: sus pacientes
+      consintieron que su psicólogo tratante maneje esa información, no el consultorio entero.
+    </p>`;
+
+  const nuevo = document.getElementById('mpBusca');
+  nuevo.addEventListener('input', pintarMisPsicologos);
+  if(teniaFoco){
+    nuevo.focus();
+    if(cursor != null) nuevo.setSelectionRange(cursor, cursor);
+  }
+
+  cont.querySelectorAll('.eq-vista').forEach(b=>{
+    b.addEventListener('click', ()=>{
+      vistaMisPsicologos = b.dataset.vista;
+      pintarMisPsicologos();
+    });
+  });
+
+  cont.querySelectorAll('[data-accion]').forEach(b=>{
+    b.addEventListener('click', ()=>{
+      const { accion, id, nombre } = b.dataset;
+      if(accion === 'pedir')     return pedirAccesoExpedientes(id, nombre);
+      if(accion === 'retirar')   return retirarDelConsultorio(id, nombre);
+      return cambiarAccesoPsicologo(id, nombre, accion === 'suspender');
+    });
+  });
+}
+
+/* Quitarle el acceso no borra nada: sus pacientes, sus notas y su historial
+   quedan donde estaban. Es una llave que se quita, no un expediente que se
+   destruye —por NOM-004 esos registros tienen que seguir existiendo aunque
+   la persona ya no trabaje ahí—, y por eso se puede devolver. */
+async function cambiarAccesoPsicologo(id, nombre, suspender){
+  const ok = suspender
+    ? await confirmar(
+        `${nombre} dejará de poder entrar a Praxia. Sus pacientes, sus notas y su historial ` +
+        `quedan intactos, y puedes devolverle el acceso cuando quieras.`,
+        { titulo: `¿Quitarle el acceso a ${nombre}?`, aceptar: 'Sí, quitarle el acceso', peligro: true })
+    : await confirmar(
+        `${nombre} podrá volver a entrar y seguir atendiendo a sus pacientes.`,
+        { titulo: `¿Devolverle el acceso a ${nombre}?`, aceptar: 'Sí, devolvérselo' });
+
+  if(!ok) return;
+
+  const { error } = await sb.rpc('suspender_acceso_psicologo', {
+    p_psicologo_id: id,
+    p_suspender: suspender,
+  });
+
+  if(error){ await avisar(error.message, 'No se pudo hacer el cambio'); return; }
+
+  await cargarMisPsicologos();
+}
+
 /* ---------- equipo del consultorio ---------- */
 /* El dueño ve la operacion de su consultorio, no los expedientes de los
    pacientes que atienden sus colaboradores. Esa separacion la sostiene la
@@ -2997,22 +3323,14 @@ async function pintarEquipoDueno(cont){
 
     ${resumen}
 
-    <div class="eq-barra">
-      <div class="eq-busca">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
-        <input type="search" id="buscaEquipo" placeholder="Buscar por nombre, correo o área..." autocomplete="off">
-      </div>
-      <div class="eq-vistas">
-        <button type="button" class="eq-vista activa" data-vista="lista" title="Ver como lista">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg>
-        </button>
-        <button type="button" class="eq-vista" data-vista="organigrama" title="Ver como organigrama">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="2" width="6" height="5" rx="1"/><rect x="2" y="17" width="6" height="5" rx="1"/><rect x="16" y="17" width="6" height="5" rx="1"/><path d="M12 7v4M5 17v-2h14v2M12 11v4"/></svg>
-        </button>
-      </div>
-    </div>
-
-    <div id="equipoVista" style="margin-top:16px;">${filas || '<p class="empty">Todavía no hay nadie más en el equipo.</p>'}</div>
+    <!-- La lista completa vive en Mis psicólogos, con el buscador, el
+         organigrama y las acciones. Aquí solo se da de alta: tener dos
+         buscadores y dos organigramas para la misma gente confunde más de
+         lo que ayuda. Si trabaja solo, esa sección no existe y la lista se
+         queda aquí, que es donde tiene sentido. -->
+    ${(equipo||[]).length > 1
+      ? `<button type="button" class="btn" id="btnVerPsicologos" style="width:auto;margin-top:18px;">Ver a mis psicólogos</button>`
+      : `<div id="equipoVista" style="margin-top:16px;">${filas || '<p class="empty">Todavía no hay nadie más en el equipo.</p>'}</div>`}
 
     <button class="btn btn-primary" id="btnMostrarAlta" style="width:auto;margin-top:16px;">Dar de alta a un psicólogo</button>
 
@@ -3051,7 +3369,10 @@ async function pintarEquipoDueno(cont){
   });
   document.getElementById('btnInvitar').addEventListener('click', generarInvitacion);
 
-  document.getElementById('buscaEquipo').addEventListener('input', pintarVistaEquipo);
+  // Con equipo, el buscador y las vistas viven en Mis psicólogos y aquí no
+  // se dibujan: por eso se consultan con ?. en vez de darlos por hechos.
+  document.getElementById('btnVerPsicologos')?.addEventListener('click', ()=> abrirPestana('psicologos'));
+  document.getElementById('buscaEquipo')?.addEventListener('input', pintarVistaEquipo);
   document.querySelectorAll('.eq-vista').forEach(b=>{
     b.addEventListener('click', ()=>{
       document.querySelectorAll('.eq-vista').forEach(x=> x.classList.remove('activa'));
@@ -3411,6 +3732,7 @@ async function iniciar(){
   if(!(await verificarAcceso())) return;
 
   cargarEquipo();
+  cargarMisPsicologos();
   cargarPlan();
   cargarCobros();
   avisarRegresoDeStripe();
