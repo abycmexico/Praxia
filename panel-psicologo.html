@@ -41,6 +41,33 @@
   .sidebar-sub{margin:2px 0 2px 14px;padding-left:12px;border-left:1.5px solid rgba(255,255,255,.16);}
   .sidebar-sub button{font-size:12.5px !important;padding-top:8px !important;padding-bottom:8px !important;}
 
+  /* subir documentos en lote */
+  .lote-zona{border:2px dashed var(--line);border-radius:14px;padding:34px 20px;text-align:center;cursor:pointer;transition:border-color .15s,background .15s;color:var(--gray);}
+  .lote-zona:hover,.lote-zona.encima{border-color:var(--primario);background:#F4FAF3;color:var(--primario);}
+  .lote-zona svg{width:34px;height:34px;margin-bottom:8px;}
+  .lote-zona-titulo{font-size:14px;font-weight:800;color:var(--ink);}
+  .lote-zona.encima .lote-zona-titulo{color:var(--primario);}
+  .lote-zona-sub{font-size:11.5px;font-weight:600;margin-top:4px;}
+  .lote-lista{max-height:46vh;overflow-y:auto;margin-top:14px;border:1.5px solid var(--line);border-radius:12px;}
+  .lote-fila{display:grid;grid-template-columns:1fr 190px 130px 30px;gap:10px;align-items:center;padding:10px 12px;border-bottom:1px solid var(--line);}
+  .lote-fila:last-child{border-bottom:none;}
+  /* Lo que Praxia no supo emparejar se marca, porque es justo lo que la
+     persona tiene que mirar. Sin la marca habria que leer las 120 filas. */
+  .lote-fila.sin-dueno{background:#FFFDF5;}
+  .lote-archivo{min-width:0;}
+  .lote-nombre{font-size:12.5px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .lote-peso{font-size:10.5px;color:var(--gray);font-weight:600;margin-top:1px;}
+  .lote-fila select{font-size:12px;padding:7px 9px;width:100%;}
+  .lote-quitar{border:none;background:none;cursor:pointer;color:var(--gray);font-size:17px;line-height:1;padding:4px;}
+  .lote-quitar:hover{color:#A2453C;}
+  .lote-estado{font-size:11px;font-weight:700;text-align:center;}
+  .lote-estado.ok{color:var(--ok);}
+  .lote-estado.err{color:var(--err);}
+  @media(max-width:620px){
+    .lote-fila{grid-template-columns:1fr 30px;gap:7px;}
+    .lote-fila select{grid-column:1 / -1;}
+  }
+
   /* mis psicologos: tarjetas del equipo */
   .mp-cab{display:flex;justify-content:space-between;align-items:flex-end;gap:16px;flex-wrap:wrap;margin-bottom:4px;}
   /* El min() es lo que deja que la tarjeta baje de 330px en un celular. Sin
@@ -1161,6 +1188,7 @@
     <div class="pac-toolbar">
       <button class="btn btn-primary" id="btnNuevoPaciente">Invitar paciente</button>
       <button class="btn btn-ghost" id="btnImportarPacientes">Importar desde Excel/CSV</button>
+      <button class="btn btn-ghost" id="btnSubirLote">Subir documentos en lote</button>
       <select id="ordenPacientes" class="select-orden">
         <option value="manual">Orden manual (arrastrar)</option>
         <option value="ingresos">Por ingresos generados</option>
@@ -1713,6 +1741,58 @@
 </div>
 
 <button id="btnFlotanteMas" class="btn-flotante-mas" title="Nueva consulta rápida">+</button>
+
+<!-- Subir documentos en lote. Quien llega a Praxia con años de consulta no
+     trae su historial en Excel: lo trae en PDFs y fotos, uno por paciente.
+     Subirlos de a uno, entrando y saliendo de cada expediente, es donde la
+     gente se rinde. Aquí los suelta todos juntos y Praxia los reparte. -->
+<div class="modal-bg" id="modalLote">
+  <div class="modal" style="max-width:820px;">
+    <div id="lotePaso1">
+      <h3>Subir documentos en lote</h3>
+      <p class="modal-sub">Suelta aquí todos los documentos que tengas: expedientes escaneados, estudios, consentimientos. Praxia trata de adivinar de qué paciente es cada uno leyendo el nombre del archivo, y tú corriges lo que haga falta antes de subir nada.</p>
+
+      <div id="loteZona" class="lote-zona">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 10l5-5 5 5"/><path d="M12 5v13"/></svg>
+        <div class="lote-zona-titulo">Arrastra tus archivos aquí</div>
+        <div class="lote-zona-sub">o haz clic para elegirlos · PDF, Word, imágenes · hasta 20 MB cada uno</div>
+      </div>
+      <input type="file" id="loteInput" multiple accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.webp,.heic" style="display:none;">
+
+      <p class="modal-sub" style="margin-top:14px;">
+        Truco: si tus archivos ya traen el nombre del paciente
+        (<em>Ana López - historia clínica.pdf</em>), Praxia los acomoda sola.
+      </p>
+
+      <p class="msg" id="loteMsg1"></p>
+      <div class="modal-actions">
+        <button class="btn btn-ghost" onclick="cerrarModal('modalLote')">Cancelar</button>
+      </div>
+    </div>
+
+    <div id="lotePaso2" style="display:none;">
+      <h3>Revisa antes de subir</h3>
+      <p class="modal-sub" id="loteResumen"></p>
+
+      <div class="lote-lista" id="loteLista"></div>
+
+      <p class="msg" id="loteMsg2"></p>
+      <div class="modal-actions">
+        <button class="btn btn-ghost" id="loteVolver">Elegir otros archivos</button>
+        <button class="btn btn-primary" id="loteSubir">Subir documentos</button>
+      </div>
+    </div>
+
+    <div id="lotePaso3" style="display:none;">
+      <h3 id="loteFinTitulo">Listo</h3>
+      <p class="modal-sub" id="loteFinTexto"></p>
+      <div class="lote-lista" id="loteFallos" style="display:none;"></div>
+      <div class="modal-actions">
+        <button class="btn btn-primary" onclick="cerrarModal('modalLote')">Cerrar</button>
+      </div>
+    </div>
+  </div>
+</div>
 
 <div class="modal-bg" id="modalImportar">
   <div class="modal" style="max-width:760px;">
@@ -3395,7 +3475,7 @@ let vistaEquipo = 'lista';
 // Busca sin acentos: quien escribe "nino" debe encontrar "Psicología infantil
 // del niño", y quien teclea rapido rara vez pone acentos.
 function sinTildes(t){
-  return String(t || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+  return String(t || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
 }
 
 function tarjetaDeMiembro(p){
@@ -3835,6 +3915,309 @@ function darAccesoPaciente(id){
   abrirModal('modalDarAcceso');
 }
 window.darAccesoPaciente = darAccesoPaciente;
+
+/* ---------- subir documentos en lote ---------- */
+/* El psicólogo que llega a Praxia con años de consulta no trae su historial
+   en una hoja de cálculo: lo trae en PDFs y fotos, uno por paciente. Hasta
+   ahora tenía que entrar a cada expediente y subirlos de a uno; con cuarenta
+   pacientes eso es una tarde entera, y es donde la gente se rinde y no
+   vuelve.
+
+   Aquí los suelta todos juntos y Praxia los reparte leyendo el nombre del
+   archivo. Lo que no logra emparejar NO lo adivina: lo deja marcado para que
+   la persona lo asigne. Un documento clínico en el expediente equivocado es
+   un daño real —y del que nadie se entera hasta que es tarde—, así que ante
+   la duda pregunta en vez de arriesgarse. */
+
+const LOTE_MAX_BYTES = 20 * 1024 * 1024;   // igual que en el expediente
+let loteArchivos = [];
+
+function normalizar(t){
+  return String(t || '')
+    .normalize('NFD').replace(/[̀-ͯ]/g, '')   // fuera tildes
+    .toLowerCase()
+    .replace(/[_\-.,]+/g, ' ')                          // separadores a espacio
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+/* Busca a qué paciente pertenece un archivo por su nombre.
+
+   Se queda con la coincidencia MÁS LARGA: si están "Ana" y "Ana López", el
+   archivo de Ana López debe caer con ella y no con Ana. Y si dos pacientes
+   empatan con el mismo nombre, devuelve nada: prefiere que la persona elija
+   a mandar el expediente de una a la carpeta de la otra. */
+function aQuienPertenece(nombreArchivo, pacientes){
+  const limpio = normalizar(nombreArchivo.replace(/\.[^.]+$/, ''));
+  if(!limpio) return null;
+
+  // Se compara por palabras completas, no por pedazos de palabra. Con
+  // pedazos, una paciente llamada Ana se llevaría el archivo de Mariana,
+  // porque "mariana" contiene "ana". Rodear ambos textos de espacios hace
+  // que solo casen palabras enteras.
+  const conBordes = ' ' + limpio + ' ';
+
+  let mejor = null, largoMejor = 0, empatado = false;
+
+  pacientes.forEach(p=>{
+    const nombre = normalizar(p.nombre);
+    if(nombre.length < 3) return;
+
+    const partes = nombre.split(' ').filter(x=> x.length > 2);
+    const apellidoNombre = partes.length > 1
+      ? [...partes.slice(1), partes[0]].join(' ')   // "López Ana" además de "Ana López"
+      : null;
+
+    let acierto = 0;
+    if(conBordes.includes(' ' + nombre + ' ')) acierto = nombre.length;
+    else if(apellidoNombre && conBordes.includes(' ' + apellidoNombre + ' ')) acierto = apellidoNombre.length;
+
+    if(!acierto) return;
+
+    if(acierto > largoMejor){ mejor = p; largoMejor = acierto; empatado = false; }
+    else if(acierto === largoMejor && mejor && mejor.id !== p.id) empatado = true;
+  });
+
+  return empatado ? null : mejor;
+}
+
+function pesoLegible(bytes){
+  if(bytes < 1024) return bytes + ' B';
+  if(bytes < 1024*1024) return Math.round(bytes/1024) + ' KB';
+  return (bytes/1024/1024).toFixed(1) + ' MB';
+}
+
+document.getElementById('btnSubirLote').addEventListener('click', ()=>{
+  loteArchivos = [];
+  document.getElementById('lotePaso1').style.display = 'block';
+  document.getElementById('lotePaso2').style.display = 'none';
+  document.getElementById('lotePaso3').style.display = 'none';
+  document.getElementById('loteMsg1').textContent = '';
+  document.getElementById('loteInput').value = '';
+  abrirModal('modalLote');
+});
+
+const loteZona = document.getElementById('loteZona');
+loteZona.addEventListener('click', ()=> document.getElementById('loteInput').click());
+loteZona.addEventListener('dragover', (e)=>{ e.preventDefault(); loteZona.classList.add('encima'); });
+loteZona.addEventListener('dragleave', ()=> loteZona.classList.remove('encima'));
+loteZona.addEventListener('drop', (e)=>{
+  e.preventDefault();
+  loteZona.classList.remove('encima');
+  recibirArchivosLote([...e.dataTransfer.files]);
+});
+document.getElementById('loteInput').addEventListener('change', (e)=> recibirArchivosLote([...e.target.files]));
+
+function recibirArchivosLote(archivos){
+  const msg = document.getElementById('loteMsg1');
+  msg.textContent = '';
+
+  if(!archivos.length) return;
+
+  // Los que pesan de más se apartan aquí y se dicen por nombre, en vez de
+  // fallar callados a la mitad de la subida.
+  const pesados = archivos.filter(f=> f.size > LOTE_MAX_BYTES);
+  const buenos  = archivos.filter(f=> f.size <= LOTE_MAX_BYTES);
+
+  if(!buenos.length){
+    msg.textContent = 'Todos los archivos pesan más de 20 MB. Reduce su tamaño e inténtalo otra vez.';
+    msg.className = 'msg err';
+    return;
+  }
+
+  loteArchivos = buenos.map((f, i)=>({
+    id: 'a' + i + '-' + Date.now(),
+    file: f,
+    pacienteId: (aQuienPertenece(f.name, pacientesCache) || {}).id || '',
+    tipo: 'otro',
+    estado: null,
+  }));
+
+  if(pesados.length){
+    msg.textContent = `Se dejaron fuera ${pesados.length} archivo(s) de más de 20 MB: ${pesados.map(f=> f.name).join(', ')}`;
+    msg.className = 'msg err';
+  }
+
+  pintarLote();
+  document.getElementById('lotePaso1').style.display = 'none';
+  document.getElementById('lotePaso2').style.display = 'block';
+}
+
+function pintarLote(){
+  const cont = document.getElementById('loteLista');
+
+  const opcionesPacientes = pacientesCache
+    .slice()
+    .sort((a,b)=> a.nombre.localeCompare(b.nombre, 'es'))
+    .map(p=> ({ id:p.id, nombre:p.nombre }));
+
+  cont.innerHTML = loteArchivos.map(a=>{
+    const sinDueno = !a.pacienteId;
+    const ops = opcionesPacientes.map(p=>
+      `<option value="${escapar(p.id)}" ${p.id === a.pacienteId ? 'selected' : ''}>${escapar(p.nombre)}</option>`
+    ).join('');
+
+    return `
+      <div class="lote-fila ${sinDueno ? 'sin-dueno' : ''}" data-id="${a.id}">
+        <div class="lote-archivo">
+          <div class="lote-nombre" title="${escapar(a.file.name)}">${escapar(a.file.name)}</div>
+          <div class="lote-peso">${pesoLegible(a.file.size)}</div>
+        </div>
+        <select data-campo="paciente">
+          <option value="">— ¿De quién es? —</option>
+          ${ops}
+        </select>
+        <select data-campo="tipo">
+          <option value="otro"           ${a.tipo==='otro'?'selected':''}>Otro</option>
+          <option value="estudio"        ${a.tipo==='estudio'?'selected':''}>Estudio</option>
+          <option value="informe"        ${a.tipo==='informe'?'selected':''}>Informe</option>
+          <option value="consentimiento" ${a.tipo==='consentimiento'?'selected':''}>Consentimiento</option>
+        </select>
+        <button type="button" class="lote-quitar" title="Quitar de la lista">&times;</button>
+      </div>`;
+  }).join('');
+
+  cont.querySelectorAll('.lote-fila').forEach(fila=>{
+    const a = loteArchivos.find(x=> x.id === fila.dataset.id);
+    fila.querySelector('[data-campo="paciente"]').addEventListener('change', (e)=>{
+      a.pacienteId = e.target.value;
+      fila.classList.toggle('sin-dueno', !a.pacienteId);
+      actualizarResumenLote();
+    });
+    fila.querySelector('[data-campo="tipo"]').addEventListener('change', (e)=> a.tipo = e.target.value);
+    fila.querySelector('.lote-quitar').addEventListener('click', ()=>{
+      loteArchivos = loteArchivos.filter(x=> x.id !== a.id);
+      if(!loteArchivos.length){
+        document.getElementById('lotePaso2').style.display = 'none';
+        document.getElementById('lotePaso1').style.display = 'block';
+        return;
+      }
+      pintarLote();
+    });
+  });
+
+  actualizarResumenLote();
+}
+
+function actualizarResumenLote(){
+  const total = loteArchivos.length;
+  const sinDueno = loteArchivos.filter(a=> !a.pacienteId).length;
+  const listos = total - sinDueno;
+
+  document.getElementById('loteResumen').innerHTML = sinDueno
+    ? (sinDueno === 1
+        ? `${listos} de ${total} archivos ya tienen paciente. <strong>Uno</strong> no se pudo identificar, marcado en amarillo: dile de quién es, o quítalo de la lista.`
+        : `${listos} de ${total} archivos ya tienen paciente. Los <strong>${sinDueno}</strong> marcados en amarillo no se pudieron identificar: diles de quién son, o quítalos de la lista.`)
+    : (total === 1
+        ? 'El archivo ya tiene paciente asignado. Revisa que esté bien y súbelo.'
+        : `Los ${total} archivos tienen paciente asignado. Revisa que estén bien y súbelos.`);
+
+  const btn = document.getElementById('loteSubir');
+  btn.disabled = listos === 0;
+  btn.textContent = listos === total
+    ? `Subir ${total} documento${total===1?'':'s'}`
+    : `Subir ${listos} documento${listos===1?'':'s'}`;
+}
+
+document.getElementById('loteVolver').addEventListener('click', ()=>{
+  loteArchivos = [];
+  document.getElementById('loteInput').value = '';
+  document.getElementById('lotePaso2').style.display = 'none';
+  document.getElementById('lotePaso1').style.display = 'block';
+});
+
+document.getElementById('loteSubir').addEventListener('click', async ()=>{
+  const pendientes = loteArchivos.filter(a=> a.pacienteId);
+  if(!pendientes.length) return;
+
+  const sinDueno = loteArchivos.length - pendientes.length;
+  if(sinDueno){
+    const ok = await confirmar(
+      sinDueno === 1
+        ? 'Un archivo sigue sin paciente y no se va a subir. Puedes asignarlo ahora o subir el resto y volver después.'
+        : `${sinDueno} archivos siguen sin paciente y no se van a subir. Puedes asignarlos ahora o subir el resto y volver después.`,
+      { titulo: pendientes.length === 1
+          ? '¿Subir solo el que sí se identificó?'
+          : `¿Subir solo los ${pendientes.length} identificados?`,
+        aceptar: 'Sí, subir esos' });
+    if(!ok) return;
+  }
+
+  const btn = document.getElementById('loteSubir');
+  const msg = document.getElementById('loteMsg2');
+  btn.disabled = true;
+  document.getElementById('loteVolver').disabled = true;
+
+  let subidos = 0;
+  const fallos = [];
+
+  // De uno en uno a propósito. Cien subidas en paralelo saturan la conexión
+  // y hacen que fallen unas cuantas al azar; así, además, el contador avanza
+  // de verdad y no es una barra que finge.
+  for(const a of pendientes){
+    msg.className = 'msg';
+    msg.textContent = `Subiendo ${subidos + 1} de ${pendientes.length}: ${a.file.name}`;
+
+    const ext = a.file.name.includes('.') ? a.file.name.split('.').pop() : '';
+    const seguro = `${Date.now()}-${Math.random().toString(36).slice(2,8)}${ext ? '.'+ext : ''}`;
+    const ruta = `${yo.id}/${a.pacienteId}/${seguro}`;
+
+    const { error: errSubida } = await sb.storage
+      .from('documentos')
+      .upload(ruta, a.file, { contentType: a.file.type || undefined });
+
+    if(errSubida){ fallos.push({ nombre:a.file.name, motivo:errSubida.message }); continue; }
+
+    const { error: errRegistro } = await sb.from('documentos').insert({
+      paciente_id: a.pacienteId,
+      psicologo_id: yo.id,
+      nombre: a.file.name,
+      ruta,
+      tipo: a.tipo,
+      mime: a.file.type || null,
+      tamano_bytes: a.file.size,
+    });
+
+    if(errRegistro){
+      // El archivo ya está en Storage pero sin registro: sin fila nadie lo
+      // ve ni lo puede borrar desde Praxia, así que se retira.
+      await sb.storage.from('documentos').remove([ruta]);
+      fallos.push({ nombre:a.file.name, motivo:errRegistro.message });
+      continue;
+    }
+
+    subidos++;
+  }
+
+  msg.textContent = '';
+  document.getElementById('lotePaso2').style.display = 'none';
+  document.getElementById('lotePaso3').style.display = 'block';
+
+  document.getElementById('loteFinTitulo').textContent = fallos.length
+    ? 'Se subieron algunos'
+    : '¡Listo!';
+  document.getElementById('loteFinTexto').textContent = fallos.length
+    ? `Se subieron ${subidos} de ${pendientes.length}. ${fallos.length === 1 ? 'Este no se pudo' : 'Estos no se pudieron'}, y puedes volver a intentarlo${fallos.length === 1 ? '' : 's'}:`
+    : `Se subieron ${subidos} documento${subidos===1?'':'s'}. Ya están en el expediente de cada paciente.`;
+
+  const caja = document.getElementById('loteFallos');
+  if(fallos.length){
+    caja.style.display = 'block';
+    caja.innerHTML = fallos.map(f=>`
+      <div class="lote-fila">
+        <div class="lote-archivo">
+          <div class="lote-nombre">${escapar(f.nombre)}</div>
+          <div class="lote-peso">${escapar(f.motivo)}</div>
+        </div>
+      </div>`).join('');
+  } else {
+    caja.style.display = 'none';
+  }
+
+  btn.disabled = false;
+  document.getElementById('loteVolver').disabled = false;
+  loteArchivos = [];
+});
 
 /* ---------- importar pacientes desde Excel/CSV ---------- */
 const CAMPOS_IMPORTAR = [
