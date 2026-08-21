@@ -927,26 +927,6 @@
   .praxi-fig svg{animation:pxRespira 4.2s ease-in-out infinite;transform-origin:50% 90%;}
   @keyframes pxRespira{0%,100%{transform:scale(1)}50%{transform:scale(1.018)}}
 
-  /* saludar */
-  .px-saluda #pxBrazoD{animation:pxSaluda 1.7s ease-in-out;}
-  /* El brazo sube deprisa y se frena arriba, que es como sube un brazo de
-     verdad; los saludos son cada vez más chicos, como cuando uno ya va
-     terminando de saludar. */
-  @keyframes pxSaluda{
-    0%{transform:rotate(0)}
-    8%{transform:rotate(-34deg)}
-    14%{transform:rotate(-58deg)}
-    22%{transform:rotate(-62deg)}
-    32%{transform:rotate(-36deg)}
-    42%{transform:rotate(-60deg)}
-    52%{transform:rotate(-38deg)}
-    62%{transform:rotate(-57deg)}
-    72%{transform:rotate(-42deg)}
-    82%{transform:rotate(-52deg)}
-    92%{transform:rotate(-22deg)}
-    100%{transform:rotate(0)}
-  }
-
   /* leer: saca el libro, lo sostiene, y de vez en cuando pasa la hoja */
   .px-lee #pxLibro{animation:pxLibro 6s ease-in-out;}
   .px-lee #pxBrazoI{animation:pxSostieneI 6s ease-in-out;}
@@ -976,45 +956,74 @@
     0%,100%{transform:translateY(0)} 14%,86%{transform:translateY(3px)}
   }
 
-  /* música: se balancea y salen las notas */
-  .px-musica #pxNotas{animation:pxNotas 5s ease-out;}
-  .px-musica #pxPlanta,.px-musica #pxPasto{animation:pxBaila 5s ease-in-out;transform-origin:105px 200px;}
-  .px-musica #pxBrazoI{animation:pxBrazoBaileI 5s ease-in-out;}
-  .px-musica #pxBrazoD{animation:pxBrazoBaileD 5s ease-in-out;}
-  /* Las notas suben en zigzag y se van desvaneciendo, como sube el humo: en
-     línea recta parecen un globo escapándose. */
-  @keyframes pxNotas{
-    0%{opacity:0;transform:translate(0,12px) scale(.7)}
-    12%{opacity:1;transform:translate(3px,4px) scale(1)}
-    30%{transform:translate(-3px,-4px)}
-    48%{transform:translate(5px,-12px)}
-    66%{opacity:.85;transform:translate(-2px,-19px)}
-    84%{opacity:.4;transform:translate(6px,-26px)}
-    100%{opacity:0;transform:translate(2px,-34px) scale(.85)}
+  /* dormir: se ladea, respira más hondo y le salen las zetas. Las zetas van
+     subiendo de a una, no las tres a la vez, que es lo que hace que parezca
+     que sigue dormida y no que soltó un globo. */
+  .px-duerme #pxZzz{animation:pxZzz 6.5s ease-out;}
+  .px-duerme #pxPlanta,.px-duerme #pxPasto{animation:pxLadea 6.5s ease-in-out;transform-origin:105px 205px;}
+  .px-duerme #pxCara{animation:pxCabecea 6.5s ease-in-out;}
+  .px-duerme svg{animation:pxRonquido 2.6s ease-in-out infinite !important;transform-origin:50% 92%;}
+  @keyframes pxZzz{
+    0%{opacity:0;transform:translate(0,6px) scale(.8)}
+    14%{opacity:.9;transform:translate(0,0) scale(1)}
+    40%{opacity:.9;transform:translate(4px,-8px)}
+    64%{opacity:.7;transform:translate(1px,-15px)}
+    84%{opacity:.35;transform:translate(6px,-21px)}
+    100%{opacity:0;transform:translate(3px,-28px) scale(.9)}
   }
-  /* El baile no vuelve al centro en cada tiempo: se queda un poco de cada
-     lado, que es lo que le da ritmo en vez de parecer un metrónomo. */
-  @keyframes pxBaila{
-    0%{transform:rotate(0)}     12%{transform:rotate(-8deg)}  24%{transform:rotate(-5deg)}
-    36%{transform:rotate(8deg)} 48%{transform:rotate(5deg)}   60%{transform:rotate(-7deg)}
-    72%{transform:rotate(-3deg)}84%{transform:rotate(6deg)}   100%{transform:rotate(0)}
+  @keyframes pxLadea{
+    0%{transform:rotate(0)} 16%{transform:rotate(-8deg)} 30%{transform:rotate(-12deg)}
+    70%{transform:rotate(-12deg)} 88%{transform:rotate(-6deg)} 100%{transform:rotate(0)}
   }
-  @keyframes pxBrazoBaileI{
-    0%{transform:rotate(0)}      14%{transform:rotate(-34deg)} 28%{transform:rotate(-12deg)}
-    42%{transform:rotate(-38deg)}56%{transform:rotate(8deg)}   70%{transform:rotate(-26deg)}
-    86%{transform:rotate(-6deg)} 100%{transform:rotate(0)}
+  @keyframes pxCabecea{
+    0%,100%{transform:translateY(0) rotate(0)}
+    18%,82%{transform:translateY(3px) rotate(-3deg)}
   }
-  @keyframes pxBrazoBaileD{
-    0%{transform:rotate(0)}      14%{transform:rotate(34deg)}  28%{transform:rotate(12deg)}
-    42%{transform:rotate(38deg)} 56%{transform:rotate(-8deg)}  70%{transform:rotate(26deg)}
-    86%{transform:rotate(6deg)}  100%{transform:rotate(0)}
+  /* Respira más hondo que despierta: más lento y con más recorrido. */
+  @keyframes pxRonquido{0%,100%{transform:scale(1)}50%{transform:scale(1.035)}}
+
+  /* serio: se queda tieso, ni se mece ni parpadea. La quietud ES la
+     animación; cualquier movimiento le quitaría la seriedad. */
+  .px-serio svg{animation:none !important;}
+  .px-serio .praxi-ojos{animation:none !important;}
+  .px-serio #pxBrazoI{animation:pxBrazoSerioI 4s ease-in-out;}
+  .px-serio #pxBrazoD{animation:pxBrazoSerioD 4s ease-in-out;}
+  /* Los brazos se cruzan: suben y se meten hacia el centro. */
+  @keyframes pxBrazoSerioI{
+    0%{transform:rotate(0)} 14%{transform:rotate(-52deg)} 20%{transform:rotate(-62deg)}
+    80%{transform:rotate(-62deg)} 92%{transform:rotate(-30deg)} 100%{transform:rotate(0)}
+  }
+  @keyframes pxBrazoSerioD{
+    0%{transform:rotate(0)} 14%{transform:rotate(52deg)} 20%{transform:rotate(62deg)}
+    80%{transform:rotate(62deg)} 92%{transform:rotate(30deg)} 100%{transform:rotate(0)}
   }
 
-  /* aburrirse: se ladea, bosteza y le salen las zetas */
-  .px-aburre #pxZzz{animation:pxZzz 5.5s ease-out;}
-  .px-aburre #pxPlanta{animation:pxLadea 5.5s ease-in-out;transform-origin:105px 200px;}
-  @keyframes pxZzz{0%{opacity:0}25%{opacity:.9}100%{opacity:0;transform:translate(10px,-16px)}}
-  @keyframes pxLadea{0%,100%{transform:rotate(0)}30%,70%{transform:rotate(-11deg)}}
+  /* peinarse: sube la mano al pasto y lo peina de arriba abajo, tres pasadas.
+     El pasto la sigue con un poco de retraso, como sigue el pelo al peine. */
+  .px-peina #pxBrazoD{animation:pxPeina 4.6s ease-in-out;}
+  .px-peina #pxPasto{animation:pxPeloPeinado 4.6s ease-in-out;transform-origin:105px 192px;}
+  .px-peina #pxPlanta{animation:pxPlantaPeinada 4.6s ease-in-out;transform-origin:105px 205px;}
+  @keyframes pxPeina{
+    0%{transform:rotate(0)}
+    10%{transform:rotate(-72deg)}
+    18%{transform:rotate(-96deg)}   28%{transform:rotate(-74deg)}
+    38%{transform:rotate(-96deg)}   48%{transform:rotate(-74deg)}
+    58%{transform:rotate(-96deg)}   68%{transform:rotate(-74deg)}
+    78%{transform:rotate(-92deg)}   90%{transform:rotate(-40deg)}
+    100%{transform:rotate(0)}
+  }
+  @keyframes pxPeloPeinado{
+    0%,100%{transform:skewX(0)}
+    20%{transform:skewX(-7deg)}  30%{transform:skewX(3deg)}
+    40%{transform:skewX(-7deg)}  50%{transform:skewX(3deg)}
+    60%{transform:skewX(-7deg)}  70%{transform:skewX(2deg)}
+    85%{transform:skewX(0)}
+  }
+  @keyframes pxPlantaPeinada{
+    0%,100%{transform:rotate(0)}
+    25%{transform:rotate(2.5deg)} 45%{transform:rotate(-2deg)}
+    65%{transform:rotate(2.5deg)} 82%{transform:rotate(0)}
+  }
 
   /* esconderse: se maneja desde el codigo, no con una clase.
      Con clase habia que confiar en que ninguna otra regla la pisara, y
@@ -1033,38 +1042,6 @@
      Y las piernas no van en el mismo instante que los brazos: el cuerpo se
      mece un poco después, que es lo que da la sensación de caminar y no de
      agitar extremidades. */
-  .px-camina #pxPiernaI{animation:pxPasoA .68s cubic-bezier(.45,.05,.55,.95) infinite;}
-  .px-camina #pxPiernaD{animation:pxPasoB .68s cubic-bezier(.45,.05,.55,.95) infinite;}
-  .px-camina #pxBrazoI{animation:pxManoB .68s cubic-bezier(.45,.05,.55,.95) infinite;}
-  .px-camina #pxBrazoD{animation:pxManoA .68s cubic-bezier(.45,.05,.55,.95) infinite;}
-  .px-camina #pxPlanta,.px-camina #pxPasto{animation:pxBamboleo .68s ease-in-out infinite;transform-origin:105px 210px;}
-  .px-camina svg{animation:pxTrote .34s ease-in-out infinite !important;transform-origin:50% 95%;}
-
-  @keyframes pxPasoA{
-    0%{transform:rotate(18deg)}   17%{transform:rotate(11deg)}  33%{transform:rotate(0deg)}
-    50%{transform:rotate(-18deg)} 67%{transform:rotate(-11deg)} 83%{transform:rotate(0deg)}
-    100%{transform:rotate(18deg)}
-  }
-  @keyframes pxPasoB{
-    0%{transform:rotate(-18deg)}  17%{transform:rotate(-11deg)} 33%{transform:rotate(0deg)}
-    50%{transform:rotate(18deg)}  67%{transform:rotate(11deg)}  83%{transform:rotate(0deg)}
-    100%{transform:rotate(-18deg)}
-  }
-  @keyframes pxManoA{
-    0%{transform:rotate(15deg)}   25%{transform:rotate(6deg)}   50%{transform:rotate(-15deg)}
-    75%{transform:rotate(-6deg)}  100%{transform:rotate(15deg)}
-  }
-  @keyframes pxManoB{
-    0%{transform:rotate(-15deg)}  25%{transform:rotate(-6deg)}  50%{transform:rotate(15deg)}
-    75%{transform:rotate(6deg)}   100%{transform:rotate(-15deg)}
-  }
-  @keyframes pxBamboleo{
-    0%,100%{transform:rotate(-3deg)} 25%{transform:rotate(0deg)}
-    50%{transform:rotate(3deg)}      75%{transform:rotate(0deg)}
-  }
-  /* El subibaja del cuerpo va al doble de ritmo que las piernas: sube una vez
-     por cada paso, no una por cada ciclo completo. */
-  @keyframes pxTrote{0%,100%{transform:translateY(0) scale(1)}50%{transform:translateY(-2.5px) scale(1.005)}}
 
   /* El paseo mueve la figura, no el contenedor: el globo se queda donde
      estaba y no sale volando detrás de ella. */
@@ -8156,6 +8133,14 @@ function praxiGesto(cual){
     ojos.innerHTML = `<circle cx="92" cy="211" r="8" fill="${negro}"/><circle cx="118" cy="211" r="8" fill="${negro}"/>
                       <circle cx="94.5" cy="208.5" r="2.6" fill="#fff"/><circle cx="120.5" cy="208.5" r="2.6" fill="#fff"/>`;
     boca.setAttribute('d', 'M100 227 L110 227');
+  } else if(cual === 'seria'){
+    // Ojos algo entrecerrados, cejas rectas y bajas, y la boca en línea. Las
+    // cejas son la mitad del gesto: sin ellas queda cara de aburrida.
+    ojos.innerHTML = `<path d="M84 202 L100 205" fill="none" stroke="${negro}" stroke-width="3.6" stroke-linecap="round"/>
+                      <path d="M126 202 L110 205" fill="none" stroke="${negro}" stroke-width="3.6" stroke-linecap="round"/>
+                      <circle cx="92" cy="213" r="5.6" fill="${negro}"/>
+                      <circle cx="118" cy="213" r="5.6" fill="${negro}"/>`;
+    boca.setAttribute('d', 'M98 227 L112 227');
   } else if(cual === 'dormida'){
     ojos.innerHTML = `<path d="M85 213 L99 213" fill="none" stroke="#9A9A9A" stroke-width="4.2" stroke-linecap="round"/>
                       <path d="M111 213 L125 213" fill="none" stroke="#9A9A9A" stroke-width="4.2" stroke-linecap="round"/>`;
@@ -8178,17 +8163,15 @@ function praxiGesto(cual){
    personaje bailando encima de una nota clínica no tiene ninguna gracia. */
 
 const PRAXI_ACTOS = [
-  { clase:'px-saluda',  dura:1700 },
-  { clase:'px-lee',     dura:6000 },
-  { clase:'px-musica',  dura:5000 },
-  { clase:'px-aburre',  dura:5500 },
-  { clase:'px-camina',  dura:7000, anda:true },
+  { clase:'px-lee',       dura:6000 },
+  { clase:'px-duerme',    dura:6500 },
+  { clase:'px-serio',     dura:4000 },
+  { clase:'px-peina',     dura:4600 },
   { clase:'px-escondida', dura:5000, esconde:true },
 ];
 
 let praxiActo = null;      // el que está en curso
 let praxiRelojVida = null;
-let praxiPaseo = 0;        // cuánto se ha alejado de su esquina, en píxeles
 
 /* ---------- llevarla de un lado a otro ---------- */
 /* Se agarra y se suelta donde uno quiera, y ahí se queda para la próxima vez.
@@ -8264,11 +8247,9 @@ function praxiHacerArrastrable(){
       movido = true;
       praxiSeMovio = true;
       caja.classList.add('praxi-agarrada');
-      praxiQuieta();                       // que no camine mientras la cargan
+      praxiQuieta();                       // que no siga en lo suyo mientras la cargan
       clearTimeout(praxiRelojVida);
       praxiGesto('atenta');
-      fig.style.transform = '';            // se olvida del paseo
-      praxiPaseo = 0;
     }
 
     praxiColocar(p.clientX - dx, p.clientY - dy);
@@ -8340,32 +8321,6 @@ function praxiEsconder(meterse){
   });
 }
 
-/* Camina por la orilla, sin alejarse tanto que se pierda ni tan poco que no
-   se note. Se voltea para ver hacia donde va, como haría cualquiera. */
-function praxiCaminar(fig){
-  // Hasta dónde puede alejarse de su esquina. En una pantalla chica, 260px
-  // es media pantalla y acabaría paseándose por encima del contenido.
-  const tope = Math.min(260, Math.round(innerWidth * 0.35));
-
-  const izquierda = praxiPaseo === 0 || Math.random() < .5;
-  const destino = izquierda
-    ? Math.min(praxiPaseo + 90 + Math.random() * 70, tope)
-    : Math.max(praxiPaseo - 90 - Math.random() * 70, 0);
-
-  const vaHaciaLaIzquierda = destino > praxiPaseo;
-  praxiPaseo = Math.round(destino);
-
-  // El transform lleva las dos cosas juntas porque es una sola propiedad:
-  // si se pusieran en reglas distintas, la última ganaría y borraría la otra.
-  fig.style.transitionDuration = (Math.abs(destino) > 0 ? 3.4 : 1) + 's';
-  fig.style.transform = `translateX(${-praxiPaseo}px) scaleX(${vaHaciaLaIzquierda ? -1 : 1})`;
-
-  // Al terminar el paseo se endereza, para no quedarse mirando a la pared.
-  setTimeout(()=>{
-    fig.style.transform = `translateX(${-praxiPaseo}px) scaleX(1)`;
-  }, 3400);
-}
-
 function praxiHacerAlgo(){
   const fig = document.getElementById('praxiFig');
   if(!fig || praxiOcupada()) return;
@@ -8374,14 +8329,13 @@ function praxiHacerAlgo(){
   praxiQuieta();
   praxiActo = acto;
 
-  if(acto.anda) praxiCaminar(fig);
   if(acto.esconde) praxiEsconder(true);
 
   // Los gestos de la cara acompañan: leer con cara de sorpresa se vería raro.
-  if(acto.clase === 'px-saluda')   praxiGesto('contenta');
-  if(acto.clase === 'px-lee')      praxiGesto('atenta');
-  if(acto.clase === 'px-musica')   praxiGesto('contenta');
-  if(acto.clase === 'px-aburre')   praxiGesto('dormida');
+  if(acto.clase === 'px-lee')    praxiGesto('atenta');
+  if(acto.clase === 'px-duerme') praxiGesto('dormida');
+  if(acto.clase === 'px-serio')  praxiGesto('seria');
+  if(acto.clase === 'px-peina')  praxiGesto('contenta');
 
   fig.classList.add(acto.clase);
 
@@ -8404,20 +8358,20 @@ function praxiVivir(){
   }, espera);
 }
 
-/* Celebrar es saludar con las dos manos y cara de contenta. Reusa la misma
-   animación del baile, que ya mueve los dos brazos y mece la planta. */
+/* Celebrar: cara de contenta y un rato peinándose, que es lo más parecido a
+   ponerse guapa por haber terminado algo. */
 function praxiCelebra(){
   const fig = document.getElementById('praxiFig');
   if(!fig || praxiEstaCallada()) return;
 
   praxiQuieta();
   praxiGesto('contenta');
-  fig.classList.add('px-musica');
+  fig.classList.add('px-peina');
 
   setTimeout(()=>{
-    fig.classList.remove('px-musica');
+    fig.classList.remove('px-peina');
     praxiGesto('normal');
-  }, 5000);
+  }, 4600);
 }
 window.praxiCelebra = praxiCelebra;
 
@@ -8746,15 +8700,12 @@ function praxiIniciar(){
   // El primer tip tarda: entrar y que algo te salte encima es justo lo que
   // hace que la gente busque cómo apagarlo antes de leerlo.
   if(!praxiEstaCallada()){
-    // Saluda al llegar, que es lo que haría cualquiera.
+    // Al llegar pone cara de contenta un momento. Nada más: el saludo con la
+    // mano se quitó, y una bienvenida más aparatosa sobraría.
     setTimeout(()=>{
       if(praxiOcupada()) return;
-      document.getElementById('praxiFig').classList.add('px-saluda');
       praxiGesto('contenta');
-      setTimeout(()=>{
-        document.getElementById('praxiFig').classList.remove('px-saluda');
-        praxiGesto('normal');
-      }, 1700);
+      setTimeout(()=>{ if(!praxiEstaCallada()) praxiGesto('normal'); }, 1800);
     }, 2500);
 
     setTimeout(()=>{
