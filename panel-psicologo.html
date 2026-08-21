@@ -887,7 +887,29 @@
 
   /* El panel de preguntas. Más ancho que un tip porque aquí se lee y se
      escribe, no solo se ojea. */
-  .praxi-panel{width:280px;max-width:78vw;}
+  .praxi-panel{width:288px;max-width:80vw;}
+
+  /* La equis va arriba a la derecha, donde todo el mundo la busca primero.
+     Grande de área aunque el signo sea chico: un blanco de 28px se acierta
+     al primer intento, uno de 14 no. */
+  .praxi-cab{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:6px;}
+  .praxi-x{
+    width:28px;height:28px;flex-shrink:0;margin:-6px -4px -6px 0;
+    border:none;background:none;cursor:pointer;
+    font-size:21px;line-height:1;color:var(--gray);font-family:inherit;
+    border-radius:8px;
+  }
+  .praxi-x:hover{background:#F1F1EE;color:var(--ink);}
+
+  /* Apagarla del todo es otra cosa que cerrar el globo, así que va aparte y
+     abajo: quien solo quiere quitárselo de enfrente usa la equis. */
+  .praxi-callar{
+    display:block;width:100%;margin-top:9px;padding-top:9px;
+    border:none;border-top:1px solid var(--line);background:none;
+    font:inherit;font-size:10.5px;font-weight:700;color:var(--gray);
+    cursor:pointer;text-align:center;
+  }
+  .praxi-callar:hover{color:var(--ink);}
   .praxi-resp{max-height:34vh;overflow-y:auto;}
   .praxi-form{display:flex;gap:6px;margin-top:10px;}
   .praxi-form input{
@@ -1055,8 +1077,11 @@
   @media(max-width:700px){
     /* En el celular se hace chica: ahí el ancho es oro. El bottom sube a 100
        porque el botón + ocupa hasta 86px desde abajo y con 84 se encimaban. */
-    .praxi{right:14px;bottom:100px;max-width:200px;}
+    /* El tope del contenedor tiene que dejar caber el menú abierto. Con 200px
+       fijos, el menú de 288 se salía cinco píxeles por la derecha. */
+    .praxi{right:14px;bottom:100px;max-width:calc(100vw - 28px);}
     .praxi-fig{width:52px;}
+    .praxi-panel{width:288px;max-width:100%;}
   }
 
   .btn-flotante-mas{position:fixed;bottom:28px;right:28px;width:58px;height:58px;border-radius:50%;background:var(--primario);color:#fff;border:none;font-size:30px;font-weight:400;line-height:1;cursor:pointer;box-shadow:0 4px 18px rgba(46,125,50,.4);z-index:60;transition:transform .15s,background .15s;}
@@ -8397,6 +8422,19 @@ function praxiCerrar(){
   clearTimeout(praxiTemporizador);
   document.getElementById('praxiGlobo').innerHTML = '';
   praxiGesto(praxiEstaCallada() ? 'dormida' : 'normal');
+
+  // Vuelve a donde la habían dejado: si el menú la corrió para caber, ese
+  // corrimiento era del menú, no de ella.
+  praxiRecordarSitio();
+
+  // Y si nunca la arrastraron, regresa a su esquina de siempre.
+  const guardado = (()=>{ try{ return localStorage.getItem(PRAXI_SITIO); }catch(e){ return null; } })();
+  if(!guardado){
+    const caja = document.getElementById('praxi');
+    if(caja){ caja.style.left = ''; caja.style.top = ''; caja.style.right = ''; caja.style.bottom = ''; }
+  }
+
+  if(!praxiEstaCallada()) praxiVivir();
 }
 
 /* Elige un tip que venga a cuento de la pestaña abierta y que no se haya
@@ -8409,7 +8447,7 @@ function praxiTip(){
   let pool = PRAXI_TIPS.filter((t,i)=> !vistos.includes(i) && (t.donde === pestana || t.donde === null));
   if(!pool.length) pool = PRAXI_TIPS.filter((t,i)=> !vistos.includes(i));
   if(!pool.length){
-    praxiDecir('Por hoy ya te conté todo lo que sé. Si algo no encuentras, escríbeme por WhatsApp.', false);
+    praxiPanel('Por hoy ya te conté todo lo que sé. Si algo no encuentras, pregúntame aquí abajo o escríbele a soporte.');
     return;
   }
 
@@ -8419,7 +8457,7 @@ function praxiTip(){
     sessionStorage.setItem(PRAXI_VISTOS, JSON.stringify([...vistos, indice]));
   }catch(e){}
 
-  praxiDecir(elegido.txt, true);
+  praxiPanel(elegido.txt, '<button type="button" data-praxi="otro">Otro tip</button>');
 }
 
 /* Busca en el manual. Cuenta cuántas palabras de cada entrada aparecen en la
@@ -8576,13 +8614,44 @@ function praxiResponder(pregunta){
   );
 }
 
+/* Praxi cabe en cualquier lado, pero su menú abierto mide bastante más que
+   ella. Si la dejaron pegada a la derecha o abajo, al abrirse se saldría de
+   la pantalla, así que se corre lo necesario para que quepa entero.
+
+   Solo se mueve el contenedor, no la posición guardada: al cerrar el menú
+   vuelve donde la habían dejado. */
+function praxiAcomodarMenu(){
+  const caja = document.getElementById('praxi');
+  if(!caja) return;
+
+  const r = caja.getBoundingClientRect();
+  let dx = 0, dy = 0;
+
+  if(r.right > innerWidth - 8)  dx = innerWidth - 8 - r.right;
+  if(r.left + dx < 8)           dx = 8 - r.left;
+  if(r.bottom > innerHeight - 8) dy = innerHeight - 8 - r.bottom;
+  if(r.top + dy < 8)             dy = 8 - r.top;
+
+  if(!dx && !dy) return;
+
+  // Si nunca la arrastraron sigue anclada con right/bottom, así que primero
+  // se pasa a coordenadas absolutas y luego se corre.
+  caja.style.left = Math.round(r.left + dx) + 'px';
+  caja.style.top  = Math.round(r.top + dy) + 'px';
+  caja.style.right = 'auto';
+  caja.style.bottom = 'auto';
+}
+
 function praxiPanel(html, extra){
   const globo = document.getElementById('praxiGlobo');
   clearTimeout(praxiTemporizador);
 
   globo.innerHTML = `
     <div class="praxi-globo praxi-panel">
-      <b>Praxi</b>
+      <div class="praxi-cab">
+        <b>Praxi</b>
+        <button type="button" class="praxi-x" data-praxi="cerrar" aria-label="Cerrar" title="Cerrar">&times;</button>
+      </div>
       <div class="praxi-resp">${html}</div>
       <form class="praxi-form" id="praxiForm">
         <input type="text" id="praxiPregunta" placeholder="Pregúntame algo de Praxia..." autocomplete="off">
@@ -8592,12 +8661,13 @@ function praxiPanel(html, extra){
         ${extra || ''}
         <button type="button" data-praxi="frecuentes">Preguntas comunes</button>
         <button type="button" data-praxi="soporte">Soporte</button>
-        <button type="button" data-praxi="cerrar">Cerrar</button>
       </div>
+      <button type="button" class="praxi-callar" data-praxi="callar">No me muestres nada</button>
     </div>`;
 
   praxiQuieta();
   praxiConectar(globo);
+  praxiAcomodarMenu();
   document.getElementById('praxiPregunta')?.focus();
 }
 
@@ -8615,6 +8685,29 @@ function praxiFrecuentes(){
     `<div class="praxi-lista">${lista.map(p=>
       `<button type="button" data-praxi="pregunta" data-q="${escapar(p)}">${escapar(p)}</button>`).join('')}</div>`
   );
+}
+
+/* Tres formas de cerrarlo, porque nadie debería tener que buscar cómo:
+   la equis de la esquina, la tecla Escape, y tocar cualquier otro lado de la
+   pantalla. Se ponen una sola vez y se quedan puestas. */
+let praxiCierresPuestos = false;
+
+function praxiPonerCierres(){
+  if(praxiCierresPuestos) return;
+  praxiCierresPuestos = true;
+
+  document.addEventListener('keydown', (e)=>{
+    if(e.key === 'Escape' && document.getElementById('praxiGlobo')?.innerHTML.trim()) praxiCerrar();
+  });
+
+  // En captura y con un cuadro de por medio: si esperara al clic normal, el
+  // botón de abajo ya habría hecho lo suyo antes de que esto corriera.
+  document.addEventListener('mousedown', (e)=>{
+    const caja = document.getElementById('praxi');
+    if(!caja || !document.getElementById('praxiGlobo').innerHTML.trim()) return;
+    if(caja.contains(e.target)) return;      // dentro del globo o sobre ella
+    praxiCerrar();
+  });
 }
 
 function praxiConectar(globo){
@@ -8648,30 +8741,6 @@ function praxiConectar(globo){
   });
 }
 
-function praxiDecir(html, conOtro){
-  const globo = document.getElementById('praxiGlobo');
-  clearTimeout(praxiTemporizador);
-
-  globo.innerHTML = `
-    <div class="praxi-globo">
-      <b>Praxi</b>
-      <div>${html}</div>
-      <div class="praxi-acciones">
-        ${conOtro ? '<button type="button" data-praxi="otro">Otro tip</button>' : ''}
-        <button type="button" data-praxi="frecuentes">Preguntarle algo</button>
-        <button type="button" data-praxi="callar">No me muestres tips</button>
-        <button type="button" data-praxi="cerrar">Cerrar</button>
-      </div>
-    </div>`;
-
-  praxiConectar(globo);
-
-  // Se cierra solo: un globo que se queda puesto termina siendo un cartel
-  // pegado a la pantalla. El panel de preguntas NO se cierra solo, porque
-  // ahí la persona está escribiendo.
-  praxiTemporizador = setTimeout(praxiCerrar, 22000);
-}
-
 function praxiIniciar(){
   const caja = document.getElementById('praxi');
   if(!caja) return;
@@ -8679,6 +8748,7 @@ function praxiIniciar(){
 
   praxiRecordarSitio();
   praxiHacerArrastrable();
+  praxiPonerCierres();
 
   if(praxiEstaCallada()){
     document.getElementById('praxiFig').classList.add('praxi-dormida');
@@ -8689,7 +8759,7 @@ function praxiIniciar(){
     if(praxiSeMovio){ praxiSeMovio = false; return; }   // la movieron, no la tocaron
     if(praxiEstaCallada()){
       praxiDespertar();
-      praxiDecir('Ya volví. ¿Quieres que te cuente algo de Praxia?', true);
+      praxiPanel('Ya volví. Pregúntame lo que quieras de Praxia.');
       return;
     }
     // Si ya está hablando, el clic la calla en vez de encimar otro globo.
@@ -8697,20 +8767,19 @@ function praxiIniciar(){
     else praxiPanel('¿Qué necesitas? Pregúntame lo que sea de Praxia: dónde está algo, cómo se hace, o cómo subir lo que ya tienes.');
   });
 
-  // El primer tip tarda: entrar y que algo te salte encima es justo lo que
-  // hace que la gente busque cómo apagarlo antes de leerlo.
+  // Praxi NUNCA abre el menú sola. Antes soltaba un tip a los doce segundos
+  // de entrar, y aunque estuviera bien escrito seguía siendo algo que se
+  // pone enfrente sin que nadie lo pidiera. Ahora solo habla si la tocan.
+  //
+  // Lo que sí hace sola es moverse, que es distinto: se ve por el rabillo del
+  // ojo y no tapa nada.
   if(!praxiEstaCallada()){
-    // Al llegar pone cara de contenta un momento. Nada más: el saludo con la
-    // mano se quitó, y una bienvenida más aparatosa sobraría.
+    // Al llegar pone cara de contenta un momento, sin decir nada.
     setTimeout(()=>{
       if(praxiOcupada()) return;
       praxiGesto('contenta');
       setTimeout(()=>{ if(!praxiEstaCallada()) praxiGesto('normal'); }, 1800);
     }, 2500);
-
-    setTimeout(()=>{
-      if(!praxiEstaCallada() && !document.querySelector('.modal-bg.show')) praxiTip();
-    }, 12000);
 
     praxiVivir();
   }
