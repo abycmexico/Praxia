@@ -853,7 +853,7 @@
     filter:drop-shadow(0 3px 8px rgba(12,36,18,.18));
     transition:transform .18s;
   }
-  .praxi-fig:hover{transform:translateY(-3px);}
+  .praxi-fig:hover{filter:drop-shadow(0 5px 12px rgba(12,36,18,.28));}
   .praxi-fig svg{width:100%;height:auto;display:block;}
 
   /* El globo va ENCIMA, nunca al lado: al lado, el texto le roba ancho,
@@ -904,9 +904,73 @@
      parpadeo cada dos segundos se convierte en un tic que distrae. */
   .praxi-ojos{animation:praxiParpadeo 5.5s infinite;transform-origin:center;transform-box:fill-box;}
   @keyframes praxiParpadeo{0%,94%,100%{transform:scaleY(1)}97%{transform:scaleY(.1)}}
-  /* Al celebrar, la planta y el pasto se mecen juntos. */
-  .praxi-mece{animation:praxiMece 1.6s ease-in-out;transform-origin:105px 200px;}
-  @keyframes praxiMece{0%,100%{transform:rotate(0)}25%{transform:rotate(-5deg)}75%{transform:rotate(5deg)}}
+  /* ----- lo que hace Praxi cuando nadie la mira -----
+     Cada actividad mueve solo las partes que le tocan, con el punto de giro
+     en la articulación. Todas terminan solas y la dejan como estaba: si una
+     dejara el brazo levantado, la siguiente empezaría torcida. */
+
+  #praxiSvg g{transform-box:fill-box;}
+
+  /* respirar: el fondo de todo, siempre encendido */
+  .praxi-fig svg{animation:pxRespira 4.2s ease-in-out infinite;transform-origin:50% 90%;}
+  @keyframes pxRespira{0%,100%{transform:scale(1)}50%{transform:scale(1.018)}}
+
+  /* saludar */
+  .px-saluda #pxBrazoD{animation:pxSaluda 1.7s ease-in-out;}
+  @keyframes pxSaluda{
+    0%,100%{transform:rotate(0)}
+    15%{transform:rotate(-58deg)}
+    30%{transform:rotate(-38deg)}
+    45%{transform:rotate(-58deg)}
+    60%{transform:rotate(-38deg)}
+    75%{transform:rotate(-55deg)}
+  }
+
+  /* leer: saca el libro y baja la mirada */
+  .px-lee #pxLibro{animation:pxLibro 6s ease-in-out;}
+  .px-lee #pxBrazoI{animation:pxSostieneI 6s ease-in-out;}
+  .px-lee #pxBrazoD{animation:pxSostieneD 6s ease-in-out;}
+  @keyframes pxLibro{0%,100%{opacity:0;transform:translateY(8px)}8%,92%{opacity:1;transform:none}}
+  @keyframes pxSostieneI{0%,100%{transform:rotate(0)}10%,90%{transform:rotate(-42deg)}}
+  @keyframes pxSostieneD{0%,100%{transform:rotate(0)}10%,90%{transform:rotate(42deg)}}
+
+  /* música: se balancea y salen las notas */
+  .px-musica #pxNotas{animation:pxNotas 5s ease-out;}
+  .px-musica #pxPlanta,.px-musica #pxPasto{animation:pxBaila 5s ease-in-out;transform-origin:105px 200px;}
+  .px-musica #pxBrazoI{animation:pxBrazoBaileI 5s ease-in-out;}
+  .px-musica #pxBrazoD{animation:pxBrazoBaileD 5s ease-in-out;}
+  @keyframes pxNotas{0%{opacity:0;transform:translate(0,10px)}20%{opacity:1}100%{opacity:0;transform:translate(14px,-26px)}}
+  @keyframes pxBaila{0%,100%{transform:rotate(0)}20%{transform:rotate(-7deg)}45%{transform:rotate(7deg)}70%{transform:rotate(-5deg)}}
+  @keyframes pxBrazoBaileI{0%,100%{transform:rotate(0)}25%{transform:rotate(-30deg)}60%{transform:rotate(10deg)}}
+  @keyframes pxBrazoBaileD{0%,100%{transform:rotate(0)}25%{transform:rotate(30deg)}60%{transform:rotate(-10deg)}}
+
+  /* aburrirse: se ladea, bosteza y le salen las zetas */
+  .px-aburre #pxZzz{animation:pxZzz 5.5s ease-out;}
+  .px-aburre #pxPlanta{animation:pxLadea 5.5s ease-in-out;transform-origin:105px 200px;}
+  @keyframes pxZzz{0%{opacity:0}25%{opacity:.9}100%{opacity:0;transform:translate(10px,-16px)}}
+  @keyframes pxLadea{0%,100%{transform:rotate(0)}30%,70%{transform:rotate(-11deg)}}
+
+  /* esconderse: se maneja desde el codigo, no con una clase.
+     Con clase habia que confiar en que ninguna otra regla la pisara, y
+     depurar por que no se aplicaba costaba mas que ponerlo a mano. Aqui
+     solo queda la transicion, que es lo que hace que se hunda en vez de
+     desaparecer de golpe. */
+  #pxCara,#pxPlanta,#pxBrazoI,#pxBrazoD,#pxPiernaI,#pxPiernaD{transition:transform .55s ease-in-out,opacity .45s;}
+
+  /* caminar: pasos alternos y un balanceo del cuerpo */
+  .px-camina #pxPiernaI{animation:pxPasoA .62s ease-in-out infinite;}
+  .px-camina #pxPiernaD{animation:pxPasoB .62s ease-in-out infinite;}
+  .px-camina #pxBrazoI{animation:pxManoB .62s ease-in-out infinite;}
+  .px-camina #pxBrazoD{animation:pxManoA .62s ease-in-out infinite;}
+  @keyframes pxPasoA{0%,100%{transform:rotate(16deg)}50%{transform:rotate(-16deg)}}
+  @keyframes pxPasoB{0%,100%{transform:rotate(-16deg)}50%{transform:rotate(16deg)}}
+  @keyframes pxManoA{0%,100%{transform:rotate(14deg)}50%{transform:rotate(-14deg)}}
+  @keyframes pxManoB{0%,100%{transform:rotate(-14deg)}50%{transform:rotate(14deg)}}
+
+  /* El paseo mueve la figura, no el contenedor: el globo se queda donde
+     estaba y no sale volando detrás de ella. */
+  .praxi-fig{transition:transform 1s linear;}
+
   .praxi-dormida{opacity:.45;}
   /* Dormida no parpadea. Se apaga desde CSS y no con estilo en línea, que
      depende de que el navegador conserve la forma corta tal cual se escribió. */
@@ -1733,22 +1797,34 @@
 <div class="praxi" id="praxi" hidden>
   <div id="praxiGlobo"></div>
   <button type="button" class="praxi-fig" id="praxiFig" title="Praxi" aria-label="Praxi, tu guía de Praxia">
-    <svg viewBox="16 16 178 274" role="img" aria-hidden="true">
-      <!-- 1. brazos, piernas y manos -->
-      <g fill="none" stroke="#4E9A3D" stroke-linecap="round">
-        <path d="M84 246 L84 272" stroke-width="12"/>
-        <path d="M126 246 L126 272" stroke-width="12"/>
-        <path d="M84 274 L74 274" stroke-width="12"/>
-        <path d="M126 274 L136 274" stroke-width="12"/>
-        <path d="M62 202 C44 210 36 224 34 236" stroke-width="11"/>
-        <path d="M148 202 C166 210 174 224 176 236" stroke-width="11"/>
-      </g>
-      <circle cx="32" cy="241" r="8" fill="#4E9A3D"/>
-      <circle cx="178" cy="241" r="8" fill="#4E9A3D"/>
+    <svg viewBox="16 6 178 290" role="img" aria-hidden="true" id="praxiSvg">
+      <!-- Cada parte va en su grupo con su punto de giro puesto donde giraria
+           de verdad: el brazo desde el hombro, la pierna desde la cadera. Si
+           el punto queda en el centro de la forma, el brazo no saluda, flota. -->
 
-      <!-- 2 y 3. la planta y el pasto, antes que la maceta para que ella les
-           tape la base: así el tallo no enseña dónde empieza. -->
-      <g id="praxiVegetal">
+      <!-- piernas -->
+      <g id="pxPiernaI" style="transform-origin:84px 246px">
+        <path d="M84 246 L84 272" stroke="#4E9A3D" stroke-width="12" stroke-linecap="round" fill="none"/>
+        <path d="M84 274 L74 274" stroke="#4E9A3D" stroke-width="12" stroke-linecap="round" fill="none"/>
+      </g>
+      <g id="pxPiernaD" style="transform-origin:126px 246px">
+        <path d="M126 246 L126 272" stroke="#4E9A3D" stroke-width="12" stroke-linecap="round" fill="none"/>
+        <path d="M126 274 L136 274" stroke="#4E9A3D" stroke-width="12" stroke-linecap="round" fill="none"/>
+      </g>
+
+      <!-- brazos -->
+      <g id="pxBrazoI" style="transform-origin:62px 202px">
+        <path d="M62 202 C44 210 36 224 34 236" stroke="#4E9A3D" stroke-width="11" stroke-linecap="round" fill="none"/>
+        <circle cx="32" cy="241" r="8" fill="#4E9A3D"/>
+      </g>
+      <g id="pxBrazoD" style="transform-origin:148px 202px">
+        <path d="M148 202 C166 210 174 224 176 236" stroke="#4E9A3D" stroke-width="11" stroke-linecap="round" fill="none"/>
+        <circle cx="178" cy="241" r="8" fill="#4E9A3D"/>
+      </g>
+
+      <!-- la planta y el pasto, antes que la maceta para que ella les tape la
+           base. Al esconderse, la planta baja y desaparece detras. -->
+      <g id="pxPlanta">
         <path d="M95 205 L95 92 A33 33 0 1 1 128 125 L95 125"
               fill="none" stroke="#2E7D32" stroke-width="13" stroke-linecap="round" stroke-linejoin="round"/>
         <g transform="translate(96,92) rotate(-16)">
@@ -1757,33 +1833,54 @@
           <path d="M2 -2 C10 -18 20 -34 32 -50"
                 fill="none" stroke="#2E7D32" stroke-width="3.4" stroke-linecap="round" opacity=".75"/>
         </g>
-        <g fill="none" stroke-linecap="round" stroke-width="5">
-          <path d="M64 190 C61 180 58 173 53 166" stroke="#4E9A3D"/>
-          <path d="M73 192 C71 181 70 172 68 163" stroke="#7BC043"/>
-          <path d="M82 192 C81 180 82 170 81 160" stroke="#4E9A3D"/>
-          <path d="M108 192 C109 181 111 172 113 164" stroke="#7BC043"/>
-          <path d="M118 192 C120 182 123 174 127 166" stroke="#4E9A3D"/>
-          <path d="M129 190 C132 181 136 175 142 169" stroke="#7BC043"/>
-          <path d="M146 190 C148 183 150 179 153 175" stroke="#4E9A3D"/>
-        </g>
+      </g>
+      <g id="pxPasto" fill="none" stroke-linecap="round" stroke-width="5">
+        <path d="M64 190 C61 180 58 173 53 166" stroke="#4E9A3D"/>
+        <path d="M73 192 C71 181 70 172 68 163" stroke="#7BC043"/>
+        <path d="M82 192 C81 180 82 170 81 160" stroke="#4E9A3D"/>
+        <path d="M108 192 C109 181 111 172 113 164" stroke="#7BC043"/>
+        <path d="M118 192 C120 182 123 174 127 166" stroke="#4E9A3D"/>
+        <path d="M129 190 C132 181 136 175 142 169" stroke="#7BC043"/>
+        <path d="M146 190 C148 183 150 179 153 175" stroke="#4E9A3D"/>
       </g>
 
-      <!-- 4. la maceta -->
+      <!-- la maceta -->
       <path d="M60 186 L150 186 L140 248 L70 248 Z"
             fill="#F0EDE4" stroke="#B9B29C" stroke-width="6" stroke-linejoin="round"/>
       <rect x="54" y="172" width="102" height="20" rx="5"
             fill="#F7F5EE" stroke="#B9B29C" stroke-width="6"/>
 
-      <!-- 5. la cara -->
-      <ellipse cx="76" cy="224" rx="8" ry="5" fill="#E88B96" opacity=".5"/>
-      <ellipse cx="134" cy="224" rx="8" ry="5" fill="#E88B96" opacity=".5"/>
-      <g id="praxiOjos" class="praxi-ojos">
-        <circle cx="92" cy="212" r="6.5" fill="#1A1A1A"/>
-        <circle cx="118" cy="212" r="6.5" fill="#1A1A1A"/>
+      <!-- la cara. Se hunde entera cuando se esconde. -->
+      <g id="pxCara">
+        <ellipse cx="76" cy="224" rx="8" ry="5" fill="#E88B96" opacity=".5"/>
+        <ellipse cx="134" cy="224" rx="8" ry="5" fill="#E88B96" opacity=".5"/>
+        <g id="praxiOjos" class="praxi-ojos">
+          <circle cx="92" cy="212" r="6.5" fill="#1A1A1A"/>
+          <circle cx="118" cy="212" r="6.5" fill="#1A1A1A"/>
+        </g>
+        <path id="praxiBoca" d="M99 226 Q105 233 111 226"
+              fill="none" stroke="#1A1A1A" stroke-width="4.2" stroke-linecap="round"/>
       </g>
-      <path id="praxiBoca" d="M99 226 Q105 233 111 226"
-            fill="none" stroke="#1A1A1A" stroke-width="4.2" stroke-linecap="round"/>
-    </svg>
+
+      <!-- lo que saca segun lo que este haciendo: un libro, notas de musica -->
+      <g id="pxLibro" style="opacity:0">
+        <path d="M96 250 L96 226 L74 230 L74 254 Z" fill="#F7F5EE" stroke="#8A8578" stroke-width="4" stroke-linejoin="round"/>
+        <path d="M96 250 L96 226 L118 230 L118 254 Z" fill="#FFFFFF" stroke="#8A8578" stroke-width="4" stroke-linejoin="round"/>
+        <path d="M80 238 L90 236 M80 245 L90 243 M102 236 L112 238 M102 243 L112 245"
+              stroke="#B9B29C" stroke-width="2.6" stroke-linecap="round"/>
+      </g>
+      <g id="pxNotas" style="opacity:0">
+        <g fill="#2E7D32">
+          <circle cx="160" cy="150" r="6"/><rect x="164" y="126" width="3.6" height="26"/>
+          <circle cx="182" cy="128" r="5"/><rect x="185.4" y="108" width="3.2" height="22"/>
+        </g>
+      </g>
+      <g id="pxZzz" style="opacity:0" fill="#9A9A9A" font-family="inherit" font-weight="800">
+        <text x="150" y="150" font-size="20">z</text>
+        <text x="166" y="132" font-size="15">z</text>
+        <text x="178" y="118" font-size="11">z</text>
+      </g>
+</svg>
   </button>
 </div>
 
@@ -7968,15 +8065,145 @@ function praxiGesto(cual){
   boca.setAttribute('stroke', negro);
 }
 
-function praxiCelebra(){
-  const veg = document.getElementById('praxiVegetal');
-  if(!veg || praxiEstaCallada()) return;
-  praxiGesto('contenta');
-  veg.classList.add('praxi-mece');
+/* ---------- la vida de Praxi ---------- */
+/* Va haciendo cosas sola: saluda, lee, se aburre, oye música, se esconde en
+   la maceta y sale a caminar por la orilla de la pantalla.
+
+   Con una regla encima de todas: se queda quieta si hay una ventana abierta
+   o si le están escribiendo. Esto se usa mientras se atiende gente, y un
+   personaje bailando encima de una nota clínica no tiene ninguna gracia. */
+
+const PRAXI_ACTOS = [
+  { clase:'px-saluda',  dura:1700 },
+  { clase:'px-lee',     dura:6000 },
+  { clase:'px-musica',  dura:5000 },
+  { clase:'px-aburre',  dura:5500 },
+  { clase:'px-camina',  dura:7000, anda:true },
+  { clase:'px-escondida', dura:5000, esconde:true },
+];
+
+let praxiActo = null;      // el que está en curso
+let praxiRelojVida = null;
+let praxiPaseo = 0;        // cuánto se ha alejado de su esquina, en píxeles
+
+function praxiOcupada(){
+  // Ventana abierta, panel de preguntas abierto, o dormida.
+  return praxiEstaCallada()
+    || !!document.querySelector('.modal-bg.show')
+    || document.getElementById('dialogo')?.classList.contains('abierto')
+    || !!document.getElementById('praxiPregunta');
+}
+
+function praxiQuieta(){
+  const fig = document.getElementById('praxiFig');
+  if(!fig) return;
+  PRAXI_ACTOS.forEach(a=> fig.classList.remove(a.clase));
+  praxiEsconder(false);
+  praxiActo = null;
+}
+
+/* Meterse en la maceta: la cara se hunde, los brazos y las piernas se
+   recogen, y la planta baja hasta que solo asoma la P.
+
+   Va con estilos puestos a mano y no con una clase de CSS. Con clase había
+   que confiar en que ninguna otra regla la pisara, y averiguar por qué no se
+   aplicaba costó más que escribirlo así. */
+const PRAXI_ESCONDIDO = {
+  pxCara:   { opacity:'0', transform:'translateY(16px)' },
+  pxPlanta: { opacity:'1', transform:'translateY(74px)' },
+  pxBrazoI: { opacity:'0', transform:'translateY(30px)' },
+  pxBrazoD: { opacity:'0', transform:'translateY(30px)' },
+  pxPiernaI:{ opacity:'0', transform:'translateY(16px)' },
+  pxPiernaD:{ opacity:'0', transform:'translateY(16px)' },
+};
+
+function praxiEsconder(meterse){
+  Object.entries(PRAXI_ESCONDIDO).forEach(([id, estilo])=>{
+    const el = document.getElementById(id);
+    if(!el) return;
+    el.style.opacity   = meterse ? estilo.opacity : '';
+    el.style.transform = meterse ? estilo.transform : '';
+  });
+}
+
+/* Camina por la orilla, sin alejarse tanto que se pierda ni tan poco que no
+   se note. Se voltea para ver hacia donde va, como haría cualquiera. */
+function praxiCaminar(fig){
+  // Hasta dónde puede alejarse de su esquina. En una pantalla chica, 260px
+  // es media pantalla y acabaría paseándose por encima del contenido.
+  const tope = Math.min(260, Math.round(innerWidth * 0.35));
+
+  const izquierda = praxiPaseo === 0 || Math.random() < .5;
+  const destino = izquierda
+    ? Math.min(praxiPaseo + 90 + Math.random() * 70, tope)
+    : Math.max(praxiPaseo - 90 - Math.random() * 70, 0);
+
+  const vaHaciaLaIzquierda = destino > praxiPaseo;
+  praxiPaseo = Math.round(destino);
+
+  // El transform lleva las dos cosas juntas porque es una sola propiedad:
+  // si se pusieran en reglas distintas, la última ganaría y borraría la otra.
+  fig.style.transitionDuration = (Math.abs(destino) > 0 ? 3.4 : 1) + 's';
+  fig.style.transform = `translateX(${-praxiPaseo}px) scaleX(${vaHaciaLaIzquierda ? -1 : 1})`;
+
+  // Al terminar el paseo se endereza, para no quedarse mirando a la pared.
   setTimeout(()=>{
-    veg.classList.remove('praxi-mece');
+    fig.style.transform = `translateX(${-praxiPaseo}px) scaleX(1)`;
+  }, 3400);
+}
+
+function praxiHacerAlgo(){
+  const fig = document.getElementById('praxiFig');
+  if(!fig || praxiOcupada()) return;
+
+  const acto = PRAXI_ACTOS[Math.floor(Math.random() * PRAXI_ACTOS.length)];
+  praxiQuieta();
+  praxiActo = acto;
+
+  if(acto.anda) praxiCaminar(fig);
+  if(acto.esconde) praxiEsconder(true);
+
+  // Los gestos de la cara acompañan: leer con cara de sorpresa se vería raro.
+  if(acto.clase === 'px-saluda')   praxiGesto('contenta');
+  if(acto.clase === 'px-lee')      praxiGesto('atenta');
+  if(acto.clase === 'px-musica')   praxiGesto('contenta');
+  if(acto.clase === 'px-aburre')   praxiGesto('dormida');
+
+  fig.classList.add(acto.clase);
+
+  setTimeout(()=>{
+    fig.classList.remove(acto.clase);
+    if(acto.esconde) praxiEsconder(false);
+    praxiActo = null;
+    if(!praxiEstaCallada()) praxiGesto('normal');
+  }, acto.dura);
+}
+
+/* El reloj de la vida. Espera entre 9 y 20 segundos entre una cosa y otra:
+   seguido cansa, y muy espaciado parece que se colgó. */
+function praxiVivir(){
+  clearTimeout(praxiRelojVida);
+  const espera = 9000 + Math.random() * 11000;
+  praxiRelojVida = setTimeout(()=>{
+    praxiHacerAlgo();
+    praxiVivir();
+  }, espera);
+}
+
+/* Celebrar es saludar con las dos manos y cara de contenta. Reusa la misma
+   animación del baile, que ya mueve los dos brazos y mece la planta. */
+function praxiCelebra(){
+  const fig = document.getElementById('praxiFig');
+  if(!fig || praxiEstaCallada()) return;
+
+  praxiQuieta();
+  praxiGesto('contenta');
+  fig.classList.add('px-musica');
+
+  setTimeout(()=>{
+    fig.classList.remove('px-musica');
     praxiGesto('normal');
-  }, 1600);
+  }, 5000);
 }
 window.praxiCelebra = praxiCelebra;
 
@@ -7986,6 +8213,8 @@ function praxiCallar(){
   globo.innerHTML = '';
   document.getElementById('praxiFig').classList.add('praxi-dormida');
   praxiGesto('dormida');
+  praxiQuieta();
+  clearTimeout(praxiRelojVida);
   try{ localStorage.setItem(PRAXI_CALLADA, '1'); }catch(e){}
 }
 
@@ -7993,6 +8222,7 @@ function praxiDespertar(){
   document.getElementById('praxiFig').classList.remove('praxi-dormida');
   try{ localStorage.removeItem(PRAXI_CALLADA); }catch(e){}
   praxiGesto('normal');
+  praxiVivir();
 }
 
 function praxiCerrar(){
@@ -8198,6 +8428,7 @@ function praxiPanel(html, extra){
       </div>
     </div>`;
 
+  praxiQuieta();
   praxiConectar(globo);
   document.getElementById('praxiPregunta')?.focus();
 }
@@ -8297,9 +8528,22 @@ function praxiIniciar(){
   // El primer tip tarda: entrar y que algo te salte encima es justo lo que
   // hace que la gente busque cómo apagarlo antes de leerlo.
   if(!praxiEstaCallada()){
+    // Saluda al llegar, que es lo que haría cualquiera.
+    setTimeout(()=>{
+      if(praxiOcupada()) return;
+      document.getElementById('praxiFig').classList.add('px-saluda');
+      praxiGesto('contenta');
+      setTimeout(()=>{
+        document.getElementById('praxiFig').classList.remove('px-saluda');
+        praxiGesto('normal');
+      }, 1700);
+    }, 2500);
+
     setTimeout(()=>{
       if(!praxiEstaCallada() && !document.querySelector('.modal-bg.show')) praxiTip();
     }, 12000);
+
+    praxiVivir();
   }
 }
 
