@@ -1,0 +1,116 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="16 16 178 274" width="178" height="274"
+     role="img" aria-labelledby="praxiTitulo praxiDesc">
+  <title id="praxiTitulo">Praxi</title>
+  <desc id="praxiDesc">La mascota de Praxia: una maceta color hueso con cara,
+    brazos y piernas, pasto a modo de cabello, y la letra P del isotipo
+    creciendo de ella con una hoja.</desc>
+
+  <!--
+    PRAXI
+
+    UNA SOLA VERSION, SIEMPRE COMPLETA
+
+    Con manos y pies en todos los tamaños. Hubo una version recortada para
+    cuando esta en reposo y fue un error: sin brazos ni piernas deja de ser
+    un personaje y pasa a ser un icono. Para achicarla se cambia el ancho,
+    nada mas.
+
+    EL MARCO
+
+        viewBox="16 16 178 274"
+
+    Medido, no a ojo. Lo que mas lejos llega:
+
+        arriba     la punta de la hoja, y=26  (va rotada, queda mas alto de
+                                               lo que uno calcula)
+        abajo      los pies,           y=280
+        izquierda  la mano,            x=24
+        derecha    la mano,            x=186
+
+    El marco abre en 16 y cierra en 194 y 290, asi que sobra aire por los
+    cuatro lados. Apretarlo mas le roza la hoja o las manos.
+
+    ORDEN DE DIBUJO, que aqui no es un detalle:
+
+        extremidades  ->  planta  ->  pasto  ->  maceta  ->  cara
+
+    La planta y el pasto van ANTES que la maceta para que esta les tape la
+    base. Asi el tallo no muestra donde empieza y el pasto parece brotar de
+    la tierra en vez de estar pegado encima. Si se invierte el orden, la
+    ilusion se rompe y se ve una planta apoyada sobre un bote.
+
+    El tallo baja hasta y=205, bien por dentro de la maceta, no hasta su
+    borde: si termina justo en el borde, al mas minimo movimiento asoma.
+
+    El pasto lleva alturas y curvas disparejas a proposito. Parejo se lee a
+    cepillo, no a pasto. Y de paso le da silueta, que es lo que la vuelve
+    reconocible en chico.
+
+    La maceta va en hueso y no en terracota para no meter un color que la
+    plataforma no usa en ningun otro lado.
+
+    EL GLOBO VA ENCIMA, NO AL LADO
+
+    Al ponerlo al lado, el texto le roba ancho, crece hacia arriba y levanta
+    a Praxi hasta sacarla del contenedor: en pantalla angosta lo primero que
+    se pierde es la P. Encima no pasa, porque cada uno tiene su linea:
+
+        flex-direction: column;
+        align-items: flex-end;
+
+    Los gestos -contenta, atenta, callada- se hacen desde el codigo cambiando
+    ojos y boca. Aqui vive el estado tranquilo.
+  -->
+
+  <!-- 1. brazos, piernas y manos -->
+  <g fill="none" stroke="#4E9A3D" stroke-linecap="round">
+    <path d="M84 246 L84 272" stroke-width="12"/>
+    <path d="M126 246 L126 272" stroke-width="12"/>
+    <path d="M84 274 L74 274" stroke-width="12"/>
+    <path d="M126 274 L136 274" stroke-width="12"/>
+    <path d="M62 202 C44 210 36 224 34 236" stroke-width="11"/>
+    <path d="M148 202 C166 210 174 224 176 236" stroke-width="11"/>
+  </g>
+  <circle cx="32" cy="241" r="8" fill="#4E9A3D"/>
+  <circle cx="178" cy="241" r="8" fill="#4E9A3D"/>
+
+  <!-- 2. la planta: el isotipo de Praxia -->
+  <g id="praxiPlanta">
+    <path d="M95 205 L95 92 A33 33 0 1 1 128 125 L95 125"
+          fill="none" stroke="#2E7D32" stroke-width="13"
+          stroke-linecap="round" stroke-linejoin="round"/>
+    <g transform="translate(96,92) rotate(-16)">
+      <path d="M0 0 C-6 -26 8 -48 34 -56 C40 -30 26 -6 2 2 Z"
+            fill="#7BC043" stroke="#2E7D32" stroke-width="5" stroke-linejoin="round"/>
+      <path d="M2 -2 C10 -18 20 -34 32 -50"
+            fill="none" stroke="#2E7D32" stroke-width="3.4" stroke-linecap="round" opacity=".75"/>
+    </g>
+  </g>
+
+  <!-- 3. el pastito -->
+  <g id="praxiPasto" fill="none" stroke-linecap="round" stroke-width="5">
+    <path d="M64 190 C61 180 58 173 53 166" stroke="#4E9A3D"/>
+    <path d="M73 192 C71 181 70 172 68 163" stroke="#7BC043"/>
+    <path d="M82 192 C81 180 82 170 81 160" stroke="#4E9A3D"/>
+    <path d="M108 192 C109 181 111 172 113 164" stroke="#7BC043"/>
+    <path d="M118 192 C120 182 123 174 127 166" stroke="#4E9A3D"/>
+    <path d="M129 190 C132 181 136 175 142 169" stroke="#7BC043"/>
+    <path d="M146 190 C148 183 150 179 153 175" stroke="#4E9A3D"/>
+  </g>
+
+  <!-- 4. la maceta, que tapa el tallo y las raices del pasto -->
+  <path d="M60 186 L150 186 L140 248 L70 248 Z"
+        fill="#F0EDE4" stroke="#B9B29C" stroke-width="6" stroke-linejoin="round"/>
+  <rect x="54" y="172" width="102" height="20" rx="5"
+        fill="#F7F5EE" stroke="#B9B29C" stroke-width="6"/>
+
+  <!-- 5. la cara -->
+  <ellipse cx="76" cy="224" rx="8" ry="5" fill="#E88B96" opacity=".5"/>
+  <ellipse cx="134" cy="224" rx="8" ry="5" fill="#E88B96" opacity=".5"/>
+  <g id="praxiOjos">
+    <circle cx="92" cy="212" r="6.5" fill="#1A1A1A"/>
+    <circle cx="118" cy="212" r="6.5" fill="#1A1A1A"/>
+  </g>
+  <path id="praxiBoca" d="M99 226 Q105 233 111 226"
+        fill="none" stroke="#1A1A1A" stroke-width="4.2" stroke-linecap="round"/>
+</svg>

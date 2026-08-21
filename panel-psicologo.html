@@ -835,6 +835,63 @@
   .btn-pago-temporal{background:#FFF1DB;color:#B5680A;border:1.5px solid #FFE0A8;}
   .btn-pago-temporal:hover{background:#FFE7BD;}
 
+  /* ---------- Praxi ---------- */
+  /* Vive encima del botón +, no a su lado: la esquina ya estaba ocupada y
+     dos cosas flotantes peleándose el mismo rincón se tapan entre sí.
+
+     z-index 45 la deja POR DEBAJO de los modales (50), del menú de paciente
+     (220) y de las ventanas (400). Es a propósito: cuando hay algo abierto,
+     la mascota no tiene nada que hacer encima. */
+  .praxi{
+    position:fixed;right:24px;bottom:96px;z-index:45;
+    display:flex;flex-direction:column;align-items:flex-end;gap:8px;
+    max-width:250px;
+  }
+  .praxi[hidden]{display:none;}
+  .praxi-fig{
+    width:74px;background:none;border:none;padding:0;cursor:pointer;
+    filter:drop-shadow(0 3px 8px rgba(12,36,18,.18));
+    transition:transform .18s;
+  }
+  .praxi-fig:hover{transform:translateY(-3px);}
+  .praxi-fig svg{width:100%;height:auto;display:block;}
+
+  /* El globo va ENCIMA, nunca al lado: al lado, el texto le roba ancho,
+     crece hacia arriba y la empuja fuera de la pantalla. */
+  .praxi-globo{
+    background:#fff;border:1.5px solid var(--primario);border-radius:14px 14px 14px 3px;
+    padding:11px 13px;font-size:12px;font-weight:600;line-height:1.5;color:var(--ink);
+    box-shadow:0 6px 20px rgba(12,36,18,.14);
+    animation:praxiEntra .22s ease-out;
+  }
+  @keyframes praxiEntra{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+  .praxi-globo b{display:block;font-weight:800;margin-bottom:3px;}
+  .praxi-acciones{display:flex;gap:6px;margin-top:9px;flex-wrap:wrap;}
+  .praxi-acciones button{
+    font:inherit;font-size:11px;font-weight:700;padding:5px 10px;border-radius:8px;
+    border:1.5px solid var(--line);background:#fff;color:var(--gray);cursor:pointer;
+  }
+  .praxi-acciones button:hover{border-color:var(--primario);color:var(--primario);}
+
+  /* Parpadeo: se le aplasta el ojo un instante. Un ciclo largo, porque un
+     parpadeo cada dos segundos se convierte en un tic que distrae. */
+  .praxi-ojos{animation:praxiParpadeo 5.5s infinite;transform-origin:center;transform-box:fill-box;}
+  @keyframes praxiParpadeo{0%,94%,100%{transform:scaleY(1)}97%{transform:scaleY(.1)}}
+  /* Al celebrar, la planta y el pasto se mecen juntos. */
+  .praxi-mece{animation:praxiMece 1.6s ease-in-out;transform-origin:105px 200px;}
+  @keyframes praxiMece{0%,100%{transform:rotate(0)}25%{transform:rotate(-5deg)}75%{transform:rotate(5deg)}}
+  .praxi-dormida{opacity:.45;}
+  /* Dormida no parpadea. Se apaga desde CSS y no con estilo en línea, que
+     depende de que el navegador conserve la forma corta tal cual se escribió. */
+  .praxi-dormida .praxi-ojos{animation:none !important;}
+
+  @media(max-width:700px){
+    /* En el celular se hace chica: ahí el ancho es oro. El bottom sube a 100
+       porque el botón + ocupa hasta 86px desde abajo y con 84 se encimaban. */
+    .praxi{right:14px;bottom:100px;max-width:200px;}
+    .praxi-fig{width:52px;}
+  }
+
   .btn-flotante-mas{position:fixed;bottom:28px;right:28px;width:58px;height:58px;border-radius:50%;background:var(--primario);color:#fff;border:none;font-size:30px;font-weight:400;line-height:1;cursor:pointer;box-shadow:0 4px 18px rgba(46,125,50,.4);z-index:60;transition:transform .15s,background .15s;}
   .btn-flotante-mas:hover{background:var(--primario-claro);transform:scale(1.06);}
 
@@ -1641,6 +1698,66 @@
      y no se pueden escribir con el tono del producto. -->
 <div id="dialogo"><div class="dlg" id="dlgCaja"></div></div>
   </div>
+</div>
+
+<!-- Praxi. Va fuera de .app-shell a propósito: position:fixed se cuelga del
+     primer ancestro con transform, y dentro del shell acabaría desplazándose
+     con el scroll en vez de quedarse quieta. -->
+<div class="praxi" id="praxi" hidden>
+  <div id="praxiGlobo"></div>
+  <button type="button" class="praxi-fig" id="praxiFig" title="Praxi" aria-label="Praxi, tu guía de Praxia">
+    <svg viewBox="16 16 178 274" role="img" aria-hidden="true">
+      <!-- 1. brazos, piernas y manos -->
+      <g fill="none" stroke="#4E9A3D" stroke-linecap="round">
+        <path d="M84 246 L84 272" stroke-width="12"/>
+        <path d="M126 246 L126 272" stroke-width="12"/>
+        <path d="M84 274 L74 274" stroke-width="12"/>
+        <path d="M126 274 L136 274" stroke-width="12"/>
+        <path d="M62 202 C44 210 36 224 34 236" stroke-width="11"/>
+        <path d="M148 202 C166 210 174 224 176 236" stroke-width="11"/>
+      </g>
+      <circle cx="32" cy="241" r="8" fill="#4E9A3D"/>
+      <circle cx="178" cy="241" r="8" fill="#4E9A3D"/>
+
+      <!-- 2 y 3. la planta y el pasto, antes que la maceta para que ella les
+           tape la base: así el tallo no enseña dónde empieza. -->
+      <g id="praxiVegetal">
+        <path d="M95 205 L95 92 A33 33 0 1 1 128 125 L95 125"
+              fill="none" stroke="#2E7D32" stroke-width="13" stroke-linecap="round" stroke-linejoin="round"/>
+        <g transform="translate(96,92) rotate(-16)">
+          <path d="M0 0 C-6 -26 8 -48 34 -56 C40 -30 26 -6 2 2 Z"
+                fill="#7BC043" stroke="#2E7D32" stroke-width="5" stroke-linejoin="round"/>
+          <path d="M2 -2 C10 -18 20 -34 32 -50"
+                fill="none" stroke="#2E7D32" stroke-width="3.4" stroke-linecap="round" opacity=".75"/>
+        </g>
+        <g fill="none" stroke-linecap="round" stroke-width="5">
+          <path d="M64 190 C61 180 58 173 53 166" stroke="#4E9A3D"/>
+          <path d="M73 192 C71 181 70 172 68 163" stroke="#7BC043"/>
+          <path d="M82 192 C81 180 82 170 81 160" stroke="#4E9A3D"/>
+          <path d="M108 192 C109 181 111 172 113 164" stroke="#7BC043"/>
+          <path d="M118 192 C120 182 123 174 127 166" stroke="#4E9A3D"/>
+          <path d="M129 190 C132 181 136 175 142 169" stroke="#7BC043"/>
+          <path d="M146 190 C148 183 150 179 153 175" stroke="#4E9A3D"/>
+        </g>
+      </g>
+
+      <!-- 4. la maceta -->
+      <path d="M60 186 L150 186 L140 248 L70 248 Z"
+            fill="#F0EDE4" stroke="#B9B29C" stroke-width="6" stroke-linejoin="round"/>
+      <rect x="54" y="172" width="102" height="20" rx="5"
+            fill="#F7F5EE" stroke="#B9B29C" stroke-width="6"/>
+
+      <!-- 5. la cara -->
+      <ellipse cx="76" cy="224" rx="8" ry="5" fill="#E88B96" opacity=".5"/>
+      <ellipse cx="134" cy="224" rx="8" ry="5" fill="#E88B96" opacity=".5"/>
+      <g id="praxiOjos" class="praxi-ojos">
+        <circle cx="92" cy="212" r="6.5" fill="#1A1A1A"/>
+        <circle cx="118" cy="212" r="6.5" fill="#1A1A1A"/>
+      </g>
+      <path id="praxiBoca" d="M99 226 Q105 233 111 226"
+            fill="none" stroke="#1A1A1A" stroke-width="4.2" stroke-linecap="round"/>
+    </svg>
+  </button>
 </div>
 
 <div class="modal-bg" id="modalInvitar">
@@ -4192,6 +4309,10 @@ document.getElementById('loteSubir').addEventListener('click', async ()=>{
   msg.textContent = '';
   document.getElementById('lotePaso2').style.display = 'none';
   document.getElementById('lotePaso3').style.display = 'block';
+
+  // Praxi celebra solo cuando salió todo bien. Si hubo fallos no hay nada
+  // que festejar, y una mascota contenta sobre un error se siente burla.
+  if(!fallos.length) window.praxiCelebra?.();
 
   document.getElementById('loteFinTitulo').textContent = fallos.length
     ? 'Se subieron algunos'
@@ -7578,7 +7699,203 @@ document.getElementById('btnMarcarTodasLeidas').addEventListener('click', async 
   cargarNotificaciones();
 });
 
-iniciar();
+/* ---------- Praxi ---------- */
+/* La guía de Praxia. Es una planta en una maceta, y la planta es el isotipo:
+   no es un dibujo parecido al logo, es el logo con cara.
+
+   La regla que manda sobre todo lo demás: Praxia se usa mientras se atiende
+   gente, a veces gente en crisis. Un personaje que interrumpe mientras
+   alguien escribe una nota clínica no es simpático, es una falta de respeto.
+   Por eso Praxi habla poco y sólo cuando la buscan:
+
+     · un tip al entrar, y no siempre
+     · lo demás, únicamente si le hacen clic
+     · nunca dos veces el mismo tip en la misma sesión
+     · se puede callar, y se queda callada para siempre
+
+   No es adorno tímido: es lo que hace que a la tercera semana siga ahí en
+   lugar de que la apaguen el primer día. */
+
+const PRAXI_CALLADA = 'praxia_praxi_callada';
+const PRAXI_VISTOS  = 'praxia_praxi_vistos';
+
+/* Cada tip apunta a algo que de verdad existe en la plataforma. Uno que
+   describa una función inventada es peor que no tener tips: manda a la
+   persona a buscar un botón que no está. */
+const PRAXI_TIPS = [
+  { donde:'pacientes', txt:'Haz <b>clic derecho</b> en cualquier parte de Mis pacientes para crear una carpeta, igual que en Drive. Luego arrastra pacientes dentro.' },
+  { donde:'pacientes', txt:'El botón de <b>tres puntos</b> en cada tarjeta abre todo lo de ese paciente: cobrarle, crear consulta, abrir su expediente o mandarle su acceso.' },
+  { donde:'pacientes', txt:'¿Muchos pacientes? El <b>buscador</b> de arriba filtra por nombre, correo, teléfono o motivo de consulta.' },
+  { donde:'pacientes', txt:'Si ya llevabas expedientes en papel o en otro lado, usa <b>Subir documentos en lote</b>: sueltas todos los archivos juntos y Praxia los reparte por paciente leyendo el nombre.' },
+  { donde:'pacientes', txt:'¿Traes tu lista de pacientes en Excel? Con <b>Importar desde Excel/CSV</b> entran todos de una vez, y tú eliges qué columna es qué.' },
+  { donde:'pacientes', txt:'Desde la tarjeta de un paciente puedes escribirle por <b>WhatsApp o correo</b> con los datos que dio al registrarse.' },
+  { donde:'cobros',    txt:'Puedes cobrar <b>una sesión suelta</b> y mandar la liga por WhatsApp, aunque tu paciente no tenga cuenta en Praxia.' },
+  { donde:'cobros',    txt:'Si te pagaron en efectivo o por transferencia, regístralo con <b>Registrar un pago recibido</b> para que la cuenta del mes cuadre.' },
+  { donde:'cobros',    txt:'Puedes armar <b>mensualidades</b>: un paquete de sesiones al mes con su precio, en vez de cobrar sesión por sesión.' },
+  { donde:'consultorio', txt:'En el expediente puedes elegir cuánto llevar: <b>Ficha técnica</b> son 18 campos, <b>Expediente</b> 49 y <b>Completo</b> 103. Bajar de nivel nunca borra lo que ya escribiste.' },
+  { donde:'consultorio', txt:'Si trabajas con más psicólogos, en <b>Mis psicólogos</b> ves cómo va cada quien, los contactas y les das o les quitas el acceso.' },
+  { donde:null, txt:'La pestaña en la que estás <b>se queda guardada</b>: si recargas, Praxia te devuelve donde ibas.' },
+  { donde:null, txt:'Dentro del expediente de un paciente puedes <b>arrastrar sus documentos</b> a la sección Documentos y subirlos todos juntos.' },
+  { donde:null, txt:'Todo lo que escribes en un expediente <b>se guarda en su sección</b>, no en un solo botón al final. Puedes salirte y volver.' },
+];
+
+let praxiTemporizador = null;
+
+function praxiVistos(){
+  try{ return JSON.parse(sessionStorage.getItem(PRAXI_VISTOS) || '[]'); }catch(e){ return []; }
+}
+
+function praxiEstaCallada(){
+  try{ return localStorage.getItem(PRAXI_CALLADA) === '1'; }catch(e){ return false; }
+}
+
+/* Los gestos se hacen moviendo ojos y boca del mismo dibujo, no cargando
+   otra imagen: así el cambio es instantáneo y no parpadea. */
+function praxiGesto(cual){
+  const ojos = document.getElementById('praxiOjos');
+  const boca = document.getElementById('praxiBoca');
+  if(!ojos || !boca) return;
+
+  const negro = praxiEstaCallada() ? '#9A9A9A' : '#1A1A1A';
+
+  if(cual === 'contenta'){
+    ojos.innerHTML = `<path d="M85 210 Q92 202 99 210" fill="none" stroke="${negro}" stroke-width="4.2" stroke-linecap="round"/>
+                      <path d="M111 210 Q118 202 125 210" fill="none" stroke="${negro}" stroke-width="4.2" stroke-linecap="round"/>`;
+    boca.setAttribute('d', 'M97 226 Q105 236 113 226');
+  } else if(cual === 'atenta'){
+    ojos.innerHTML = `<circle cx="92" cy="211" r="8" fill="${negro}"/><circle cx="118" cy="211" r="8" fill="${negro}"/>
+                      <circle cx="94.5" cy="208.5" r="2.6" fill="#fff"/><circle cx="120.5" cy="208.5" r="2.6" fill="#fff"/>`;
+    boca.setAttribute('d', 'M100 227 L110 227');
+  } else if(cual === 'dormida'){
+    ojos.innerHTML = `<path d="M85 213 L99 213" fill="none" stroke="#9A9A9A" stroke-width="4.2" stroke-linecap="round"/>
+                      <path d="M111 213 L125 213" fill="none" stroke="#9A9A9A" stroke-width="4.2" stroke-linecap="round"/>`;
+    boca.setAttribute('d', 'M99 228 L111 228');
+    boca.setAttribute('stroke', '#9A9A9A');
+    return;
+  } else {
+    ojos.innerHTML = `<circle cx="92" cy="212" r="6.5" fill="${negro}"/><circle cx="118" cy="212" r="6.5" fill="${negro}"/>`;
+    boca.setAttribute('d', 'M99 226 Q105 233 111 226');
+  }
+  boca.setAttribute('stroke', negro);
+}
+
+function praxiCelebra(){
+  const veg = document.getElementById('praxiVegetal');
+  if(!veg || praxiEstaCallada()) return;
+  praxiGesto('contenta');
+  veg.classList.add('praxi-mece');
+  setTimeout(()=>{
+    veg.classList.remove('praxi-mece');
+    praxiGesto('normal');
+  }, 1600);
+}
+window.praxiCelebra = praxiCelebra;
+
+function praxiCallar(){
+  const globo = document.getElementById('praxiGlobo');
+  clearTimeout(praxiTemporizador);
+  globo.innerHTML = '';
+  document.getElementById('praxiFig').classList.add('praxi-dormida');
+  praxiGesto('dormida');
+  try{ localStorage.setItem(PRAXI_CALLADA, '1'); }catch(e){}
+}
+
+function praxiDespertar(){
+  document.getElementById('praxiFig').classList.remove('praxi-dormida');
+  try{ localStorage.removeItem(PRAXI_CALLADA); }catch(e){}
+  praxiGesto('normal');
+}
+
+function praxiCerrar(){
+  clearTimeout(praxiTemporizador);
+  document.getElementById('praxiGlobo').innerHTML = '';
+  praxiGesto(praxiEstaCallada() ? 'dormida' : 'normal');
+}
+
+/* Elige un tip que venga a cuento de la pestaña abierta y que no se haya
+   dicho ya en esta sesión. Repetir el mismo tip es la forma más rápida de
+   que alguien deje de leerlos. */
+function praxiTip(){
+  const pestana = document.querySelector('nav.tabs button.active')?.dataset.tab;
+  const vistos = praxiVistos();
+
+  let pool = PRAXI_TIPS.filter((t,i)=> !vistos.includes(i) && (t.donde === pestana || t.donde === null));
+  if(!pool.length) pool = PRAXI_TIPS.filter((t,i)=> !vistos.includes(i));
+  if(!pool.length){
+    praxiDecir('Por hoy ya te conté todo lo que sé. Si algo no encuentras, escríbeme por WhatsApp.', false);
+    return;
+  }
+
+  const elegido = pool[Math.floor(Math.random() * pool.length)];
+  const indice = PRAXI_TIPS.indexOf(elegido);
+  try{
+    sessionStorage.setItem(PRAXI_VISTOS, JSON.stringify([...vistos, indice]));
+  }catch(e){}
+
+  praxiDecir(elegido.txt, true);
+}
+
+function praxiDecir(html, conOtro){
+  const globo = document.getElementById('praxiGlobo');
+  clearTimeout(praxiTemporizador);
+
+  globo.innerHTML = `
+    <div class="praxi-globo">
+      <b>Praxi</b>
+      <div>${html}</div>
+      <div class="praxi-acciones">
+        ${conOtro ? '<button type="button" data-praxi="otro">Otro tip</button>' : ''}
+        <button type="button" data-praxi="callar">No me muestres tips</button>
+        <button type="button" data-praxi="cerrar">Cerrar</button>
+      </div>
+    </div>`;
+
+  globo.querySelector('[data-praxi="otro"]')?.addEventListener('click', praxiTip);
+  globo.querySelector('[data-praxi="cerrar"]').addEventListener('click', praxiCerrar);
+  globo.querySelector('[data-praxi="callar"]').addEventListener('click', async ()=>{
+    praxiCerrar();
+    praxiCallar();
+    await avisar('No te muestro más tips. Si me necesitas, tócame y vuelvo.', 'Listo');
+  });
+
+  // Se cierra sola: un globo que se queda puesto termina siendo un cartel
+  // pegado a la pantalla.
+  praxiTemporizador = setTimeout(praxiCerrar, 22000);
+}
+
+function praxiIniciar(){
+  const caja = document.getElementById('praxi');
+  if(!caja) return;
+  caja.hidden = false;
+
+  if(praxiEstaCallada()){
+    document.getElementById('praxiFig').classList.add('praxi-dormida');
+    praxiGesto('dormida');
+  }
+
+  document.getElementById('praxiFig').addEventListener('click', ()=>{
+    if(praxiEstaCallada()){
+      praxiDespertar();
+      praxiDecir('Ya volví. ¿Quieres que te cuente algo de Praxia?', true);
+      return;
+    }
+    // Si ya está hablando, el clic la calla en vez de encimar otro globo.
+    if(document.getElementById('praxiGlobo').innerHTML.trim()) praxiCerrar();
+    else praxiTip();
+  });
+
+  // El primer tip tarda: entrar y que algo te salte encima es justo lo que
+  // hace que la gente busque cómo apagarlo antes de leerlo.
+  if(!praxiEstaCallada()){
+    setTimeout(()=>{
+      if(!praxiEstaCallada() && !document.querySelector('.modal-bg.show')) praxiTip();
+    }, 12000);
+  }
+}
+
+// Praxi aparece cuando el panel ya cargó, no antes: si la sesión no es
+// válida, iniciar() manda a login y no tiene caso que asome.
+iniciar().then(praxiIniciar).catch(()=>{});
 </script>
 
 </body>
