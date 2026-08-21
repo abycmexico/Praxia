@@ -260,13 +260,28 @@
   .card .fecha-sub{font-size:12.5px;color:var(--gray);}
   .card .previo{font-size:13px;color:#444;line-height:1.7;margin-top:12px;padding-top:12px;border-top:1px solid var(--line);white-space:pre-wrap;}
   .empty{color:var(--gray);font-size:13.5px;text-align:center;padding:34px 0;border:1.5px dashed var(--line);border-radius:14px;}
-  .subir-box{border:1.5px dashed var(--line);border-radius:16px;padding:26px;text-align:center;}
-  .subir-label{display:block;cursor:pointer;margin-bottom:16px;}
-  .subir-label strong{display:block;font-size:14.5px;margin-bottom:4px;}
-  .subir-label span{font-size:12.5px;color:var(--gray);}
-  .subir-controles{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;}
-  .subir-controles select{width:auto;min-width:160px;}
-  .nombre-elegido{font-size:12.5px;color:var(--ink);margin-top:12px;font-weight:700;}
+  /* Subida de documentos: se sueltan varios de golpe. */
+  .doc-zona{border:2px dashed var(--line);border-radius:16px;padding:34px 20px;text-align:center;cursor:pointer;color:var(--gray);transition:border-color .15s,background .15s;}
+  .doc-zona:hover,.doc-zona.encima{border-color:var(--primario);background:#F4FAF3;color:var(--primario);}
+  .doc-zona svg{width:34px;height:34px;margin-bottom:8px;}
+  .doc-zona-titulo{font-size:14px;font-weight:800;color:var(--ink);}
+  .doc-zona.encima .doc-zona-titulo{color:var(--primario);}
+  .doc-zona-sub{font-size:11.5px;font-weight:600;margin-top:4px;}
+  .lote-lista{max-height:44vh;overflow-y:auto;margin-top:14px;border:1.5px solid var(--line);border-radius:12px;}
+  .lote-fila{display:grid;grid-template-columns:1fr 150px 30px;gap:10px;align-items:center;padding:10px 12px;border-bottom:1px solid var(--line);}
+  .lote-fila:last-child{border-bottom:none;}
+  .lote-archivo{min-width:0;}
+  .lote-nombre{font-size:12.5px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .lote-peso{font-size:10.5px;color:var(--gray);font-weight:600;margin-top:1px;}
+  .lote-fila select{font-size:12px;padding:7px 9px;width:100%;}
+  .lote-quitar{border:none;background:none;cursor:pointer;color:var(--gray);font-size:17px;line-height:1;padding:4px;}
+  .lote-quitar:hover{color:#A2453C;}
+  .doc-acciones{display:flex;gap:8px;justify-content:flex-end;margin-top:12px;}
+  @media(max-width:620px){
+    .lote-fila{grid-template-columns:1fr 30px;gap:7px;}
+    .lote-fila select{grid-column:1 / -1;}
+  }
+
   .doc-card{border:1.5px solid var(--line);border-radius:14px;padding:16px 18px;margin-bottom:10px;display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;}
   .doc-info{display:flex;align-items:center;gap:12px;min-width:0;}
   .doc-icono{width:38px;height:38px;border-radius:10px;background:var(--verde-claro, #EDF5EC);color:var(--primario);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;}
@@ -858,25 +873,27 @@
     </section>
 
     <section id="tab-documentos">
-      <div class="subir-box">
-        <label for="inputArchivo" class="subir-label">
-          <strong>Subir un documento</strong>
-          <span>PDF, imágenes o archivos de este paciente. Máximo 20 MB.</span>
-        </label>
-        <input type="file" id="inputArchivo" style="display:none;"
-               accept=".pdf,.jpg,.jpeg,.png,.doc,.docx">
-        <div class="subir-controles">
-          <select id="tipoDocumento">
-            <option value="estudio">Estudio</option>
-            <option value="informe">Informe</option>
-            <option value="consentimiento">Consentimiento</option>
-            <option value="otro">Otro</option>
-          </select>
-          <button type="button" class="btn btn-ghost" id="btnElegirArchivo">Elegir archivo</button>
-        </div>
-        <p id="nombreArchivoElegido" class="nombre-elegido"></p>
-        <p class="msg" id="msgSubida"></p>
+      <!-- Quien llega con años de consulta trae el expediente en papel o en
+           archivos sueltos. Subirlos de uno en uno es lo que hace que se
+           queden sin subir, así que aquí se sueltan todos juntos: ya se sabe
+           de quién es el expediente, no hay que decírselo a cada archivo. -->
+      <div id="docZona" class="doc-zona">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 10l5-5 5 5"/><path d="M12 5v13"/></svg>
+        <div class="doc-zona-titulo">Arrastra aquí los documentos de este paciente</div>
+        <div class="doc-zona-sub">o haz clic para elegirlos · PDF, Word o imágenes · hasta 20 MB cada uno</div>
       </div>
+      <input type="file" id="inputArchivo" multiple style="display:none;"
+             accept=".pdf,.jpg,.jpeg,.png,.webp,.heic,.doc,.docx">
+
+      <div id="docPorSubir" style="display:none;">
+        <div class="lote-lista" id="docLista"></div>
+        <div class="doc-acciones">
+          <button type="button" class="btn btn-ghost" id="docCancelar">Cancelar</button>
+          <button type="button" class="btn btn-primary" id="docSubir">Subir</button>
+        </div>
+      </div>
+
+      <p class="msg" id="msgSubida"></p>
 
       <div id="listaDocumentos" style="margin-top:20px;"><p class="empty">Cargando documentos...</p></div>
     </section>
@@ -2068,84 +2085,186 @@ document.getElementById('btnGuardarNota').addEventListener('click', async ()=>{
 });
 
 /* ---------- documentos ---------- */
+/* Quien llega a Praxia con años de consulta trae el expediente en papel o en
+   archivos sueltos. Subirlos de uno en uno, eligiendo archivo y esperando
+   entre cada uno, es lo que hace que se queden sin subir.
+
+   Aquí se sueltan todos juntos. No hace falta decir de quién es cada uno:
+   estamos dentro de su expediente. */
+
 const MAX_BYTES = 20 * 1024 * 1024; // 20 MB
-let archivoElegido = null;
+let porSubir = [];
 
-document.getElementById('btnElegirArchivo').addEventListener('click', ()=>{
-  document.getElementById('inputArchivo').click();
+function pesoLegible(bytes){
+  if(bytes < 1024) return bytes + ' B';
+  if(bytes < 1024*1024) return Math.round(bytes/1024) + ' KB';
+  return (bytes/1024/1024).toFixed(1) + ' MB';
+}
+
+const docZona = document.getElementById('docZona');
+docZona.addEventListener('click', ()=> document.getElementById('inputArchivo').click());
+docZona.addEventListener('dragover', (e)=>{ e.preventDefault(); docZona.classList.add('encima'); });
+docZona.addEventListener('dragleave', ()=> docZona.classList.remove('encima'));
+docZona.addEventListener('drop', (e)=>{
+  e.preventDefault();
+  docZona.classList.remove('encima');
+  recibirArchivos([...e.dataTransfer.files]);
 });
+document.getElementById('inputArchivo').addEventListener('change', (e)=> recibirArchivos([...e.target.files]));
 
-document.getElementById('inputArchivo').addEventListener('change', async (e)=>{
-  const file = e.target.files[0];
+function recibirArchivos(archivos){
   const msg = document.getElementById('msgSubida');
   msg.textContent = '';
+  if(!archivos.length) return;
 
-  if(!file) return;
+  // Los que pesan de más se apartan aquí y se dicen por nombre, en vez de
+  // fallar callados a la mitad de la subida.
+  const pesados = archivos.filter(f=> f.size > MAX_BYTES);
+  const buenos  = archivos.filter(f=> f.size <= MAX_BYTES);
 
-  if(file.size > MAX_BYTES){
-    msg.textContent = 'El archivo pesa más de 20 MB. Elige uno más pequeño.';
+  if(pesados.length){
     msg.className = 'msg err';
-    e.target.value = '';
-    return;
+    msg.textContent = pesados.length === 1
+      ? `"${pesados[0].name}" pesa más de 20 MB y no se puede subir.`
+      : `${pesados.length} archivos pesan más de 20 MB y no se pueden subir: ${pesados.map(f=> f.name).join(', ')}`;
   }
 
-  archivoElegido = file;
-  document.getElementById('nombreArchivoElegido').textContent = file.name;
-  await subirArchivo();
-});
+  if(!buenos.length) return;
 
-async function subirArchivo(){
-  if(!archivoElegido) return;
-  const msg = document.getElementById('msgSubida');
-  msg.className = 'msg';
-  msg.textContent = 'Subiendo...';
+  // Se acumulan: soltar una segunda tanda agrega, no reemplaza.
+  porSubir = porSubir.concat(buenos.map((f, i)=>({
+    id: 'd' + Date.now() + '-' + i,
+    file: f,
+    tipo: adivinarTipo(f.name),
+  })));
 
-  const tipo = document.getElementById('tipoDocumento').value;
-  const extension = archivoElegido.name.includes('.')
-    ? archivoElegido.name.split('.').pop()
-    : '';
-  const nombreSeguro = `${Date.now()}-${Math.random().toString(36).slice(2,8)}${extension ? '.'+extension : ''}`;
-  // Ruta: {psicologo_id}/{paciente_id}/{archivo} — así la política de Storage
-  // puede validar dueño con solo mirar la primera carpeta.
-  const ruta = `${yo.id}/${paciente.id}/${nombreSeguro}`;
+  pintarPorSubir();
+}
 
-  const { error: errSubida } = await sb.storage
-    .from('documentos')
-    .upload(ruta, archivoElegido, { contentType: archivoElegido.type || undefined });
+/* El nombre del archivo suele decir qué es. Acertar ahorra un clic por
+   documento; equivocarse no rompe nada, porque el tipo se ve y se cambia
+   antes de subir. */
+function adivinarTipo(nombre){
+  const n = nombre.toLowerCase();
+  if(/consent/.test(n)) return 'consentimiento';
+  if(/informe|reporte/.test(n)) return 'informe';
+  if(/estudio|lab|analisis|análisis|prueba|test/.test(n)) return 'estudio';
+  return 'otro';
+}
 
-  if(errSubida){
-    msg.textContent = 'No se pudo subir: ' + errSubida.message;
-    msg.className = 'msg err';
-    archivoElegido = null;
+function pintarPorSubir(){
+  const caja = document.getElementById('docPorSubir');
+  const cont = document.getElementById('docLista');
+
+  if(!porSubir.length){
+    caja.style.display = 'none';
     document.getElementById('inputArchivo').value = '';
     return;
   }
 
-  const { error: errRegistro } = await sb.from('documentos').insert({
-    paciente_id: paciente.id,
-    psicologo_id: yo.id,
-    nombre: archivoElegido.name,
-    ruta,
-    tipo,
-    mime: archivoElegido.type || null,
-    tamano_bytes: archivoElegido.size
+  caja.style.display = 'block';
+  cont.innerHTML = porSubir.map(a=>`
+    <div class="lote-fila" data-id="${a.id}">
+      <div class="lote-archivo">
+        <div class="lote-nombre" title="${escapar(a.file.name)}">${escapar(a.file.name)}</div>
+        <div class="lote-peso">${pesoLegible(a.file.size)}</div>
+      </div>
+      <select data-campo="tipo">
+        <option value="otro"           ${a.tipo==='otro'?'selected':''}>Otro</option>
+        <option value="estudio"        ${a.tipo==='estudio'?'selected':''}>Estudio</option>
+        <option value="informe"        ${a.tipo==='informe'?'selected':''}>Informe</option>
+        <option value="consentimiento" ${a.tipo==='consentimiento'?'selected':''}>Consentimiento</option>
+      </select>
+      <button type="button" class="lote-quitar" title="Quitar de la lista">&times;</button>
+    </div>`).join('');
+
+  cont.querySelectorAll('.lote-fila').forEach(fila=>{
+    const a = porSubir.find(x=> x.id === fila.dataset.id);
+    fila.querySelector('[data-campo="tipo"]').addEventListener('change', (e)=> a.tipo = e.target.value);
+    fila.querySelector('.lote-quitar').addEventListener('click', ()=>{
+      porSubir = porSubir.filter(x=> x.id !== a.id);
+      pintarPorSubir();
+    });
   });
 
-  if(errRegistro){
-    msg.textContent = 'El archivo se subió pero no se pudo registrar: ' + errRegistro.message;
-    msg.className = 'msg err';
-    archivoElegido = null;
-    document.getElementById('inputArchivo').value = '';
-    return;
+  document.getElementById('docSubir').textContent =
+    porSubir.length === 1 ? 'Subir el documento' : `Subir ${porSubir.length} documentos`;
+}
+
+document.getElementById('docCancelar').addEventListener('click', ()=>{
+  porSubir = [];
+  document.getElementById('msgSubida').textContent = '';
+  pintarPorSubir();
+});
+
+document.getElementById('docSubir').addEventListener('click', subirArchivos);
+
+async function subirArchivos(){
+  if(!porSubir.length) return;
+
+  const msg = document.getElementById('msgSubida');
+  const btn = document.getElementById('docSubir');
+  btn.disabled = true;
+  document.getElementById('docCancelar').disabled = true;
+
+  const total = porSubir.length;
+  let subidos = 0;
+  const fallos = [];
+
+  // De uno en uno a propósito: en paralelo se satura la conexión y fallan
+  // unos cuantos al azar, y así el contador avanza de verdad.
+  for(const a of porSubir){
+    msg.className = 'msg';
+    msg.textContent = `Subiendo ${subidos + 1} de ${total}: ${a.file.name}`;
+
+    const ext = a.file.name.includes('.') ? a.file.name.split('.').pop() : '';
+    const seguro = `${Date.now()}-${Math.random().toString(36).slice(2,8)}${ext ? '.'+ext : ''}`;
+    // Ruta: {psicologo_id}/{paciente_id}/{archivo} — así la política de
+    // Storage valida dueño con solo mirar la primera carpeta.
+    const ruta = `${yo.id}/${paciente.id}/${seguro}`;
+
+    const { error: errSubida } = await sb.storage
+      .from('documentos')
+      .upload(ruta, a.file, { contentType: a.file.type || undefined });
+
+    if(errSubida){ fallos.push(a.file.name + ': ' + errSubida.message); continue; }
+
+    const { error: errRegistro } = await sb.from('documentos').insert({
+      paciente_id: paciente.id,
+      psicologo_id: yo.id,
+      nombre: a.file.name,
+      ruta,
+      tipo: a.tipo,
+      mime: a.file.type || null,
+      tamano_bytes: a.file.size,
+    });
+
+    if(errRegistro){
+      // Subido pero sin registrar: sin su fila nadie lo ve ni lo puede
+      // borrar desde Praxia, así que se retira en vez de dejarlo perdido.
+      await sb.storage.from('documentos').remove([ruta]);
+      fallos.push(a.file.name + ': ' + errRegistro.message);
+      continue;
+    }
+
+    subidos++;
   }
 
-  msg.textContent = 'Documento subido.';
-  msg.className = 'msg ok';
-  archivoElegido = null;
-  document.getElementById('inputArchivo').value = '';
-  document.getElementById('nombreArchivoElegido').textContent = '';
+  porSubir = [];
+  pintarPorSubir();
+  btn.disabled = false;
+  document.getElementById('docCancelar').disabled = false;
+
+  if(fallos.length){
+    msg.className = 'msg err';
+    msg.textContent = `Se subieron ${subidos} de ${total}. No se pudo con: ${fallos.join(' · ')}`;
+  } else {
+    msg.className = 'msg ok';
+    msg.textContent = subidos === 1 ? 'Documento subido.' : `${subidos} documentos subidos.`;
+    setTimeout(()=>{ if(msg.className === 'msg ok') msg.textContent = ''; }, 4000);
+  }
+
   cargarDocumentos();
-  setTimeout(()=>{ if(msg.textContent==='Documento subido.') msg.textContent=''; }, 3000);
 }
 
 async function cargarDocumentos(){
