@@ -315,6 +315,58 @@ td.no{color:#5F6B61;}
 .pregunta p{padding:0 24px 22px;font-size:14.5px;line-height:1.75;color:var(--gris);font-weight:600;}
 
 /* ── cierre ─────────────────────────────────────────────────────── */
+/* ---------- franja de Praxi ---------- */
+/* La imagen es muy panorámica y trae la maceta pegada a la derecha. Se pone
+   de fondo anclada a ese lado, para que al recortarse en pantallas angostas
+   lo que se pierda sea el espacio vacío de la izquierda y nunca el personaje. */
+.franja-praxi{
+  background:#DCEBCF url("./assets/praxi-escritorio.jpg") no-repeat right center;
+  background-size:cover;
+  min-height:420px;
+  display:flex;align-items:center;
+  padding:64px 24px;
+}
+.franja-texto{max-width:1120px;margin:0 auto;width:100%;}
+.franja-texto .kicker,
+.franja-texto h2,
+.franja-texto p{max-width:470px;}
+.franja-texto h2{color:var(--hondo);font-size:clamp(26px,3.4vw,40px);margin:10px 0 16px;}
+.franja-texto p{color:#2A3D2B;font-size:15.5px;line-height:1.65;font-weight:600;}
+/* Un verde más oscuro que el de marca. El de marca sobre este fondo claro se
+   queda en 4.11 y la norma pide 4.5 para texto chico; además el fondo lo pone
+   una foto, que puede aclararse de un lado, así que conviene margen. */
+.franja-texto .kicker{color:#1D5321;}
+.franja-nota{
+  margin-top:14px;font-size:13px !important;font-weight:700 !important;
+  color:#4A6B4C !important;border-left:var(--trazo) solid var(--acento);padding-left:12px;
+}
+
+@media(max-width:900px){
+  /* En angosto el texto se baja debajo de la imagen en vez de encimársele.
+
+     La imagen se recorta en vez de encogerse: entera a 375px de ancho quedaría
+     de 97px de alto y la macetita se vería como una mancha. Recortada a 200px
+     y encuadrada en el personaje, se ve lo que importa y se pierde el espacio
+     vacío, que es justo lo prescindible. */
+  .franja-praxi{
+    min-height:0;padding:0;flex-direction:column;
+    /* La imagen se le quita a la sección y se le pasa a la banda: si se queda
+       aquí, con cover se estira a los 640px de alto de toda la franja y el
+       texto acaba encima del personaje. */
+    background-image:none;
+    background-color:#DCEBCF;
+  }
+  .franja-praxi::before{
+    content:"";display:block;width:100%;height:200px;
+    background:url("./assets/praxi-escritorio.jpg") no-repeat 64% center;
+    background-size:cover;
+  }
+  .franja-texto{padding:26px 22px 44px;}
+  .franja-texto .kicker,
+  .franja-texto h2,
+  .franja-texto p{max-width:none;}
+}
+
 .cierre{text-align:center;background:var(--hondo-2);}
 .cierre h2{font-size:40px;margin-bottom:16px;}
 .cierre p{font-size:16px;color:var(--suave);max-width:580px;margin:0 auto 32px;line-height:1.75;}
@@ -1041,6 +1093,23 @@ footer a{color:var(--acento);font-weight:800;}
 </section>
 
 <!-- ── CIERRE ──────────────────────────────────────────────────── -->
+<!-- Praxi. La imagen trae la maceta a la derecha y el resto despejado, así
+     que el texto va en ese hueco en lugar de encima del personaje. -->
+<section class="franja-praxi">
+  <div class="franja-texto entra">
+    <span class="kicker">Te acompaña</span>
+    <h2>Praxi resuelve tus dudas dentro del sistema</h2>
+    <p>
+      Vive en una esquina de tu panel y sabe cómo funciona Praxia por dentro.
+      Pregúntale dónde están tus cobros, cómo subir los expedientes que ya
+      llevas o cómo emitir una constancia, y te lleva ahí.
+    </p>
+    <p class="franja-nota">
+      De casos clínicos no opina: esas decisiones son tuyas.
+    </p>
+  </div>
+</section>
+
 <section class="cierre">
   <div class="wrap entra">
     <h2>Conoce Praxia en una sesión de 15 minutos</h2>
