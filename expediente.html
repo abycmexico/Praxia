@@ -210,6 +210,8 @@
   .res-item strong{display:block;font-size:13px;margin-bottom:2px;}
   .res-item .res-meta{color:var(--gray);font-size:11px;}
   .res-vacio{font-size:12.5px;color:var(--gray);}
+  .res-accion{margin-top:10px;width:auto;}
+  .res-pista{font-size:11px;color:var(--gray);margin-top:7px;line-height:1.5;}
   @media(max-width:700px){.grid-resumen{grid-template-columns:1fr;}}
   .riesgo-bloque{border-color:#f0c9c9;background:#FFFBFB;}
   .item-lista-clinica{border:1.5px solid var(--line);border-radius:12px;padding:14px 16px;margin-bottom:10px;background:#fff;font-size:13px;line-height:1.6;}
@@ -2837,7 +2839,20 @@ async function cargarResumenPaciente(){
       </div>
     `).join('');
   } else {
-    contDocs.innerHTML = '<p class="res-vacio">Sin documentos.</p>';
+    // Con la tarjeta vacía, "Sin documentos" no le dice a nadie qué hacer, y
+    // la sección donde se suben queda abajo en el menú, fuera de la vista.
+    // Aquí es donde se descubre que faltan, así que aquí va la salida.
+    contDocs.innerHTML = `
+      <p class="res-vacio">Sin documentos todavía.</p>
+      <button type="button" class="btn btn-ghost res-accion" id="resSubirDocs">
+        Subir sus documentos
+      </button>
+      <p class="res-pista">Si ya lo llevabas en papel o en otro lado, súbelos todos de una vez.</p>`;
+
+    document.getElementById('resSubirDocs').addEventListener('click', ()=>{
+      irAPestana('documentos');
+      document.getElementById('docZona')?.scrollIntoView({ behavior:'smooth', block:'center' });
+    });
   }
 }
 

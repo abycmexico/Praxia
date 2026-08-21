@@ -303,6 +303,43 @@ nav.tabs:not(.sidebar-nav) button.active{
   color:var(--primario) !important;
 }
 
+/* El menu del expediente NO son pestañas: es una columna de secciones con su
+   propio diseño -texto plano y una linea a la izquierda para la activa-. La
+   regla de arriba se escribio para las tiras horizontales, pero tambien lo
+   agarraba, y con doce secciones lo dejaba como un muro de botones verdes.
+   Se le devuelve su aspecto de menu. */
+.exp-menu nav.tabs button{
+  background:none !important;
+  border:none !important;
+  border-left:3px solid transparent !important;
+  border-radius:8px !important;
+  color:var(--gray) !important;
+  font-weight:700;
+}
+.exp-menu nav.tabs button:hover{
+  background:var(--claro-verde,#EDF5EC) !important;
+  color:var(--primario) !important;
+}
+.exp-menu nav.tabs button.active{
+  background:var(--claro-verde,#EDF5EC) !important;
+  border-left-color:var(--primario) !important;
+  color:var(--primario) !important;
+  font-weight:800;
+}
+/* En pantalla angosta el menu vuelve a ser una tira: ahi la marca de la
+   seccion activa va abajo, no a la izquierda. */
+@media(max-width:1000px){
+  .exp-menu nav.tabs button{
+    border-left:none !important;
+    border-bottom:2.5px solid transparent !important;
+    border-radius:8px 8px 0 0 !important;
+  }
+  .exp-menu nav.tabs button.active{
+    border-left:none !important;
+    border-bottom-color:var(--primario) !important;
+  }
+}
+
 /* ── datos y etiquetas ───────────────────────────────────────────── */
 /* El bloque de dato es el corazon del estilo: numero grande, etiqueta
    chica en mayusculas, y un cuadro en la esquina como firma. */
