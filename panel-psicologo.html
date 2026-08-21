@@ -873,6 +873,33 @@
   }
   .praxi-acciones button:hover{border-color:var(--primario);color:var(--primario);}
 
+  /* El panel de preguntas. Más ancho que un tip porque aquí se lee y se
+     escribe, no solo se ojea. */
+  .praxi-panel{width:280px;max-width:78vw;}
+  .praxi-resp{max-height:34vh;overflow-y:auto;}
+  .praxi-form{display:flex;gap:6px;margin-top:10px;}
+  .praxi-form input{
+    flex:1;min-width:0;font:inherit;font-size:12px;padding:8px 10px;
+    border:1.5px solid var(--line);border-radius:9px;background:#fff;
+  }
+  .praxi-form input:focus{outline:none;border-color:var(--primario);}
+  .praxi-form button{
+    border:1.5px solid var(--primario);background:var(--primario);color:#fff;
+    border-radius:9px;width:34px;font-size:15px;cursor:pointer;font-family:inherit;flex-shrink:0;
+  }
+  .praxi-lista{display:flex;flex-direction:column;gap:5px;margin-top:9px;}
+  .praxi-lista button{
+    font:inherit;font-size:11.5px;font-weight:700;text-align:left;padding:7px 10px;
+    border:1.5px solid var(--line);border-radius:9px;background:#fff;color:var(--ink);cursor:pointer;
+  }
+  .praxi-lista button:hover{border-color:var(--primario);color:var(--primario);}
+  .praxi-soporte{display:flex;gap:7px;margin-top:10px;}
+  .praxi-soporte a{
+    flex:1;text-align:center;font-size:11.5px;font-weight:800;padding:8px 10px;
+    border:1.5px solid var(--primario);border-radius:9px;color:var(--primario);text-decoration:none;
+  }
+  .praxi-soporte a:hover{background:var(--primario);color:#fff;}
+
   /* Parpadeo: se le aplasta el ojo un instante. Un ciclo largo, porque un
      parpadeo cada dos segundos se convierte en un tic que distrae. */
   .praxi-ojos{animation:praxiParpadeo 5.5s infinite;transform-origin:center;transform-box:fill-box;}
@@ -5074,7 +5101,7 @@ async function cargarCarpetas(){
 }
 
 function pintarCarpetas(){
-  const cont = document.getElementById('carpetas');
+  const cont = document.getElementById('carpetas','organizar','ordenar','agrupar pacientes','clasificar');
   if(!cont) return;
 
   const cuantos = (id)=> pacientesCache.filter(p=>
@@ -7722,6 +7749,168 @@ const PRAXI_VISTOS  = 'praxia_praxi_vistos';
 /* Cada tip apunta a algo que de verdad existe en la plataforma. Uno que
    describa una función inventada es peor que no tener tips: manda a la
    persona a buscar un botón que no está. */
+/* ---------- lo que Praxi sabe ---------- */
+/* El manual de Praxia, escrito a mano. Cada respuesta apunta a un botón o a
+   una sección que existe de verdad: se revisaron uno por uno contra el
+   panel. Una respuesta que manda a un botón inventado es peor que no
+   contestar, porque la persona se pone a buscarlo.
+
+   Praxi contesta SOLO de la plataforma. Si le preguntan de un caso, de un
+   diagnóstico o de qué hacer con un paciente, dice que de eso no opina y
+   pasa a soporte. No es modestia: no es su función y no puede responder de
+   eso.
+
+   `claves` son las palabras con las que alguien buscaría. Van sin tildes
+   porque la búsqueda las quita antes de comparar. */
+
+const PRAXI_SOPORTE_TEL = '5616066334';
+const PRAXI_SOPORTE_MAIL = 'abycmexico@gmail.com';
+
+const PRAXI_SABE = [
+  // ----- cobros y dinero
+  { claves:['pagos','pago','cobros','cobrado','dinero','ingresos','cuanto he ganado','facturacion','estado de cuenta'],
+    ir:'cobros',
+    // "cuánto pago" es ambiguo de verdad: puede ser lo que te pagan o lo que
+    // pagas tú. En vez de forzar al buscador a adivinar, la respuesta cubre
+    // las dos lecturas.
+    r:'En la pestaña <b>Cobros</b>. Ahí ves lo cobrado del mes, quién te debe y el historial de pagos de cada paciente.' +
+      '<br><br>Si lo que buscabas es <b>lo que tú pagas por Praxia</b>, eso está en Configuración, en <b>Mi plan</b>.' },
+
+  { claves:['cobrar una sesion','cobrar sesion','liga de pago','no tiene cuenta','sin cuenta','cobrarle a alguien','link de pago','cobrar sin cuenta','mandar liga','cobrar por whatsapp'],
+    ir:'cobros',
+    r:'Usa <b>Cobrar una sesión</b> desde el botón de tres puntos del paciente, o en Cobros. Genera una liga que le mandas por WhatsApp, y <b>funciona aunque el paciente no tenga cuenta</b> en Praxia.' },
+
+  { claves:['pago en efectivo','transferencia','ya me pagaron','efectivo','me deposito','me transfirio','registrar pago','pago fuera'],
+    ir:'cobros',
+    r:'Con <b>Registrar un pago recibido</b>, en el menú de tres puntos del paciente. Anotas el monto y si fue efectivo, transferencia o tarjeta, para que la cuenta del mes cuadre.' },
+
+  { claves:['mensualidad','plan mensual','paquete','suscripcion del paciente','cobrar por mes'],
+    ir:'cobros',
+    r:'En Cobros creas <b>planes mensuales</b>: un paquete de sesiones al mes con su precio. Luego se lo asignas al paciente con <b>Asignar mensualidad</b>, en su menú de tres puntos.' },
+
+  { claves:['precio','cuanto cobro','cambiar precio','precio por sesion','tarifa'],
+    ir:'cobros',
+    r:'En <b>Cobros</b>, en el bloque <b>Precio por sesión</b>. Ese es el precio que se usa por defecto cuando creas una consulta.' },
+
+  { claves:['descuento','rebaja','precio especial'],
+    ir:'cobros',
+    r:'Al crear el cobro puedes poner el monto que quieras, así que un descuento es simplemente cobrar menos. Para algo fijo, arma un plan mensual con el precio rebajado y asígnaselo solo a ese paciente.' },
+
+  { claves:['stripe','tarjeta','cobrar con tarjeta','conectar cobros','pagos en linea'],
+    ir:'cobros',
+    r:'En Cobros, con <b>Conectar cobros</b>. Se conecta con Stripe para recibir pagos con tarjeta. Mientras no esté conectado, las ligas se generan pero no cobran de verdad.' },
+
+  // ----- expedientes
+  { claves:['subir expediente','expedientes que ya tengo','pasar expedientes','migrar','expediente en papel','papel','fisico','escaneado','escaneados','pasar a digital','digitalizar','documentos viejos','subir rapido','subir varios','muchos archivos','lote'],
+    ir:'pacientes',
+    r:'Dos formas. Para <b>varios pacientes de golpe</b>: el botón <b>Subir documentos en lote</b> en Mis pacientes. Sueltas todos los archivos juntos y Praxia los reparte leyendo el nombre del archivo. Para <b>un solo paciente</b>: abre su expediente, ve a Documentos y arrastra ahí sus archivos.' },
+
+  { claves:['expediente','abrir expediente','historia clinica','historial'],
+    ir:'pacientes',
+    r:'Desde la tarjeta del paciente, en el menú de tres puntos, <b>Abrir expediente</b>. Ahí vive todo: ficha, antecedentes, notas de sesión, diagnóstico, plan, riesgo y documentos.' },
+
+  { claves:['niveles','demasiados campos','muchos campos','muy largo','resumido','mas corto','ficha tecnica','expediente completo','muchos campos','nom 004','nom-004','mas corto','abrumador'],
+    r:'Dentro del expediente, arriba a la izquierda, eliges cuánto llevar: <b>Ficha técnica</b> (18 campos, lo mínimo para empezar), <b>Expediente</b> (49, lo esencial clínico) o <b>Completo</b> (103, lo que pide la NOM-004). Bajar de nivel <b>nunca borra</b> lo que ya escribiste.' },
+
+  { claves:['respuestas sugeridas','sugerencias','llenar mas rapido','escribir menos','chips'],
+    r:'En los campos del expediente aparecen <b>respuestas sugeridas</b> debajo. Tocas una y se escribe sola; puedes editarla. Sirven sobre todo para lo que más se repite: "sin antecedentes", "niega consumo".' },
+
+  { claves:['nota de sesion','nota de la sesion','notas de sesion','escribir la sesion','registrar la sesion','apunte','notas','apuntes','que escribi la sesion pasada'],
+    r:'En el expediente del paciente, sección <b>Notas por sesión</b>. Cada nota queda ligada a su cita, así que el historial se arma solo.' },
+
+  { claves:['constancia','comprobante','justificante','reporte del paciente','certificado','alta','carta','documento oficial','imprimir expediente','exportar','pdf'],
+    r:'Desde el expediente, con el botón de <b>exportar</b>. Genera el PDF con los datos de tu consultorio. En el expediente también ves una vista previa de cómo va quedando.' },
+
+  { claves:['documentos','subir archivo','pdf del paciente','estudios'],
+    r:'En el expediente del paciente, sección <b>Documentos</b>. Puedes arrastrar varios archivos a la vez; cada uno hasta 20 MB.' },
+
+  // ----- pacientes
+  { claves:['agregar paciente','nuevo paciente','invitar paciente','agregar un paciente','paciente nuevo','alta de paciente','meter paciente','capturar paciente','dar de alta paciente','registrar paciente'],
+    ir:'pacientes',
+    r:'Con <b>Invitar paciente</b> en Mis pacientes. Si prefieres capturarlo tú sin esperar a que se registre, ahí mismo puedes darlo de alta directo.' },
+
+  { claves:['importar','excel','csv','lista de pacientes','pasar mi lista'],
+    ir:'pacientes',
+    r:'Con <b>Importar desde Excel/CSV</b> en Mis pacientes. Subes tu archivo y eliges qué columna es cada dato; no importa cómo se llamen tus columnas.' },
+
+  { claves:['carpetas','organizar pacientes','agrupar','ordenar pacientes'],
+    ir:'pacientes',
+    r:'Haz <b>clic derecho</b> en cualquier parte de Mis pacientes para crear una carpeta, como en Drive. Después arrastras pacientes dentro. Las carpetas son solo para ordenar: no cambian permisos ni quién ve qué.' },
+
+  { claves:['buscar paciente','encontrar','localizar','filtrar','encontrar paciente','buscador'],
+    ir:'pacientes',
+    r:'El buscador arriba de las tarjetas, en Mis pacientes. Filtra por nombre, correo, teléfono o motivo de consulta.' },
+
+  { claves:['contactar paciente','whatsapp','mandar mensaje','correo del paciente','llamar'],
+    ir:'pacientes',
+    r:'En la tarjeta de cada paciente hay botones de <b>WhatsApp y correo</b>, con los datos que dio al registrarse.' },
+
+  { claves:['eliminar paciente','quitar paciente','borrar','baja de paciente','borrar paciente','archivar','ya no lo atiendo','dar de baja'],
+    ir:'pacientes',
+    r:'En el menú de tres puntos del paciente, <b>Eliminar</b>. En realidad lo <b>archiva</b>: su historial clínico no se borra, solo deja de aparecer en tus listas.' },
+
+  { claves:['acceso del paciente','como entra el paciente','mandar acceso','contraseña del paciente'],
+    ir:'pacientes',
+    r:'En su menú de tres puntos, <b>Enviarle su acceso</b>. Le llega una liga para entrar con su correo, sin que tenga que registrarse desde cero.' },
+
+  // ----- agenda
+  { claves:['agendar','crear consulta','nueva cita','sesion','citas'],
+    ir:'citas',
+    r:'Desde el botón <b>+</b> de la esquina, o en la tarjeta del paciente con <b>Crear consulta</b>. También en la pestaña <b>Mis citas</b>.' },
+
+  { claves:['calendario','ver mi semana','horarios','disponibilidad'],
+    ir:'calendario',
+    r:'En <b>Calendario</b> ves tu semana. Y en Configuración marcas tu <b>disponibilidad</b>: los horarios en los que aceptas sesiones.' },
+
+  { claves:['videollamada','google meet','link de la sesion','sesion en linea','google calendar'],
+    ir:'config',
+    r:'En Configuración, <b>Integraciones</b>, conecta Google Calendar. A partir de ahí cada sesión en línea genera su liga de videollamada sola.' },
+
+  { claves:['cancelar cita','cancelar sesion','cancelar consulta','anular','reprogramar','mover sesion','cambiar el horario'],
+    ir:'citas',
+    r:'En <b>Mis citas</b>, sobre la cita, tienes <b>Cancelar</b> y <b>Reprogramar</b>.' },
+
+  // ----- consultorio y equipo
+  { claves:['consultorio','mi consultorio','nombre del consultorio','logo','marca','identidad'],
+    ir:'consultorio',
+    r:'En <b>Mi consultorio</b>: el nombre, el logo y los datos que salen en tus documentos. Eso es lo que hace que todo se vea con tu marca y no con la de Praxia.' },
+
+  { claves:['psicologos','equipo','agregar psicologo','otro psicologo','sumar psicologo','contratar','nuevo psicologo','mis psicologos','colaborador','dar de alta psicologo'],
+    ir:'consultorio',
+    r:'En Mi consultorio, con <b>Dar de alta a un psicólogo</b>. Cuando ya son varios, aparece <b>Mis psicólogos</b> en el menú lateral: ahí ves cómo va cada quien, los contactas y les das o les quitas el acceso.' },
+
+  { claves:['ver expedientes de otro psicologo','expedientes del equipo','expedientes de mi equipo','expedientes de otros','acceso a expedientes','expedientes del equipo'],
+    ir:'consultorio',
+    r:'No se ven por defecto, y es a propósito: los pacientes consintieron que su psicólogo tratante maneje esa información. Puedes <b>pedirle acceso</b> desde Mis psicólogos, y esa persona decide.' },
+
+  { claves:['quitar acceso','se fue','renuncio','ya no trabaja','despedi','sacar del consultorio','suspender','bloquear psicologo','se fue del consultorio'],
+    ir:'consultorio',
+    r:'En <b>Mis psicólogos</b>, con <b>Quitarle el acceso</b>. No borra nada: sus pacientes y su historial quedan intactos, y puedes devolvérselo cuando quieras.' },
+
+  // ----- cuenta y plataforma
+  { claves:['mi plan','cuanto cuesta','me cobran','mi suscripcion','suscripcion','facturas','cancelar mi plan','renovar','cuota','mensualidad que pago'],
+    ir:'config',
+    r:'En Configuración, bloque <b>Mi plan</b>: qué plan tienes, cuándo se renueva y cómo cancelarlo.' },
+
+  { claves:['cerrar sesion','cierro sesion','salirme','desconectarme','cerrar mi sesion','salir','logout'],
+    ir:'config',
+    r:'El botón <b>Salir</b>, abajo en Configuración.' },
+
+  { claves:['celular','app','instalar','descargar','app del celular','en mi telefono','telefono','movil','iphone','android'],
+    r:`Praxia se instala como app desde el navegador. Entra a <b>praxia.mx/instalar</b> desde tu celular y sigue los pasos; en iPhone tiene que ser con Safari.` },
+
+  { claves:['notificaciones','avisos','recordatorios','me avise'],
+    ir:'config',
+    r:'En Configuración puedes activar las <b>notificaciones</b>: te avisan de solicitudes de sesión, pagos y sesiones próximas.' },
+
+  { claves:['mi perfil','mi foto','mis datos','cedula','cambiar mi correo'],
+    ir:'consultorio',
+    r:'En Mi consultorio, bloque <b>Mi perfil</b>: tu foto, tu cédula, tu teléfono y tus datos profesionales.' },
+
+  { claves:['respaldo','backup','se pierden mis datos','seguridad','privacidad','quien ve mis datos'],
+    r:'Tus expedientes están cifrados y solo tú los ves; ni el resto de tu consultorio entra a ellos sin tu permiso. Si te preocupa el respaldo de tu información, escríbele a soporte y te explican cómo está hoy.' },
+];
+
 const PRAXI_TIPS = [
   { donde:'pacientes', txt:'Haz <b>clic derecho</b> en cualquier parte de Mis pacientes para crear una carpeta, igual que en Drive. Luego arrastra pacientes dentro.' },
   { donde:'pacientes', txt:'El botón de <b>tres puntos</b> en cada tarjeta abre todo lo de ese paciente: cobrarle, crear consulta, abrir su expediente o mandarle su acceso.' },
@@ -7835,6 +8024,231 @@ function praxiTip(){
   praxiDecir(elegido.txt, true);
 }
 
+/* Busca en el manual. Cuenta cuántas palabras de cada entrada aparecen en la
+   pregunta, y se queda con la que más pegue.
+
+   Las claves de varias palabras valen más que las sueltas: quien escribe
+   "liga de pago" busca algo muy distinto de quien solo escribió "pago". */
+/* Palabras que aparecen en casi cualquier pregunta y no dicen nada de lo que
+   la persona busca. Sin quitarlas, "¿cómo agrego un paciente?" se parece a
+   todas las entradas que mencionan pacientes, que son casi todas. */
+const PRAXI_VACIAS = new Set(['como','donde','que','cual','cuales','cuanto','cuando','quien',
+  'el','la','los','las','un','una','unos','unas','de','del','en','a','al','para','por','con','sin',
+  'mi','mis','su','sus','me','le','les','se','y','o','es','son','esta','estan','hay','tengo','tiene',
+  'puedo','quiero','necesito','hacer','ver','poner','pongo','veo','va','ir','si','no','muy','mas','ya',
+  'praxia','sistema','plataforma','pagina','aqui','esto','eso','algo']);
+
+/* El peso de cada palabra sale de en cuántas entradas del manual aparece.
+   "carpeta" o "excel" salen en una sola y por eso identifican; "paciente"
+   sale en media docena y casi no distingue. Se calcula una vez. */
+let praxiPesos = null;
+
+/* Recorta la palabra a su raíz para que "busco" y "buscar" cuenten como la
+   misma, igual que "pagos" y "pago". Sin esto hay que adivinar en qué
+   conjugación va a escribir cada persona, y siempre falta una.
+
+   No es un analizador de español, es una tijera: corta terminaciones
+   comunes y sólo si queda algo de al menos cuatro letras, para no convertir
+   "pago" en "pag" y juntarlo con cualquier cosa. */
+const PRAXI_COLAS = ['andose','iendo','ando','arse','erse','irse','ados','idos','ado','ido','ar','er','ir','es','os','as','a','o','s'];
+
+function praxiRaiz(p){
+  for(const cola of PRAXI_COLAS){
+    if(p.endsWith(cola) && p.length - cola.length >= 4) return p.slice(0, -cola.length);
+  }
+  return p;
+}
+
+function praxiPalabras(txt){
+  return normalizar(txt).split(' ')
+    .filter(p=> p.length > 2 && !PRAXI_VACIAS.has(p))
+    .map(praxiRaiz);
+}
+
+function praxiCalcularPesos(){
+  const enCuantas = {};
+  PRAXI_SABE.forEach(item=>{
+    const vistas = new Set();
+    item.claves.forEach(c=> praxiPalabras(c).forEach(p=> vistas.add(p)));
+    vistas.forEach(p=> enCuantas[p] = (enCuantas[p] || 0) + 1);
+  });
+
+  praxiPesos = {};
+  Object.entries(enCuantas).forEach(([palabra, n])=>{
+    praxiPesos[palabra] = 1 / n;
+  });
+}
+
+function praxiBuscar(pregunta){
+  if(!praxiPesos) praxiCalcularPesos();
+
+  const q = ' ' + normalizar(pregunta) + ' ';
+  const palabras = new Set(praxiPalabras(pregunta));
+  if(!palabras.size) return null;
+
+  let mejor = null, mejorPunto = 0;
+
+  PRAXI_SABE.forEach(item=>{
+    let punto = 0;
+
+    // Una clave de varias palabras que está entera en la pregunta es la
+    // señal más fuerte que hay: quien escribe "liga de pago" no puede estar
+    // buscando otra cosa.
+    //
+    // No se exige que vayan pegadas. "necesito cancelar una cita" lleva un
+    // "una" en medio de "cancelar cita", y pedir la frase literal dejaba
+    // fuera la forma en que la gente escribe de verdad.
+    item.claves.forEach(clave=>{
+      const partes = praxiPalabras(clave);
+      if(partes.length < 2) return;
+      if(partes.every(p=> palabras.has(p))) punto += partes.length * 1.5;
+    });
+
+    // Una clave que es UNA sola palabra y que la persona escribió tal cual:
+    // "pagos", "carpetas", "expediente". Es el nombre que la entrada se puso
+    // a sí misma, así que vale más que aparecer de pasada en una frase.
+    item.claves.forEach(clave=>{
+      if(clave.includes(' ')) return;
+      const raiz = praxiRaiz(normalizar(clave));
+      if(palabras.has(raiz)) punto += 0.5;
+    });
+
+    // Y luego las palabras sueltas, cada una según lo que distinga.
+    const suyas = new Set();
+    item.claves.forEach(c=> praxiPalabras(c).forEach(p=> suyas.add(p)));
+    suyas.forEach(p=>{ if(palabras.has(p)) punto += (praxiPesos[p] || 0.2); });
+
+    if(punto > mejorPunto){ mejorPunto = punto; mejor = item; }
+  });
+
+  // Por debajo de este umbral prefiere decir "no sé" y pasar a soporte.
+  // Contestar una cosa por otra manda a la persona a buscar algo que no
+  // está donde le dijiste, y eso cuesta más que no haber contestado.
+  return mejorPunto >= 0.45 ? mejor : null;
+}
+
+/* Señales de que la pregunta es sobre un caso y no sobre la plataforma. Solo
+   se miran cuando el manual NO encontró nada: si alguien escribe "dónde pongo
+   el diagnóstico", eso es plataforma y ya se respondió antes de llegar aquí. */
+const PRAXI_CLINICO = [
+  'que hago con','como trato','como manejo','deberia derivar','esta en crisis',
+  'se quiere matar','suicid','se corta','autolesion','le receto','que medicamento',
+  'que dosis','diagnostico de un','tiene depresion','tiene ansiedad','mi paciente esta',
+  'como le digo a mi paciente','es normal que el paciente',
+];
+
+function praxiEsClinico(pregunta){
+  const q = normalizar(pregunta);
+  return PRAXI_CLINICO.some(s=> q.includes(normalizar(s)));
+}
+
+function praxiSoporteHTML(){
+  const tel = PRAXI_SOPORTE_TEL.replace(/\D/g,'');
+  const wa = tel.length === 10 ? '52' + tel : tel;
+  return `<div class="praxi-soporte">
+      <a href="https://wa.me/${wa}?text=${encodeURIComponent('Hola, necesito ayuda con Praxia: ')}" target="_blank" rel="noopener">WhatsApp</a>
+      <a href="mailto:${PRAXI_SOPORTE_MAIL}?subject=${encodeURIComponent('Ayuda con Praxia')}">Correo</a>
+    </div>`;
+}
+
+function praxiResponder(pregunta){
+  const hallado = praxiBuscar(pregunta);
+
+  if(hallado){
+    const irBoton = hallado.ir
+      ? `<button type="button" data-praxi="ir" data-tab="${hallado.ir}">Llévame ahí</button>`
+      : '';
+    praxiPanel(hallado.r, irBoton);
+    return;
+  }
+
+  if(praxiEsClinico(pregunta)){
+    // Aquí no se improvisa. Praxi sabe de la herramienta, no de los casos, y
+    // fingir lo contrario sería lo más dañino que podría hacer.
+    praxiPanel(
+      'De casos, diagnósticos o qué hacer con un paciente no puedo opinar: yo solo sé de Praxia, ' +
+      'y esas decisiones son tuyas y de tu criterio profesional.<br><br>' +
+      'Si lo que necesitas es <b>dónde se registra</b> algo de eso en el expediente, pregúntamelo así y te llevo.'
+    );
+    return;
+  }
+
+  praxiPanel(
+    'Esa no me la sé. Escríbele a soporte y te responden ellos:' + praxiSoporteHTML()
+  );
+}
+
+function praxiPanel(html, extra){
+  const globo = document.getElementById('praxiGlobo');
+  clearTimeout(praxiTemporizador);
+
+  globo.innerHTML = `
+    <div class="praxi-globo praxi-panel">
+      <b>Praxi</b>
+      <div class="praxi-resp">${html}</div>
+      <form class="praxi-form" id="praxiForm">
+        <input type="text" id="praxiPregunta" placeholder="Pregúntame algo de Praxia..." autocomplete="off">
+        <button type="submit" aria-label="Preguntar">→</button>
+      </form>
+      <div class="praxi-acciones">
+        ${extra || ''}
+        <button type="button" data-praxi="frecuentes">Preguntas comunes</button>
+        <button type="button" data-praxi="soporte">Soporte</button>
+        <button type="button" data-praxi="cerrar">Cerrar</button>
+      </div>
+    </div>`;
+
+  praxiConectar(globo);
+  document.getElementById('praxiPregunta')?.focus();
+}
+
+function praxiFrecuentes(){
+  const lista = [
+    '¿Dónde están los pagos?',
+    '¿Cómo cobro una sesión suelta?',
+    '¿Cómo subo expedientes que ya tengo?',
+    '¿Cómo agrego un paciente?',
+    '¿Cómo organizo a mis pacientes en carpetas?',
+    '¿Cómo genero una constancia?',
+  ];
+  praxiPanel(
+    'Esto es lo que más me preguntan:' +
+    `<div class="praxi-lista">${lista.map(p=>
+      `<button type="button" data-praxi="pregunta" data-q="${escapar(p)}">${escapar(p)}</button>`).join('')}</div>`
+  );
+}
+
+function praxiConectar(globo){
+  globo.querySelector('[data-praxi="cerrar"]')?.addEventListener('click', praxiCerrar);
+  globo.querySelector('[data-praxi="otro"]')?.addEventListener('click', praxiTip);
+  globo.querySelector('[data-praxi="frecuentes"]')?.addEventListener('click', praxiFrecuentes);
+  globo.querySelector('[data-praxi="soporte"]')?.addEventListener('click', ()=>{
+    praxiPanel('Escríbeles y te ayudan con lo que necesites:' + praxiSoporteHTML());
+  });
+  globo.querySelector('[data-praxi="ir"]')?.addEventListener('click', (e)=>{
+    abrirPestana(e.target.dataset.tab);
+    praxiCerrar();
+  });
+  globo.querySelectorAll('[data-praxi="pregunta"]').forEach(b=>{
+    b.addEventListener('click', ()=> praxiResponder(b.dataset.q));
+  });
+  globo.querySelector('[data-praxi="callar"]')?.addEventListener('click', async ()=>{
+    praxiCerrar();
+    praxiCallar();
+    await avisar('No te muestro más tips. Si me necesitas, tócame y vuelvo.', 'Listo');
+  });
+
+  globo.querySelector('#praxiForm')?.addEventListener('submit', (e)=>{
+    e.preventDefault();
+    const campo = document.getElementById('praxiPregunta');
+    const q = campo.value.trim();
+    if(!q) return;
+    praxiGesto('atenta');
+    praxiResponder(q);
+    setTimeout(()=> praxiGesto('normal'), 900);
+  });
+}
+
 function praxiDecir(html, conOtro){
   const globo = document.getElementById('praxiGlobo');
   clearTimeout(praxiTemporizador);
@@ -7845,21 +8259,17 @@ function praxiDecir(html, conOtro){
       <div>${html}</div>
       <div class="praxi-acciones">
         ${conOtro ? '<button type="button" data-praxi="otro">Otro tip</button>' : ''}
+        <button type="button" data-praxi="frecuentes">Preguntarle algo</button>
         <button type="button" data-praxi="callar">No me muestres tips</button>
         <button type="button" data-praxi="cerrar">Cerrar</button>
       </div>
     </div>`;
 
-  globo.querySelector('[data-praxi="otro"]')?.addEventListener('click', praxiTip);
-  globo.querySelector('[data-praxi="cerrar"]').addEventListener('click', praxiCerrar);
-  globo.querySelector('[data-praxi="callar"]').addEventListener('click', async ()=>{
-    praxiCerrar();
-    praxiCallar();
-    await avisar('No te muestro más tips. Si me necesitas, tócame y vuelvo.', 'Listo');
-  });
+  praxiConectar(globo);
 
-  // Se cierra sola: un globo que se queda puesto termina siendo un cartel
-  // pegado a la pantalla.
+  // Se cierra solo: un globo que se queda puesto termina siendo un cartel
+  // pegado a la pantalla. El panel de preguntas NO se cierra solo, porque
+  // ahí la persona está escribiendo.
   praxiTemporizador = setTimeout(praxiCerrar, 22000);
 }
 
@@ -7881,7 +8291,7 @@ function praxiIniciar(){
     }
     // Si ya está hablando, el clic la calla en vez de encimar otro globo.
     if(document.getElementById('praxiGlobo').innerHTML.trim()) praxiCerrar();
-    else praxiTip();
+    else praxiPanel('¿Qué necesitas? Pregúntame lo que sea de Praxia: dónde está algo, cómo se hace, o cómo subir lo que ya tienes.');
   });
 
   // El primer tip tarda: entrar y que algo te salte encima es justo lo que
