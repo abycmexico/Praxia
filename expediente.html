@@ -73,9 +73,15 @@
   /* Con la vista previa abierta, una tercera columna. */
   .exp-columnas.con-previa{grid-template-columns:212px minmax(0,1fr) 400px;}
 
+  /* La columna del menú: el selector de nivel arriba y las secciones
+     debajo. El sticky pasa aquí, para que las dos cosas suban juntas. */
+  /* min-width:0 porque un item de grid crece con su contenido si no se le
+     dice lo contrario, y el nav de adentro mide lo que suman sus botones en
+     fila: sin esto la columna empuja la página entera a lo ancho. */
+  .exp-menu{position:sticky;top:88px;min-width:0;}
   nav.tabs{
     display:flex;flex-direction:column;gap:2px;
-    position:sticky;top:88px;border:none;margin:0;overflow:visible;
+    border:none;margin:0;overflow:visible;
   }
   nav.tabs button{
     background:none;border:none;padding:10px 13px;font-size:13px;font-weight:700;
@@ -90,6 +96,35 @@
   .tabs-titulo{
     font-size:10.5px;font-weight:800;text-transform:uppercase;letter-spacing:.7px;
     color:var(--gray);padding:0 13px 8px;
+  }
+
+  /* Selector de nivel. Va arriba de las secciones porque decide cuáles se
+     ven: leerlo después de la lista sería leerlo tarde. */
+  .niveles{display:flex;flex-direction:column;gap:4px;padding:0 8px 14px;margin-bottom:6px;border-bottom:1.5px solid var(--line);}
+  .niveles button{
+    text-align:left;background:none;border:1.5px solid var(--line);border-radius:10px;
+    padding:9px 12px;cursor:pointer;font-family:inherit;font-size:12.5px;font-weight:700;
+    color:var(--ink);line-height:1.3;
+  }
+  .niveles button small{display:block;font-size:10.5px;font-weight:600;color:var(--gray);margin-top:2px;}
+  .niveles button:hover{border-color:var(--primario);}
+  .niveles button.activo{border-color:var(--primario);background:var(--verde-claro,#EDF5EC);color:var(--primario);}
+  .niveles button.activo small{color:var(--primario);}
+  /* Lo que está fuera del nivel elegido pero YA tiene algo escrito se sigue
+     mostrando, con esta marca. Esconderle a alguien lo que él mismo llenó
+     es peor que mostrarle un bloque de más. */
+  .fuera-de-nivel{border-style:dashed;}
+  .aviso-nivel{
+    font-size:11px;font-weight:700;color:var(--gray);background:#FAFAF7;
+    border:1.5px solid var(--line);border-radius:8px;padding:6px 10px;margin-bottom:12px;display:inline-block;
+  }
+  @media(max-width:1000px){
+    .niveles{flex-direction:row;border-bottom:none;padding:0 0 10px;}
+    /* min-width:0 es lo que permite que los tres botones se encojan para
+       caber. Sin él, flex respeta el ancho del texto y la tira se sale unos
+       píxeles por la derecha en pantallas de 375. */
+    .niveles button{flex:1;min-width:0;text-align:center;padding:9px 6px;font-size:12px;}
+    .niveles button small{display:none;}
   }
 
   /* Vista previa siempre a la mano, no escondida en una ventana. */
@@ -114,6 +149,7 @@
      columna lateral en el celular se comeria el ancho del contenido. */
   @media(max-width:1000px){
     .exp-columnas, .exp-columnas.con-previa{grid-template-columns:1fr;gap:18px;}
+    .exp-menu{position:static;}
     nav.tabs{
       flex-direction:row;position:static;overflow-x:auto;gap:4px;
       border-bottom:1.5px solid var(--line);padding-bottom:2px;
@@ -318,21 +354,46 @@
     </div>
 
     <div class="exp-columnas" id="expColumnas">
-      <nav class="tabs">
+      <!-- El selector va FUERA del nav. En el celular el nav es una tira que
+           se desliza de lado, y meter ahí lo primero que hay que leer lo
+           dejaba escondido a mil píxeles a la derecha. -->
+      <div class="exp-menu">
+        <!-- Cuánto expediente quieres llevar. Son 103 campos en total: para
+             quien apenas abre a un paciente, verlos todos de golpe es lo
+             que hace que no llene ninguno. Elegir un nivel más corto solo
+             esconde secciones, nunca borra lo ya escrito. -->
+        <div class="tabs-titulo">Nivel del expediente</div>
+        <div class="niveles" id="nivelesExp">
+          <button type="button" data-nivel="1">
+            Ficha técnica
+            <small>Lo mínimo para empezar</small>
+          </button>
+          <button type="button" data-nivel="2" class="activo">
+            Expediente
+            <small>Lo esencial clínico</small>
+          </button>
+          <button type="button" data-nivel="3">
+            Completo
+            <small>Todo, para NOM-004</small>
+          </button>
+        </div>
+
+        <nav class="tabs">
         <div class="tabs-titulo">Secciones</div>
-        <button class="active" data-tab="resumen">Resumen</button>
-        <button data-tab="ficha">Ficha</button>
-        <button data-tab="antecedentes">Antecedentes</button>
-        <button data-tab="evaluacion">Evaluación</button>
-        <button data-tab="diagnostico">Diagnóstico</button>
-        <button data-tab="objetivos">Objetivos</button>
-        <button data-tab="plan">Plan de tratamiento</button>
-        <button data-tab="notas">Notas por sesión</button>
-        <button data-tab="riesgo">Riesgo</button>
-        <button data-tab="medicacion">Medicación</button>
-        <button data-tab="documentos">Documentos</button>
-        <button data-tab="alta">Seguimiento y alta</button>
-      </nav>
+        <button class="active" data-tab="resumen" data-nivel="1">Resumen</button>
+        <button data-tab="ficha"        data-nivel="1">Ficha</button>
+        <button data-tab="notas"        data-nivel="1">Notas por sesión</button>
+        <button data-tab="documentos"   data-nivel="1">Documentos</button>
+        <button data-tab="antecedentes" data-nivel="2">Antecedentes</button>
+        <button data-tab="diagnostico"  data-nivel="2">Diagnóstico</button>
+        <button data-tab="objetivos"    data-nivel="2">Objetivos</button>
+        <button data-tab="plan"         data-nivel="2">Plan de tratamiento</button>
+        <button data-tab="riesgo"       data-nivel="2">Riesgo</button>
+        <button data-tab="medicacion"   data-nivel="2">Medicación</button>
+        <button data-tab="alta"         data-nivel="2">Seguimiento y alta</button>
+        <button data-tab="evaluacion"   data-nivel="3">Evaluación</button>
+        </nav>
+      </div>
 
       <div id="expSecciones">
 
@@ -389,7 +450,7 @@
 
     <section id="tab-ficha">
       <form id="formFicha">
-        <div class="bloque">
+        <div class="bloque" data-nivel="1">
           <h3>Datos personales</h3>
           <p class="bh">Información de contacto e identificación del paciente.</p>
           <div class="rejilla">
@@ -465,7 +526,9 @@
           </div>
         </div>
 
-        <div class="bloque bloque-menor" id="bloqueMenor">
+        <!-- Nivel 1: si el paciente es menor, el tutor legal no es un dato
+             que se pueda dejar para después. Es quien da el consentimiento. -->
+        <div class="bloque bloque-menor" id="bloqueMenor" data-nivel="1">
           <label class="check-fila-menor">
             <input type="checkbox" id="esMenorEdad">
             <span>Es menor de edad</span>
@@ -493,7 +556,7 @@
           </div>
         </div>
 
-        <div class="bloque">
+        <div class="bloque" data-nivel="1">
           <h3>Contacto de emergencia</h3>
           <p class="bh">A quién avisar en caso necesario.</p>
           <div class="rejilla">
@@ -512,7 +575,7 @@
           </div>
         </div>
 
-        <div class="bloque">
+        <div class="bloque" data-nivel="2">
           <h3>Información administrativa</h3>
           <p class="bh">Modalidad y frecuencia de atención.</p>
           <div class="rejilla">
@@ -549,7 +612,7 @@
           </div>
         </div>
 
-        <div class="bloque">
+        <div class="bloque" data-nivel="1">
           <h3>Motivo de consulta</h3>
           <p class="bh">Qué trae al paciente a consulta, contado con el mayor detalle posible.</p>
           <div class="rejilla" style="margin-bottom:16px;">
@@ -617,7 +680,7 @@
 
     <section id="tab-antecedentes">
       <form id="formAntecedentes">
-        <div class="bloque">
+        <div class="bloque" data-nivel="2">
           <h3>Antecedentes personales</h3>
           <p class="bh">Historial médico y psicológico relevante para el caso.</p>
           <div class="campo" style="margin-bottom:16px;"><label for="antecedentesMedicos">Antecedentes médicos</label><textarea id="antecedentesMedicos"></textarea></div>
@@ -633,7 +696,7 @@
           <div class="campo"><label for="antecedentesFamiliares">Antecedentes familiares relevantes</label><textarea id="antecedentesFamiliares"></textarea></div>
         </div>
 
-        <div class="bloque">
+        <div class="bloque" data-nivel="3">
           <h3>Historia personal y familiar</h3>
           <p class="bh">Desarrollo, relaciones y eventos significativos en la vida del paciente.</p>
           <div class="campo" style="margin-bottom:16px;"><label for="historiaPrenatal">Historia prenatal y perinatal</label><textarea id="historiaPrenatal"></textarea></div>
@@ -1133,6 +1196,14 @@ async function iniciar(){
   cargarMedicamentos();
   cargarConsentimiento();
   cargarResumenPaciente();
+
+  // Hasta el final: el nivel decide qué esconder mirando qué campos tienen
+  // algo escrito, así que tiene que correr con el expediente ya pintado. Si
+  // corriera antes, vería todo vacío y escondería secciones que sí tienen
+  // contenido.
+  let guardado = 2;
+  try{ guardado = Number(localStorage.getItem(CLAVE_NIVEL)) || 2; }catch(e){}
+  aplicarNivel(guardado);
 }
 
 /* ---------- consentimiento ---------- */
@@ -1156,13 +1227,90 @@ async function cargarConsentimiento(){
 }
 
 /* ---------- pestañas y modales ---------- */
-document.querySelectorAll('nav.tabs button').forEach(b=>{
+/* Hijos directos: los botones del selector de nivel también viven dentro de
+   nav.tabs, y no son pestañas. */
+document.querySelectorAll('nav.tabs > button').forEach(b=>{
   b.addEventListener('click', ()=>{
-    document.querySelectorAll('nav.tabs button').forEach(x=>x.classList.remove('active'));
+    document.querySelectorAll('nav.tabs > button').forEach(x=>x.classList.remove('active'));
     document.querySelectorAll('main section').forEach(s=>s.classList.remove('active'));
     b.classList.add('active');
     document.getElementById('tab-' + b.dataset.tab).classList.add('active');
   });
+});
+
+/* ---------- nivel del expediente ---------- */
+/* El expediente completo son 103 campos. Para quien apenas abre a un
+   paciente, verlos todos de golpe es justo lo que hace que no llene
+   ninguno: la pantalla se lee como una tarea de dos horas y se pospone.
+
+   Así que se elige cuánto expediente llevar. No es una función recortada:
+   los tres niveles guardan en los mismos campos, y subir de nivel muestra
+   lo que faltaba sin mover nada de lo ya escrito.
+
+   Regla que manda sobre todo lo demás: bajar de nivel NUNCA esconde algo
+   que ya tiene contenido. Si alguien llenó la evaluación y luego elige
+   "Expediente", su evaluación sigue ahí a la vista, marcada. Esconderle a
+   una persona lo que ella misma escribió es peor que mostrarle un bloque
+   de más, y con un expediente clínico haría dudar de si se perdió. */
+
+const CLAVE_NIVEL = 'praxia_nivel_expediente';
+let nivelExpediente = 2;
+
+function tieneAlgoEscrito(caja){
+  return [...caja.querySelectorAll('input, textarea, select')].some(c=>{
+    if(c.type === 'checkbox' || c.type === 'radio') return c.checked;
+    if(c.disabled) return false;
+    return String(c.value || '').trim() !== '';
+  });
+}
+
+function aplicarNivel(nivel){
+  nivelExpediente = Number(nivel) || 2;
+  try{ localStorage.setItem(CLAVE_NIVEL, String(nivelExpediente)); }catch(e){}
+
+  document.querySelectorAll('#nivelesExp button').forEach(b=>
+    b.classList.toggle('activo', Number(b.dataset.nivel) === nivelExpediente));
+
+  // Secciones del menú
+  document.querySelectorAll('nav.tabs > button[data-nivel]').forEach(b=>{
+    const seccion = document.getElementById('tab-' + b.dataset.tab);
+    const cabe = Number(b.dataset.nivel) <= nivelExpediente;
+    const conDatos = seccion ? tieneAlgoEscrito(seccion) : false;
+    b.hidden = !cabe && !conDatos;
+  });
+
+  // Bloques dentro de una sección
+  document.querySelectorAll('.bloque[data-nivel]').forEach(caja=>{
+    const cabe = Number(caja.dataset.nivel) <= nivelExpediente;
+    const conDatos = tieneAlgoEscrito(caja);
+    caja.hidden = !cabe && !conDatos;
+    caja.classList.toggle('fuera-de-nivel', !cabe && conDatos);
+
+    // Se dice por qué sigue ahí, para que no parezca un descuido.
+    let aviso = caja.querySelector('.aviso-nivel');
+    if(!cabe && conDatos){
+      if(!aviso){
+        aviso = document.createElement('div');
+        aviso.className = 'aviso-nivel';
+        aviso.textContent = 'Fuera del nivel que elegiste, pero ya lo tenías llenado.';
+        caja.insertBefore(aviso, caja.firstChild);
+      }
+    } else if(aviso){
+      aviso.remove();
+    }
+  });
+
+  // Si la pestaña abierta acaba de esconderse, hay que llevar a la persona a
+  // una que sí exista, o se queda mirando una pantalla en blanco.
+  const activa = document.querySelector('nav.tabs > button.active');
+  if(activa && activa.hidden){
+    const primera = document.querySelector('nav.tabs > button:not([hidden])');
+    if(primera) primera.click();
+  }
+}
+
+document.querySelectorAll('#nivelesExp button').forEach(b=>{
+  b.addEventListener('click', ()=> aplicarNivel(b.dataset.nivel));
 });
 
 function abrirModal(id){ document.getElementById(id).classList.add('show'); }
@@ -3332,7 +3480,71 @@ const SUGERENCIAS = {
   /* modales */
   objPrioridad: ['Alta', 'Media', 'Baja'],
   nEvolucion: ['Sin cambios respecto a la sesión anterior', 'Mejoría', 'Retroceso', 'Avance en los objetivos planteados'],
-  medFrecuencia: ['Cada 24 horas', 'Cada 12 horas', 'Cada 8 horas', 'Por la mañana', 'Por la noche', 'Según indicación médica']
+  medFrecuencia: ['Cada 24 horas', 'Cada 12 horas', 'Cada 8 horas', 'Por la mañana', 'Por la noche', 'Según indicación médica'],
+
+  /* Los campos que faltaban. Lo que más se escribe en un expediente es que
+     NO hay nada —"sin antecedentes", "niega", "no refiere"—, y escribir eso
+     a mano sesenta veces es la mayor parte del trabajo y la que menos
+     aporta. Son plantillas para empezar, no conclusiones: se insertan y
+     quien atiende las edita.
+
+     En riesgo las opciones cubren todo el rango y no solo el caso
+     tranquilo. Una lista que solo ofreciera negativos empujaría a marcar el
+     negativo, y ahí el costo de equivocarse no es un campo mal llenado. */
+
+  // Ficha: campos de una línea
+  ocupacion:    ['Empleado/a', 'Estudiante', 'Profesionista independiente', 'Hogar', 'Desempleado/a', 'Jubilado/a'],
+  estadoCivil:  ['Soltero/a', 'Casado/a', 'Unión libre', 'Separado/a', 'Divorciado/a', 'Viudo/a'],
+  escolaridad:  ['Primaria', 'Secundaria', 'Preparatoria', 'Licenciatura', 'Maestría', 'Doctorado', 'Sin escolaridad'],
+
+  // Motivo de consulta
+  motivoConsulta:         ['Acude por sintomatología ansiosa', 'Acude por sintomatología depresiva', 'Acude por dificultades de pareja', 'Acude por duelo', 'Acude por estrés laboral', 'Acude por dificultades familiares'],
+  problemaActual:         ['Refiere que la situación comenzó hace', 'La sintomatología se presenta principalmente en'],
+  sintomasReportados:     ['Alteraciones del sueño', 'Cambios en el apetito', 'Irritabilidad', 'Dificultad para concentrarse', 'Fatiga', 'Llanto frecuente', 'Preocupación excesiva'],
+  expectativasPaciente:   ['Espera reducir la sintomatología', 'Espera herramientas de afrontamiento', 'Espera comprender lo que le pasa'],
+  objetivosIniciales:     ['Reducir la sintomatología reportada', 'Desarrollar estrategias de afrontamiento', 'Mejorar el funcionamiento cotidiano'],
+  factoresDesencadenantes:['No identifica un desencadenante claro', 'Refiere como desencadenante:'],
+  observacionesGenerales: ['Sin observaciones adicionales'],
+
+  // Antecedentes que faltaban
+  tratamientosAnteriores: ['Sin tratamientos previos', 'Tratamiento psicológico previo', 'Tratamiento farmacológico previo'],
+  enfermedadesRelevantes: ['Ninguna', 'Refiere:'],
+  eventosSignificativos:  ['No refiere eventos significativos', 'Refiere pérdida de un familiar', 'Refiere separación', 'Refiere pérdida de empleo'],
+  recursosPersonales:     ['Buena disposición al tratamiento', 'Cuenta con estrategias de afrontamiento', 'Capacidad de introspección'],
+  relacionesFamiliares:   ['Relaciones familiares cercanas', 'Relaciones familiares distantes', 'Conflicto familiar activo'],
+  dinamicaFamiliar:       ['Sin conflictos referidos', 'Refiere conflicto en:'],
+  historiaEscolar:        ['Trayectoria escolar sin incidencias', 'Refiere dificultades escolares'],
+  historiaLaboral:        ['Estabilidad laboral', 'Cambios laborales frecuentes', 'Sin actividad laboral actual'],
+  relacionesPareja:       ['Sin pareja actual', 'Relación de pareja estable', 'Refiere conflicto de pareja'],
+  vidaSocial:             ['Mantiene vínculos sociales', 'Vida social limitada', 'Refiere aislamiento'],
+  historiaInfancia:       ['Sin eventos relevantes referidos', 'Refiere:'],
+  historiaAdolescencia:   ['Sin eventos relevantes referidos', 'Refiere:'],
+  historiaDesarrollo:     ['Desarrollo dentro de lo esperado', 'Refiere retraso en:'],
+  historiaPrenatal:       ['Sin complicaciones referidas', 'Refiere:'],
+
+  // Evaluación que faltaba
+  evalFuncionamientoGeneral: ['Mantiene sus actividades cotidianas', 'Afectación en área laboral', 'Afectación en área escolar', 'Afectación en área social', 'Afectación en área familiar'],
+  evalFactoresRiesgo:        ['No se identifican factores de riesgo actuales', 'Se identifican:'],
+
+  // Diagnóstico
+  impresionClinica:  ['Los datos apuntan a', 'Se requiere más información para precisar la impresión'],
+  hipotesisTrabajo:  ['Se plantea como hipótesis inicial', 'Hipótesis a contrastar en las siguientes sesiones'],
+  diagnosticosDiferenciales: ['A descartar:'],
+
+  // Riesgo que faltaba
+  riesgoFactoresRiesgo:      ['No se identifican factores de riesgo actuales', 'Antecedente de intento previo', 'Consumo de sustancias', 'Aislamiento social', 'Pérdida reciente'],
+  riesgoFactoresProtectores: ['Red de apoyo presente', 'Vinculación con el tratamiento', 'Proyectos a futuro', 'Responsabilidad con dependientes'],
+
+  // Plan
+  planIntervenciones:  ['Psicoeducación', 'Reestructuración cognitiva', 'Técnicas de regulación emocional', 'Entrenamiento en habilidades sociales', 'Exposición gradual'],
+  planIndicadores:     ['Reducción de la sintomatología reportada', 'Mejora en el funcionamiento cotidiano', 'Asistencia sostenida a sesión'],
+  planRecomendaciones: ['Se recomienda valoración médica', 'Se recomienda valoración psiquiátrica', 'Se sugiere involucrar a la familia'],
+
+  // Alta
+  motivoAlta:                     ['Objetivos terapéuticos alcanzados', 'Alta voluntaria del paciente', 'Derivación a otro servicio', 'Abandono del tratamiento'],
+  seguimientoEvolucionGeneral:    ['Evolución favorable', 'Evolución parcialmente favorable', 'Sin cambios significativos'],
+  seguimientoObjetivosAlcanzados: ['Se alcanzaron los objetivos planteados', 'Se alcanzaron parcialmente'],
+  seguimientoObjetivosPendientes: ['Ninguno', 'Quedan pendientes:']
 };
 
 function insertarSugerencia(campo, texto){
