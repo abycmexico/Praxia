@@ -366,15 +366,15 @@
         <div class="niveles" id="nivelesExp">
           <button type="button" data-nivel="1">
             Ficha técnica
-            <small>Lo mínimo para empezar</small>
+            <small>18 campos · para empezar hoy</small>
           </button>
           <button type="button" data-nivel="2" class="activo">
             Expediente
-            <small>Lo esencial clínico</small>
+            <small>49 campos · lo esencial clínico</small>
           </button>
           <button type="button" data-nivel="3">
             Completo
-            <small>Todo, para NOM-004</small>
+            <small>103 campos · para NOM-004</small>
           </button>
         </div>
 
@@ -386,11 +386,15 @@
         <button data-tab="documentos"   data-nivel="1">Documentos</button>
         <button data-tab="antecedentes" data-nivel="2">Antecedentes</button>
         <button data-tab="diagnostico"  data-nivel="2">Diagnóstico</button>
-        <button data-tab="objetivos"    data-nivel="2">Objetivos</button>
         <button data-tab="plan"         data-nivel="2">Plan de tratamiento</button>
         <button data-tab="riesgo"       data-nivel="2">Riesgo</button>
-        <button data-tab="medicacion"   data-nivel="2">Medicación</button>
-        <button data-tab="alta"         data-nivel="2">Seguimiento y alta</button>
+        <!-- Nivel 3. Objetivos los cubre el plan; medicación solo aplica si
+             hay prescripción de otro médico; el alta se llena al cerrar el
+             proceso, no al abrirlo; y la evaluación es el examen mental
+             formal. Ninguna hace falta para atender la semana que entra. -->
+        <button data-tab="objetivos"    data-nivel="3">Objetivos</button>
+        <button data-tab="medicacion"   data-nivel="3">Medicación</button>
+        <button data-tab="alta"         data-nivel="3">Seguimiento y alta</button>
         <button data-tab="evaluacion"   data-nivel="3">Evaluación</button>
         </nav>
       </div>
@@ -479,15 +483,15 @@
                 <option value="Sin información">
               </datalist>
             </div>
-            <div class="campo">
+            <div class="campo" data-nivel="3">
               <label for="pronombres">Pronombres</label>
               <input type="text" id="pronombres" placeholder="Ej. ella/la, él/lo, elle">
             </div>
-            <div class="campo">
+            <div class="campo" data-nivel="2">
               <label for="ocupacion">Ocupación</label>
               <input type="text" id="ocupacion">
             </div>
-            <div class="campo">
+            <div class="campo" data-nivel="2">
               <label for="estadoCivil">Estado civil</label>
               <input type="text" id="estadoCivil" list="dlEstadoCivil">
               <datalist id="dlEstadoCivil">
@@ -497,7 +501,7 @@
                 <option value="Sin información">
               </datalist>
             </div>
-            <div class="campo">
+            <div class="campo" data-nivel="2">
               <label for="escolaridad">Escolaridad</label>
               <input type="text" id="escolaridad" list="dlEscolaridad">
               <datalist id="dlEscolaridad">
@@ -507,19 +511,19 @@
                 <option value="Posgrado"><option value="Sin información">
               </datalist>
             </div>
-            <div class="campo">
+            <div class="campo" data-nivel="3">
               <label for="direccion">Dirección</label>
               <input type="text" id="direccion">
             </div>
-            <div class="campo">
+            <div class="campo" data-nivel="2">
               <label for="ciudad">Ciudad</label>
               <input type="text" id="ciudad">
             </div>
-            <div class="campo">
+            <div class="campo" data-nivel="3">
               <label for="estadoGeografico">Estado</label>
               <input type="text" id="estadoGeografico">
             </div>
-            <div class="campo">
+            <div class="campo" data-nivel="3">
               <label for="pais">País</label>
               <input type="text" id="pais">
             </div>
@@ -628,11 +632,11 @@
                 <option value="dado_de_alta">Dado de alta</option>
               </select>
             </div>
-            <div class="campo">
+            <div class="campo" data-nivel="2">
               <label for="quienRefiere">Quién refiere al paciente</label>
               <input type="text" id="quienRefiere">
             </div>
-            <div class="campo">
+            <div class="campo" data-nivel="2">
               <label for="tiempoEvolucion">Tiempo de evolución del problema</label>
               <input type="text" id="tiempoEvolucion" placeholder="Ej. 6 meses">
             </div>
@@ -641,27 +645,27 @@
             <label for="motivoConsulta">Motivo principal de consulta</label>
             <textarea id="motivoConsulta"></textarea>
           </div>
-          <div class="campo" style="margin-bottom:16px;">
+          <div class="campo" style="margin-bottom:16px;" data-nivel="2">
             <label for="problemaActual">Problema actual</label>
             <textarea id="problemaActual"></textarea>
           </div>
-          <div class="campo" style="margin-bottom:16px;">
+          <div class="campo" style="margin-bottom:16px;" data-nivel="2">
             <label for="sintomasReportados">Síntomas o dificultades reportadas</label>
             <textarea id="sintomasReportados"></textarea>
           </div>
-          <div class="campo" style="margin-bottom:16px;">
+          <div class="campo" style="margin-bottom:16px;" data-nivel="3">
             <label for="expectativasPaciente">Expectativas del paciente</label>
             <textarea id="expectativasPaciente"></textarea>
           </div>
-          <div class="campo" style="margin-bottom:16px;">
+          <div class="campo" style="margin-bottom:16px;" data-nivel="2">
             <label for="objetivosIniciales">Objetivos iniciales</label>
             <textarea id="objetivosIniciales"></textarea>
           </div>
-          <div class="campo" style="margin-bottom:16px;">
+          <div class="campo" style="margin-bottom:16px;" data-nivel="3">
             <label for="factoresDesencadenantes">Factores que agravaron o desencadenaron la situación</label>
             <textarea id="factoresDesencadenantes"></textarea>
           </div>
-          <div class="campo">
+          <div class="campo" data-nivel="3">
             <label for="observacionesGenerales">Observaciones generales</label>
             <textarea id="observacionesGenerales" class="alto"></textarea>
           </div>
@@ -686,12 +690,12 @@
           <div class="campo" style="margin-bottom:16px;"><label for="antecedentesMedicos">Antecedentes médicos</label><textarea id="antecedentesMedicos"></textarea></div>
           <div class="campo" style="margin-bottom:16px;"><label for="antecedentesPsicologicos">Antecedentes psicológicos</label><textarea id="antecedentesPsicologicos"></textarea></div>
           <div class="campo" style="margin-bottom:16px;"><label for="antecedentesPsiquiatricos">Antecedentes psiquiátricos</label><textarea id="antecedentesPsiquiatricos"></textarea></div>
-          <div class="campo" style="margin-bottom:16px;"><label for="tratamientosAnteriores">Tratamientos anteriores</label><textarea id="tratamientosAnteriores"></textarea></div>
-          <div class="campo" style="margin-bottom:16px;"><label for="hospitalizaciones">Hospitalizaciones</label><textarea id="hospitalizaciones"></textarea></div>
+          <div class="campo" style="margin-bottom:16px;" data-nivel="3"><label for="tratamientosAnteriores">Tratamientos anteriores</label><textarea id="tratamientosAnteriores"></textarea></div>
+          <div class="campo" style="margin-bottom:16px;" data-nivel="3"><label for="hospitalizaciones">Hospitalizaciones</label><textarea id="hospitalizaciones"></textarea></div>
           <div class="campo" style="margin-bottom:16px;"><label for="consumoSustancias">Consumo de sustancias</label><textarea id="consumoSustancias"></textarea></div>
           <div class="rejilla" style="margin-bottom:16px;">
             <div class="campo"><label for="alergias">Alergias</label><input type="text" id="alergias"></div>
-            <div class="campo"><label for="enfermedadesRelevantes">Enfermedades relevantes</label><input type="text" id="enfermedadesRelevantes"></div>
+            <div class="campo" data-nivel="3"><label for="enfermedadesRelevantes">Enfermedades relevantes</label><input type="text" id="enfermedadesRelevantes"></div>
           </div>
           <div class="campo"><label for="antecedentesFamiliares">Antecedentes familiares relevantes</label><textarea id="antecedentesFamiliares"></textarea></div>
         </div>
@@ -765,13 +769,13 @@
           <h3>Impresión clínica / diagnóstico</h3>
           <p class="bh">El diagnóstico lo introduce y valida el profesional — el sistema no lo sugiere ni lo infiere.</p>
           <div class="campo" style="margin-bottom:16px;"><label for="impresionClinica">Impresión clínica</label><textarea id="impresionClinica"></textarea></div>
-          <div class="campo" style="margin-bottom:16px;"><label for="hipotesisTrabajo">Hipótesis de trabajo</label><textarea id="hipotesisTrabajo"></textarea></div>
+          <div class="campo" style="margin-bottom:16px;" data-nivel="3"><label for="hipotesisTrabajo">Hipótesis de trabajo</label><textarea id="hipotesisTrabajo"></textarea></div>
           <div class="rejilla" style="margin-bottom:16px;">
             <div class="campo"><label for="diagnostico">Diagnóstico</label><input type="text" id="diagnostico"></div>
-            <div class="campo"><label for="codigoDiagnostico">Código diagnóstico</label><input type="text" id="codigoDiagnostico"></div>
+            <div class="campo" data-nivel="3"><label for="codigoDiagnostico">Código diagnóstico</label><input type="text" id="codigoDiagnostico"></div>
             <div class="campo"><label for="diagnosticoFecha">Fecha de evaluación</label><input type="date" id="diagnosticoFecha"></div>
           </div>
-          <div class="campo"><label for="diagnosticosDiferenciales">Diagnósticos diferenciales</label><textarea id="diagnosticosDiferenciales"></textarea></div>
+          <div class="campo" data-nivel="3"><label for="diagnosticosDiferenciales">Diagnósticos diferenciales</label><textarea id="diagnosticosDiferenciales"></textarea></div>
         </div>
         <div class="barra-guardar">
           <p class="msg" id="msgDiagnostico"></p>
@@ -799,10 +803,10 @@
           <div class="campo" style="margin-bottom:16px;"><label for="planIntervenciones">Intervenciones planeadas</label><textarea id="planIntervenciones"></textarea></div>
           <div class="rejilla" style="margin-bottom:16px;">
             <div class="campo"><label for="planFrecuencia">Frecuencia</label><input type="text" id="planFrecuencia"></div>
-            <div class="campo"><label for="planDuracionEstimada">Duración estimada</label><input type="text" id="planDuracionEstimada"></div>
+            <div class="campo" data-nivel="3"><label for="planDuracionEstimada">Duración estimada</label><input type="text" id="planDuracionEstimada"></div>
           </div>
-          <div class="campo" style="margin-bottom:16px;"><label for="planIndicadores">Indicadores de progreso</label><textarea id="planIndicadores"></textarea></div>
-          <div class="campo"><label for="planRecomendaciones">Recomendaciones</label><textarea id="planRecomendaciones"></textarea></div>
+          <div class="campo" style="margin-bottom:16px;" data-nivel="3"><label for="planIndicadores">Indicadores de progreso</label><textarea id="planIndicadores"></textarea></div>
+          <div class="campo" data-nivel="3"><label for="planRecomendaciones">Recomendaciones</label><textarea id="planRecomendaciones"></textarea></div>
         </div>
         <div class="barra-guardar">
           <p class="msg" id="msgPlan"></p>
@@ -820,7 +824,7 @@
           <div class="rejilla" style="margin-bottom:16px;">
             <div class="campo"><label for="riesgoIdeacionSuicida">Ideación suicida</label><textarea id="riesgoIdeacionSuicida"></textarea></div>
             <div class="campo"><label for="riesgoAutolesiones">Autolesiones</label><textarea id="riesgoAutolesiones"></textarea></div>
-            <div class="campo"><label for="riesgoTerceros">Riesgo hacia terceros</label><textarea id="riesgoTerceros"></textarea></div>
+            <div class="campo" data-nivel="3"><label for="riesgoTerceros">Riesgo hacia terceros</label><textarea id="riesgoTerceros"></textarea></div>
             <div class="campo">
               <label for="riesgoNivel">Nivel de riesgo registrado</label>
               <select id="riesgoNivel">
@@ -831,8 +835,8 @@
               </select>
             </div>
           </div>
-          <div class="campo" style="margin-bottom:16px;"><label for="riesgoFactoresRiesgo">Factores de riesgo</label><textarea id="riesgoFactoresRiesgo"></textarea></div>
-          <div class="campo" style="margin-bottom:16px;"><label for="riesgoFactoresProtectores">Factores protectores</label><textarea id="riesgoFactoresProtectores"></textarea></div>
+          <div class="campo" style="margin-bottom:16px;" data-nivel="3"><label for="riesgoFactoresRiesgo">Factores de riesgo</label><textarea id="riesgoFactoresRiesgo"></textarea></div>
+          <div class="campo" style="margin-bottom:16px;" data-nivel="3"><label for="riesgoFactoresProtectores">Factores protectores</label><textarea id="riesgoFactoresProtectores"></textarea></div>
           <div class="campo" style="margin-bottom:16px;"><label for="riesgoPlanIntervencion">Plan / documentación de intervención</label><textarea id="riesgoPlanIntervencion"></textarea></div>
           <div class="campo"><label for="riesgoFechaEvaluacion">Fecha de evaluación</label><input type="date" id="riesgoFechaEvaluacion"></div>
         </div>
@@ -1298,6 +1302,16 @@ function aplicarNivel(nivel){
     } else if(aviso){
       aviso.remove();
     }
+  });
+
+  // Campos sueltos dentro de un bloque que sí se muestra. Sin esto, "lo
+  // esencial" traía las mismas treinta y cinco casillas que el completo y
+  // no se sentía más corto en nada.
+  document.querySelectorAll('.campo[data-nivel]').forEach(campo=>{
+    const cabe = Number(campo.dataset.nivel) <= nivelExpediente;
+    const conDatos = tieneAlgoEscrito(campo);
+    campo.hidden = !cabe && !conDatos;
+    campo.classList.toggle('fuera-de-nivel', !cabe && conDatos);
   });
 
   // Si la pestaña abierta acaba de esconderse, hay que llevar a la persona a
