@@ -853,7 +853,19 @@
     filter:drop-shadow(0 3px 8px rgba(12,36,18,.18));
     transition:transform .18s;
   }
+  .praxi-fig{cursor:grab;}
+  .praxi-fig:active{cursor:grabbing;}
   .praxi-fig:hover{filter:drop-shadow(0 5px 12px rgba(12,36,18,.28));}
+  /* Mientras la cargan: se levanta un poco y no arrastra transiciones, o
+     iría siempre un paso atrás del cursor. */
+  .praxi-agarrada{transition:none !important;}
+  .praxi-agarrada .praxi-fig{
+    transition:none !important;
+    filter:drop-shadow(0 10px 18px rgba(12,36,18,.32));
+    transform:scale(1.06) !important;
+  }
+  /* Sin esto, al arrastrar sobre la página se selecciona texto de fondo. */
+  .praxi-agarrada,.praxi-agarrada *{user-select:none;-webkit-user-select:none;}
   .praxi-fig svg{width:100%;height:auto;display:block;}
 
   /* El globo va ENCIMA, nunca al lado: al lado, el texto le roba ancho,
@@ -917,32 +929,86 @@
 
   /* saludar */
   .px-saluda #pxBrazoD{animation:pxSaluda 1.7s ease-in-out;}
+  /* El brazo sube deprisa y se frena arriba, que es como sube un brazo de
+     verdad; los saludos son cada vez más chicos, como cuando uno ya va
+     terminando de saludar. */
   @keyframes pxSaluda{
-    0%,100%{transform:rotate(0)}
-    15%{transform:rotate(-58deg)}
-    30%{transform:rotate(-38deg)}
-    45%{transform:rotate(-58deg)}
-    60%{transform:rotate(-38deg)}
-    75%{transform:rotate(-55deg)}
+    0%{transform:rotate(0)}
+    8%{transform:rotate(-34deg)}
+    14%{transform:rotate(-58deg)}
+    22%{transform:rotate(-62deg)}
+    32%{transform:rotate(-36deg)}
+    42%{transform:rotate(-60deg)}
+    52%{transform:rotate(-38deg)}
+    62%{transform:rotate(-57deg)}
+    72%{transform:rotate(-42deg)}
+    82%{transform:rotate(-52deg)}
+    92%{transform:rotate(-22deg)}
+    100%{transform:rotate(0)}
   }
 
-  /* leer: saca el libro y baja la mirada */
+  /* leer: saca el libro, lo sostiene, y de vez en cuando pasa la hoja */
   .px-lee #pxLibro{animation:pxLibro 6s ease-in-out;}
   .px-lee #pxBrazoI{animation:pxSostieneI 6s ease-in-out;}
   .px-lee #pxBrazoD{animation:pxSostieneD 6s ease-in-out;}
-  @keyframes pxLibro{0%,100%{opacity:0;transform:translateY(8px)}8%,92%{opacity:1;transform:none}}
-  @keyframes pxSostieneI{0%,100%{transform:rotate(0)}10%,90%{transform:rotate(-42deg)}}
-  @keyframes pxSostieneD{0%,100%{transform:rotate(0)}10%,90%{transform:rotate(42deg)}}
+  .px-lee #pxCara{animation:pxLeeCara 6s ease-in-out;}
+  @keyframes pxLibro{
+    0%{opacity:0;transform:translateY(10px) scale(.9)}
+    9%{opacity:1;transform:translateY(0) scale(1)}
+    30%{transform:rotate(-1.5deg)}
+    48%{transform:rotate(1.5deg)}
+    68%{transform:rotate(-1deg)}
+    88%{opacity:1;transform:none}
+    100%{opacity:0;transform:translateY(10px) scale(.9)}
+  }
+  @keyframes pxSostieneI{
+    0%{transform:rotate(0)} 10%{transform:rotate(-30deg)} 16%{transform:rotate(-44deg)}
+    50%{transform:rotate(-40deg)} 84%{transform:rotate(-44deg)}
+    93%{transform:rotate(-20deg)} 100%{transform:rotate(0)}
+  }
+  @keyframes pxSostieneD{
+    0%{transform:rotate(0)} 10%{transform:rotate(30deg)} 16%{transform:rotate(44deg)}
+    50%{transform:rotate(40deg)} 84%{transform:rotate(44deg)}
+    93%{transform:rotate(20deg)} 100%{transform:rotate(0)}
+  }
+  /* La cara baja un poco: está mirando el libro, no al frente. */
+  @keyframes pxLeeCara{
+    0%,100%{transform:translateY(0)} 14%,86%{transform:translateY(3px)}
+  }
 
   /* música: se balancea y salen las notas */
   .px-musica #pxNotas{animation:pxNotas 5s ease-out;}
   .px-musica #pxPlanta,.px-musica #pxPasto{animation:pxBaila 5s ease-in-out;transform-origin:105px 200px;}
   .px-musica #pxBrazoI{animation:pxBrazoBaileI 5s ease-in-out;}
   .px-musica #pxBrazoD{animation:pxBrazoBaileD 5s ease-in-out;}
-  @keyframes pxNotas{0%{opacity:0;transform:translate(0,10px)}20%{opacity:1}100%{opacity:0;transform:translate(14px,-26px)}}
-  @keyframes pxBaila{0%,100%{transform:rotate(0)}20%{transform:rotate(-7deg)}45%{transform:rotate(7deg)}70%{transform:rotate(-5deg)}}
-  @keyframes pxBrazoBaileI{0%,100%{transform:rotate(0)}25%{transform:rotate(-30deg)}60%{transform:rotate(10deg)}}
-  @keyframes pxBrazoBaileD{0%,100%{transform:rotate(0)}25%{transform:rotate(30deg)}60%{transform:rotate(-10deg)}}
+  /* Las notas suben en zigzag y se van desvaneciendo, como sube el humo: en
+     línea recta parecen un globo escapándose. */
+  @keyframes pxNotas{
+    0%{opacity:0;transform:translate(0,12px) scale(.7)}
+    12%{opacity:1;transform:translate(3px,4px) scale(1)}
+    30%{transform:translate(-3px,-4px)}
+    48%{transform:translate(5px,-12px)}
+    66%{opacity:.85;transform:translate(-2px,-19px)}
+    84%{opacity:.4;transform:translate(6px,-26px)}
+    100%{opacity:0;transform:translate(2px,-34px) scale(.85)}
+  }
+  /* El baile no vuelve al centro en cada tiempo: se queda un poco de cada
+     lado, que es lo que le da ritmo en vez de parecer un metrónomo. */
+  @keyframes pxBaila{
+    0%{transform:rotate(0)}     12%{transform:rotate(-8deg)}  24%{transform:rotate(-5deg)}
+    36%{transform:rotate(8deg)} 48%{transform:rotate(5deg)}   60%{transform:rotate(-7deg)}
+    72%{transform:rotate(-3deg)}84%{transform:rotate(6deg)}   100%{transform:rotate(0)}
+  }
+  @keyframes pxBrazoBaileI{
+    0%{transform:rotate(0)}      14%{transform:rotate(-34deg)} 28%{transform:rotate(-12deg)}
+    42%{transform:rotate(-38deg)}56%{transform:rotate(8deg)}   70%{transform:rotate(-26deg)}
+    86%{transform:rotate(-6deg)} 100%{transform:rotate(0)}
+  }
+  @keyframes pxBrazoBaileD{
+    0%{transform:rotate(0)}      14%{transform:rotate(34deg)}  28%{transform:rotate(12deg)}
+    42%{transform:rotate(38deg)} 56%{transform:rotate(-8deg)}  70%{transform:rotate(26deg)}
+    86%{transform:rotate(6deg)}  100%{transform:rotate(0)}
+  }
 
   /* aburrirse: se ladea, bosteza y le salen las zetas */
   .px-aburre #pxZzz{animation:pxZzz 5.5s ease-out;}
@@ -957,15 +1023,48 @@
      desaparecer de golpe. */
   #pxCara,#pxPlanta,#pxBrazoI,#pxBrazoD,#pxPiernaI,#pxPiernaD{transition:transform .55s ease-in-out,opacity .45s;}
 
-  /* caminar: pasos alternos y un balanceo del cuerpo */
-  .px-camina #pxPiernaI{animation:pxPasoA .62s ease-in-out infinite;}
-  .px-camina #pxPiernaD{animation:pxPasoB .62s ease-in-out infinite;}
-  .px-camina #pxBrazoI{animation:pxManoB .62s ease-in-out infinite;}
-  .px-camina #pxBrazoD{animation:pxManoA .62s ease-in-out infinite;}
-  @keyframes pxPasoA{0%,100%{transform:rotate(16deg)}50%{transform:rotate(-16deg)}}
-  @keyframes pxPasoB{0%,100%{transform:rotate(-16deg)}50%{transform:rotate(16deg)}}
-  @keyframes pxManoA{0%,100%{transform:rotate(14deg)}50%{transform:rotate(-14deg)}}
-  @keyframes pxManoB{0%,100%{transform:rotate(-14deg)}50%{transform:rotate(14deg)}}
+  /* caminar.
+
+     Un paso no es la pierna yendo y viniendo a velocidad constante: frena al
+     final del arco, cambia de sentido y vuelve a acelerar. Con dos fotogramas
+     -ida y vuelta- el navegador interpola en línea recta y se ve a tirones.
+     Con los pasos intermedios el movimiento tiene peso.
+
+     Y las piernas no van en el mismo instante que los brazos: el cuerpo se
+     mece un poco después, que es lo que da la sensación de caminar y no de
+     agitar extremidades. */
+  .px-camina #pxPiernaI{animation:pxPasoA .68s cubic-bezier(.45,.05,.55,.95) infinite;}
+  .px-camina #pxPiernaD{animation:pxPasoB .68s cubic-bezier(.45,.05,.55,.95) infinite;}
+  .px-camina #pxBrazoI{animation:pxManoB .68s cubic-bezier(.45,.05,.55,.95) infinite;}
+  .px-camina #pxBrazoD{animation:pxManoA .68s cubic-bezier(.45,.05,.55,.95) infinite;}
+  .px-camina #pxPlanta,.px-camina #pxPasto{animation:pxBamboleo .68s ease-in-out infinite;transform-origin:105px 210px;}
+  .px-camina svg{animation:pxTrote .34s ease-in-out infinite !important;transform-origin:50% 95%;}
+
+  @keyframes pxPasoA{
+    0%{transform:rotate(18deg)}   17%{transform:rotate(11deg)}  33%{transform:rotate(0deg)}
+    50%{transform:rotate(-18deg)} 67%{transform:rotate(-11deg)} 83%{transform:rotate(0deg)}
+    100%{transform:rotate(18deg)}
+  }
+  @keyframes pxPasoB{
+    0%{transform:rotate(-18deg)}  17%{transform:rotate(-11deg)} 33%{transform:rotate(0deg)}
+    50%{transform:rotate(18deg)}  67%{transform:rotate(11deg)}  83%{transform:rotate(0deg)}
+    100%{transform:rotate(-18deg)}
+  }
+  @keyframes pxManoA{
+    0%{transform:rotate(15deg)}   25%{transform:rotate(6deg)}   50%{transform:rotate(-15deg)}
+    75%{transform:rotate(-6deg)}  100%{transform:rotate(15deg)}
+  }
+  @keyframes pxManoB{
+    0%{transform:rotate(-15deg)}  25%{transform:rotate(-6deg)}  50%{transform:rotate(15deg)}
+    75%{transform:rotate(6deg)}   100%{transform:rotate(-15deg)}
+  }
+  @keyframes pxBamboleo{
+    0%,100%{transform:rotate(-3deg)} 25%{transform:rotate(0deg)}
+    50%{transform:rotate(3deg)}      75%{transform:rotate(0deg)}
+  }
+  /* El subibaja del cuerpo va al doble de ritmo que las piernas: sube una vez
+     por cada paso, no una por cada ciclo completo. */
+  @keyframes pxTrote{0%,100%{transform:translateY(0) scale(1)}50%{transform:translateY(-2.5px) scale(1.005)}}
 
   /* El paseo mueve la figura, no el contenedor: el globo se queda donde
      estaba y no sale volando detrás de ella. */
@@ -1824,7 +1923,12 @@
 
       <!-- la planta y el pasto, antes que la maceta para que ella les tape la
            base. Al esconderse, la planta baja y desaparece detras. -->
-      <g id="pxPlanta">
+      <!-- Recorte para la planta: no puede pintarse por debajo del fondo de
+           la maceta. Sin esto, al esconderse baja 74px y el tallo asoma por
+           abajo, entre las piernas, como si la hubieran ensartado. -->
+      <clipPath id="pxCorte"><rect x="0" y="0" width="210" height="250"/></clipPath>
+
+      <g id="pxPlanta" clip-path="url(#pxCorte)">
         <path d="M95 205 L95 92 A33 33 0 1 1 128 125 L95 125"
               fill="none" stroke="#2E7D32" stroke-width="13" stroke-linecap="round" stroke-linejoin="round"/>
         <g transform="translate(96,92) rotate(-16)">
@@ -8086,6 +8190,116 @@ let praxiActo = null;      // el que está en curso
 let praxiRelojVida = null;
 let praxiPaseo = 0;        // cuánto se ha alejado de su esquina, en píxeles
 
+/* ---------- llevarla de un lado a otro ---------- */
+/* Se agarra y se suelta donde uno quiera, y ahí se queda para la próxima vez.
+
+   Lo delicado es distinguir un arrastre de un clic: si cualquier mousedown
+   contara como arrastre, tocarla para preguntarle algo la movería tres
+   píxeles y no abriría nada. Por eso solo se considera arrastre a partir de
+   cuatro píxeles de recorrido. */
+
+const PRAXI_SITIO = 'praxia_praxi_sitio';
+let praxiArrastrando = false;
+let praxiSeMovio = false;   // hubo arrastre de verdad, no solo un clic
+
+function praxiColocar(x, y){
+  const caja = document.getElementById('praxi');
+  if(!caja) return;
+
+  // Se guarda con margen para que no quede medio cuerpo fuera si la sueltan
+  // pegada a una orilla, o si la próxima vez la pantalla es más chica.
+  const ancho = caja.offsetWidth || 90;
+  const alto  = caja.offsetHeight || 120;
+  const izq = Math.max(6, Math.min(x, innerWidth  - ancho - 6));
+  const arr = Math.max(6, Math.min(y, innerHeight - alto  - 6));
+
+  caja.style.left = izq + 'px';
+  caja.style.top  = arr + 'px';
+  caja.style.right = 'auto';
+  caja.style.bottom = 'auto';
+  return { x:izq, y:arr };
+}
+
+function praxiRecordarSitio(){
+  const guardado = (()=>{ try{ return JSON.parse(localStorage.getItem(PRAXI_SITIO)); }catch(e){ return null; } })();
+  if(!guardado) return;
+  praxiColocar(guardado.x, guardado.y);
+}
+
+function praxiHacerArrastrable(){
+  const caja = document.getElementById('praxi');
+  const fig  = document.getElementById('praxiFig');
+  if(!caja || !fig) return;
+
+  let dx = 0, dy = 0, movido = false, x0 = 0, y0 = 0;
+
+  const agarrar = (e)=>{
+    const p = e.touches ? e.touches[0] : e;
+    const r = caja.getBoundingClientRect();
+    dx = p.clientX - r.left;
+    dy = p.clientY - r.top;
+    // Dónde estaba el puntero al agarrar. El umbral se mide contra ESTE
+    // punto: comparar contra la caja no sirve, porque la caja ya se movió.
+    x0 = p.clientX;
+    y0 = p.clientY;
+    movido = false;
+    praxiSeMovio = false;
+    praxiArrastrando = true;
+
+    document.addEventListener('mousemove', mover);
+    document.addEventListener('mouseup', soltar);
+    document.addEventListener('touchmove', mover, { passive:false });
+    document.addEventListener('touchend', soltar);
+  };
+
+  const mover = (e)=>{
+    if(!praxiArrastrando) return;
+    const p = e.touches ? e.touches[0] : e;
+    if(e.cancelable) e.preventDefault();
+
+    if(!movido){
+      // Cuatro píxeles desde donde se agarró: por debajo de eso es el
+      // temblor de la mano al hacer clic, no la intención de moverla.
+      if(Math.abs(p.clientX - x0) < 4 && Math.abs(p.clientY - y0) < 4) return;
+      movido = true;
+      praxiSeMovio = true;
+      caja.classList.add('praxi-agarrada');
+      praxiQuieta();                       // que no camine mientras la cargan
+      clearTimeout(praxiRelojVida);
+      praxiGesto('atenta');
+      fig.style.transform = '';            // se olvida del paseo
+      praxiPaseo = 0;
+    }
+
+    praxiColocar(p.clientX - dx, p.clientY - dy);
+  };
+
+  const soltar = ()=>{
+    document.removeEventListener('mousemove', mover);
+    document.removeEventListener('mouseup', soltar);
+    document.removeEventListener('touchmove', mover);
+    document.removeEventListener('touchend', soltar);
+
+    if(movido){
+      const r = caja.getBoundingClientRect();
+      try{ localStorage.setItem(PRAXI_SITIO, JSON.stringify({ x:Math.round(r.left), y:Math.round(r.top) })); }catch(e){}
+      caja.classList.remove('praxi-agarrada');
+      praxiGesto('contenta');
+      setTimeout(()=>{ if(!praxiEstaCallada()) praxiGesto('normal'); }, 900);
+      if(!praxiEstaCallada()) praxiVivir();
+    }
+
+    // El clic se procesa después de soltar, así que hay que dejar la marca
+    // puesta un instante para que el manejador del clic sepa que hubo
+    // arrastre y no abra el panel.
+    setTimeout(()=>{ praxiArrastrando = false; }, 0);
+    if(!movido) praxiArrastrando = false;
+  };
+
+  fig.addEventListener('mousedown', agarrar);
+  fig.addEventListener('touchstart', agarrar, { passive:true });
+}
+
 function praxiOcupada(){
   // Ventana abierta, panel de preguntas abierto, o dormida.
   return praxiEstaCallada()
@@ -8509,12 +8723,16 @@ function praxiIniciar(){
   if(!caja) return;
   caja.hidden = false;
 
+  praxiRecordarSitio();
+  praxiHacerArrastrable();
+
   if(praxiEstaCallada()){
     document.getElementById('praxiFig').classList.add('praxi-dormida');
     praxiGesto('dormida');
   }
 
   document.getElementById('praxiFig').addEventListener('click', ()=>{
+    if(praxiSeMovio){ praxiSeMovio = false; return; }   // la movieron, no la tocaron
     if(praxiEstaCallada()){
       praxiDespertar();
       praxiDecir('Ya volví. ¿Quieres que te cuente algo de Praxia?', true);
